@@ -50,7 +50,8 @@ use std::time::{Duration, Instant};
 
 use liteinst_jit::Refuse;
 use liteinst_jit::o1::{
-    ChildInfo, O1sOutcome, OracleOutcome, run_o1_bytes_observed, run_o1_observed, run_o1s,
+    ChildInfo, O1Stop, O1sOutcome, OracleOutcome, run_o1_bytes_observed, run_o1_observed,
+    run_o1_until_observed, run_o1s,
 };
 use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
 
@@ -240,6 +241,18 @@ pub fn o1_bytes(
     })
 }
 
+/// `run_o1_until_observed` (the k-branch oracle) with its child armed.
+pub fn o1_until(bin: &str, name: &str, stop: O1Stop) -> OracleOutcome {
+    custody(|| {
+        let mut deadline = None;
+        let o = run_o1_until_observed(std::path::Path::new(bin), name, stop, |pid| {
+            deadline = Some(Deadline::arm(pid));
+        });
+        drop(deadline);
+        o
+    })
+}
+
 /// `run_o1s` with its child armed before the caller's `on_spawn`.
 pub fn o1s(
     bin: &str,
@@ -309,13 +322,14 @@ pub fn command_status(cmd: &mut Command) -> std::io::Result<ExitStatus> {
 ///   in one place and started in another is still caught.
 ///
 /// This file is not scanned, so the helpers' own calls never match.
-const RAW_SPAWNS: [&str; 9] = [
+const RAW_SPAWNS: [&str; 10] = [
     "RemoteExecutable::spawn",
     "run_o1(",
     "run_o1_bytes(",
     "run_o1s(",
     "run_o1_observed(",
     "run_o1_bytes_observed(",
+    "run_o1_until_observed(",
     ".spawn()",
     ".status()",
     ".output()",

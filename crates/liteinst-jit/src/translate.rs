@@ -21,11 +21,11 @@ use crate::pcmap::{
 use crate::refuse::Refuse;
 use crate::state::SCRATCH_LEN;
 use crate::state::{
-    OFF_BRANCH_COUNT, OFF_EXIT_KIND, OFF_EXIT_NEXT, OFF_EXIT_SRC, OFF_HOST_R12, OFF_HOST_R13,
-    OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP, OFF_HOST_RBX, OFF_HOST_RSP, OFF_INSTRUCTION_COUNT,
-    OFF_POLL, OFF_SCRATCH, OFF_SPILL_FLAGS, OFF_SPILL_RAX, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11,
-    ST_R12, ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS,
-    ST_RSI, ST_RSP, exit_kind,
+    OFF_BRANCH_COUNT, OFF_BUDGET, OFF_EXIT_KIND, OFF_EXIT_NEXT, OFF_EXIT_SRC, OFF_HOST_R12,
+    OFF_HOST_R13, OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP, OFF_HOST_RBX, OFF_HOST_RSP,
+    OFF_INSTRUCTION_COUNT, OFF_POLL, OFF_SCRATCH, OFF_SPILL_FLAGS, OFF_SPILL_RAX, OFF_STATE, ST_R8,
+    ST_R9, ST_R10, ST_R11, ST_R12, ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI,
+    ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
 use crate::types::{CountProfile, RegionFacts};
 
@@ -110,6 +110,9 @@ pub struct Translation {
     pub pcmap: PcMap,
     pub block_gen: BTreeMap<u64, u64>,
     pub blocks: BTreeMap<u64, Block>,
+    /// Whether every branch credit stub carries the remaining-RCB
+    /// budget check ([`TranslateOptions::rcb_budget`]).
+    pub rcb_budget: bool,
 }
 
 fn check_interior(decoded: &BTreeMap<u64, usize>, target: u64) -> Result<(), Refuse> {
@@ -270,6 +273,7 @@ enum FixTarget {
     Block(u64),
     CountStub { branch: u64, successor: u64 },
     PollExit(u64),
+    BudgetExit(u64),
     CommonExit,
 }
 
@@ -287,6 +291,10 @@ struct Emitter {
     fixups: Vec<(usize, FixTarget)>,
     stubs: Vec<(u64, u64)>,
     poll_exits: Vec<u64>,
+    /// Emit the remaining-RCB budget check in branch credit stubs.
+    rcb_budget: bool,
+    /// Successors that need a `BUDGET` exit stub, in first-use order.
+    budget_exits: Vec<u64>,
 }
 
 impl Emitter {
@@ -435,6 +443,45 @@ impl Emitter {
             }
             Ok(())
         })?;
+        // Remaining-RCB budget (budgeted translations only). The
+        // credit above has retired the branch; count the budget
+        // down and, at zero, leave through the successor's BUDGET
+        // exit with guest flags and RAX restored. Flags are still
+        // spilled here, so `dec` may clobber them.
+        if let (true, StubKind::Branch { successor, .. }) = (self.rcb_budget, mk) {
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                let d = e.disp(OFF_BUDGET, 7)?;
+                e.buf.extend_from_slice(&[0x48, 0xff, 0x0d]); // dec qword [rip+d]
+                e.buf.extend_from_slice(&d.to_le_bytes());
+                Ok(())
+            })?;
+            // jnz over the budget path (restore-A 17 + jmp 5 = 22)
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.buf.extend_from_slice(&[0x75, 22]);
+                Ok(())
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.mov_rax_mem(OFF_SPILL_FLAGS)
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.buf.extend_from_slice(&[0x04, 0x7f]);
+                Ok(())
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.buf.push(0x9e);
+                Ok(())
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditFlagsRestored), |e| {
+                e.mov_rax_mem(OFF_SPILL_RAX)
+            })?;
+            if !self.budget_exits.contains(&successor) {
+                self.budget_exits.push(successor);
+            }
+            self.seg(src, Phase::CountStub, rec(Committed), |e| {
+                e.jmp_fix(FixTarget::BudgetExit(successor));
+                Ok(())
+            })?;
+        }
         self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
             e.mov_rax_mem(OFF_SPILL_FLAGS)
         })?;
@@ -773,6 +820,39 @@ pub fn translate_with_exit_style(
     data_addr: u64,
     exit_style: ExitStyle,
 ) -> Result<Translation, Refuse> {
+    translate_with_options(
+        region,
+        entry,
+        profile,
+        gen_base,
+        data_addr,
+        TranslateOptions {
+            exit_style,
+            rcb_budget: false,
+        },
+    )
+}
+
+/// Emission options beyond the count profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TranslateOptions {
+    pub exit_style: ExitStyle,
+    /// Add the remaining-RCB budget check to every branch credit
+    /// stub (`JitData::budget_remaining`, `exit_kind::BUDGET`).
+    /// Off, emission is byte-identical to [`translate_with_exit_style`].
+    pub rcb_budget: bool,
+}
+
+/// As [`translate_with_exit_style`], with every emission option.
+pub fn translate_with_options(
+    region: &RegionFacts,
+    entry: u64,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
+    let exit_style = options.exit_style;
     let blocks = discover(region, entry)?;
     let mut e = Emitter {
         buf: Vec::new(),
@@ -782,6 +862,8 @@ pub fn translate_with_exit_style(
         fixups: Vec::new(),
         stubs: Vec::new(),
         poll_exits: Vec::new(),
+        rcb_budget: options.rcb_budget,
+        budget_exits: Vec::new(),
     };
     let mut block_gen: BTreeMap<u64, u64> = BTreeMap::new();
     let mut stub_gen: HashMap<(u64, u64), u64> = HashMap::new();
@@ -985,6 +1067,12 @@ pub fn translate_with_exit_style(
         stub_gen.insert((branch, successor), e.pc());
         e.count_stub_body(branch, successor)?;
     }
+    let mut budget_gen: HashMap<u64, u64> = HashMap::new();
+    let pending_budget: Vec<u64> = e.budget_exits.clone();
+    for successor in pending_budget {
+        budget_gen.insert(successor, e.pc());
+        e.exit_stub(exit_kind::BUDGET, successor, successor)?;
+    }
     let mut poll_gen: HashMap<u64, u64> = HashMap::new();
     let pending_polls: Vec<u64> = e.poll_exits.clone();
     for block in pending_polls {
@@ -1003,6 +1091,9 @@ pub fn translate_with_exit_style(
             FixTarget::PollExit(block) => *poll_gen
                 .get(&block)
                 .ok_or(Refuse::InteriorEntry { target: block })?,
+            FixTarget::BudgetExit(successor) => *budget_gen
+                .get(&successor)
+                .ok_or(Refuse::InteriorEntry { target: successor })?,
             FixTarget::CommonExit => common_exit,
         };
         let next = gen_base.wrapping_add(at as u64).wrapping_add(4);
@@ -1020,6 +1111,7 @@ pub fn translate_with_exit_style(
         pcmap: e.pcmap,
         block_gen,
         blocks,
+        rcb_budget: options.rcb_budget,
     })
 }
 
@@ -1176,6 +1268,74 @@ mod tests {
         assert_eq!(t.block_gen.len(), 3);
         for &g in t.block_gen.values() {
             assert!(t.pcmap.lookup(g).is_some(), "gen {g:#x} unmapped");
+        }
+    }
+
+    /// The budget option: off, emission equals the default path
+    /// (the pre-change bytes themselves are pinned by
+    /// tests/streaming_golden.rs); on, every branch stub grows by
+    /// exactly the budget sequence, one BUDGET exit stub exists per
+    /// distinct successor, and every emitted byte stays mapped.
+    #[test]
+    fn budget_option_emission() {
+        let bytes = vec![0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
+        for exit_style in [ExitStyle::ReturnToDispatcher, ExitStyle::TrapToDispatcher] {
+            let r = region(bytes.clone());
+            let opts = |rcb_budget: bool| TranslateOptions {
+                exit_style,
+                rcb_budget,
+            };
+            let base = translate_with_exit_style(
+                &r,
+                0x10_0000,
+                CountProfile::Branches,
+                0x80_0000,
+                0x81_0000,
+                exit_style,
+            )
+            .unwrap();
+            let off = translate_with_options(
+                &r,
+                0x10_0000,
+                CountProfile::Branches,
+                0x80_0000,
+                0x81_0000,
+                opts(false),
+            )
+            .unwrap();
+            let on = translate_with_options(
+                &r,
+                0x10_0000,
+                CountProfile::Branches,
+                0x80_0000,
+                0x81_0000,
+                opts(true),
+            )
+            .unwrap();
+            assert_eq!(
+                base.code, off.code,
+                "{exit_style:?}: option off moved bytes"
+            );
+            assert!(!off.rcb_budget && on.rcb_budget);
+            // One conditional branch with two successors: two branch
+            // stubs, each + dec(7) + jnz(2) + restore(17) + jmp(5) = 31,
+            // and two BUDGET exit stubs (spill 7, 3 x (imm 10 + store
+            // 7), reload 7, jmp 5 = 70 each).
+            assert_eq!(
+                on.code.len(),
+                off.code.len() + 2 * 31 + 2 * 70,
+                "{exit_style:?}: budget growth"
+            );
+            let unmapped = (0..on.code.len() as u64)
+                .filter(|&i| on.pcmap.lookup(0x80_0000 + i).is_none())
+                .count();
+            assert_eq!(unmapped, 0, "{exit_style:?}: unmapped budget bytes");
+            let mut expect = 0x80_0000u64;
+            for e in on.pcmap.entries() {
+                assert_eq!(e.gen_start, expect, "gap before {e:?}");
+                expect = e.gen_end;
+            }
+            assert_eq!(on.block_gen, off.block_gen, "{exit_style:?}: block entries");
         }
     }
 }

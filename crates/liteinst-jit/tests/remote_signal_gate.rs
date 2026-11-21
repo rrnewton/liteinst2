@@ -4848,6 +4848,7 @@ fn bound_census_refuses_unsupported_attributes() {
 fn bound_inventory() {
     use deadline::BoundRole::{Armed, Exempt};
     deadline::bound_inventory(&[
+        ("budget_tail.rs", Armed),
         ("custody.rs", Armed),
         ("lifecycle_dispatch.rs", Armed),
         ("o1_compare.rs", Armed),

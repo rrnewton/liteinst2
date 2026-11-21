@@ -19,6 +19,21 @@ run_suite() {
     return $?
 }
 
+# Mutants 06 and 07 change the remaining-RCB budget, which only the
+# #[ignore]d corpus test exercises; run exactly that test for them.
+# Its W1 assertion fails before any PMU witness, so the kill needs no
+# PMU. Every other mutant runs the full default suite.
+run_mutant() {
+    case "$1" in
+        06*|07*)
+            cargo test --locked -p liteinst-jit --test budget_tail -- \
+                --ignored --exact budget_tail_corpus_v1 >"$2" 2>&1
+            return $?
+            ;;
+    esac
+    run_suite "$2"
+}
+
 echo "=== BASELINE"
 if run_suite /tmp/mutant-baseline.log; then
     echo "BASELINE green"
@@ -27,6 +42,18 @@ else
     exit 1
 fi
 
+# The budget corpus test is 06/07's only killing test, and it is not
+# in the default suite. Run it once unmutated: its first failure must
+# not already be W1, or a 06/07 "kill" would not be causal. Green is
+# not required (its PMU witness may be unavailable on this host).
+echo "=== BUDGET BASELINE (06/07)"
+run_mutant 06-baseline /tmp/mutant-budget-baseline.log
+if grep -Eq "first: .*W1: " /tmp/mutant-budget-baseline.log; then
+    echo "MUTANTS: unmutated budget corpus already fails W1 — refusing to judge 06/07" >&2
+    exit 1
+fi
+echo "BUDGET BASELINE: no W1 first failure"
+
 expected_for() {
     case "$1" in
         01*) echo "retired branch credited exactly once" ;;
@@ -34,6 +61,7 @@ expected_for() {
         03*) echo "StaleGeneration" ;;
         04*) echo "outside source range|fault pc offset" ;;
         05*) echo "fault_before_branch branches" ;;
+        06*|07*) echo "first: .*W1: " ;;
         *) echo "FAILED" ;;
     esac
 }
@@ -49,7 +77,7 @@ for patch in crates/liteinst-jit/mutants/0*.patch; do
         fail=1
         continue
     fi
-    if run_suite "$log"; then
+    if run_mutant "$name" "$log"; then
         echo "MUTANT $name SURVIVED (suite green) — see $log"
         fail=1
     elif grep -q "could not compile" "$log"; then
