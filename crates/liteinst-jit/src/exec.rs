@@ -8,9 +8,11 @@
 //! source PC recovered through the PC map; it is never delivered as
 //! a cache PC.
 
+use std::collections::BTreeSet;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::cache::{CacheIndex, CacheRecord};
+use crate::indirect::{IndirectKind, ResolveError};
 #[cfg(test)]
 use crate::pcmap::{CallStage, CommonStage, Recovery, StubStage};
 use crate::recovery::RecoveryInput;
@@ -23,7 +25,8 @@ use crate::state::{
     ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
 use crate::translate::{
-    ExitStyle, TranslateOptions, Translation, translate, translate_with_options,
+    ExitStyle, TranslateOptions, Translation, translate, translate_roots_with_options,
+    translate_with_options,
 };
 use crate::types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
 
@@ -139,9 +142,14 @@ pub trait Handler {
     }
 }
 
-/// Guest memory reads the dispatcher needs (return targets).
+/// Guest memory the dispatcher needs: reads of return targets and
+/// indirect memory operands, and the write of the return address an
+/// indirect call pushes (P1b.1).
 pub trait GuestMemory {
     fn read_u64(&self, addr: u64) -> Option<u64>;
+    /// Write 8 guest bytes at `addr`; `false` when the 8 bytes were
+    /// not all written (a guest fault).
+    fn write_u64(&self, addr: u64, value: u64) -> bool;
 }
 
 /// In-process guest memory via `process_vm_readv` on this process, so
@@ -164,6 +172,22 @@ impl GuestMemory for ProcessMemory {
         // duration of the call; failure is reported, never faults.
         let n = unsafe { libc::process_vm_readv(libc::getpid(), &local, 1, &remote, 1, 0) };
         (n == 8).then(|| u64::from_ne_bytes(buf))
+    }
+    fn write_u64(&self, addr: u64, value: u64) -> bool {
+        let buf = value.to_ne_bytes();
+        let local = libc::iovec {
+            iov_base: buf.as_ptr().cast_mut().cast(),
+            iov_len: 8,
+        };
+        let remote = libc::iovec {
+            iov_base: addr as usize as *mut libc::c_void,
+            iov_len: 8,
+        };
+        // SAFETY: both iovecs describe live 8-byte ranges for the
+        // duration of the call; a bad guest address fails cleanly
+        // instead of faulting the dispatcher.
+        let n = unsafe { libc::process_vm_writev(libc::getpid(), &local, 1, &remote, 1, 0) };
+        n == 8
     }
 }
 
@@ -968,6 +992,65 @@ pub struct Executable {
     /// (`set_pmu_window_for_test`); -1 when unset.
     #[cfg(feature = "test-seams")]
     pmu_fd: i32,
+    /// The admitted region and entry, kept for P1b.1 closure
+    /// retranslation.
+    region: RegionFacts,
+    entry: u64,
+    /// The sorted root set the live translation was made from
+    /// (`{entry}` at prepare time; grows by in-region indirect
+    /// targets, P1b.1).
+    roots: BTreeSet<u64>,
+    /// Successful retranslations (`retranslations()` test seam).
+    retranslations: u64,
+}
+
+/// How the P1b.1 INDIRECT arm stops instead of transferring (both
+/// dispatchers).
+pub(crate) enum IndirectStop {
+    /// A named refusal; the state is the state before the
+    /// instruction.
+    Refuse(Refuse),
+    /// A guest fault at `addr` (the memory operand read, or the
+    /// call's push); the instruction did not retire.
+    Fault { addr: u64 },
+}
+
+/// The cache index over every block of `translation`.
+fn build_index(
+    region: &RegionFacts,
+    translation: &Translation,
+    profile: CountProfile,
+) -> Result<CacheIndex, Refuse> {
+    let mut index = CacheIndex::new(region.generation);
+    for block in translation.blocks.values() {
+        let end = block
+            .insns
+            .last()
+            .map(|i| i.pc + i.len as u64)
+            .unwrap_or(block.start)
+            .max(
+                block
+                    .term
+                    .as_ref()
+                    .map_or(block.start, |t| t.pc + t.len as u64),
+            );
+        let bytes = region
+            .slice_from(block.start)
+            .map(|s| &s[..(end - block.start) as usize])
+            .unwrap_or(&[]);
+        index.insert(CacheRecord {
+            key: CacheKey {
+                src_pc: block.start,
+                byte_hash: byte_hash(bytes),
+                generation: region.generation,
+                profile,
+            },
+            src_start: block.start,
+            src_end: end,
+            gen_entry: translation.block_gen[&block.start],
+        })?;
+    }
+    Ok(index)
 }
 
 impl Executable {
@@ -1023,35 +1106,7 @@ impl Executable {
             translate(region, entry, profile, base, data_addr)?
         };
         arena.install_code(&translation.code)?;
-        let mut index = CacheIndex::new(region.generation);
-        for block in translation.blocks.values() {
-            let end = block
-                .insns
-                .last()
-                .map(|i| i.pc + i.len as u64)
-                .unwrap_or(block.start)
-                .max(
-                    block
-                        .term
-                        .as_ref()
-                        .map_or(block.start, |t| t.pc + t.len as u64),
-                );
-            let bytes = region
-                .slice_from(block.start)
-                .map(|s| &s[..(end - block.start) as usize])
-                .unwrap_or(&[]);
-            index.insert(CacheRecord {
-                key: CacheKey {
-                    src_pc: block.start,
-                    byte_hash: byte_hash(bytes),
-                    generation: region.generation,
-                    profile,
-                },
-                src_start: block.start,
-                src_end: end,
-                gen_entry: translation.block_gen[&block.start],
-            })?;
-        }
+        let index = build_index(region, &translation, profile)?;
         Ok(Executable {
             arena,
             translation,
@@ -1063,7 +1118,102 @@ impl Executable {
             budget_run: None,
             #[cfg(feature = "test-seams")]
             pmu_fd: -1,
+            region: region.clone(),
+            entry,
+            roots: BTreeSet::from([entry]),
+            retranslations: 0,
         })
+    }
+
+    /// Test seam: successful P1b.1 retranslations of this
+    /// executable (each one a closure retranslation from a larger
+    /// root set, installed in a fresh arena).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn retranslations(&self) -> u64 {
+        self.retranslations
+    }
+
+    /// P1b.1 closure retranslation, in-process: translate the region
+    /// from `roots` (with the prepare-time options and profile) for a
+    /// FRESH arena, install it through the unchanged `install_code`
+    /// (copy, then RX), rebuild the cache index, and swap arena,
+    /// translation, index and root set at this exit boundary; the old
+    /// arena is unmapped. On any refusal nothing changes. JitData is
+    /// seeded on every entry, so the fresh data page needs no copy.
+    fn retranslate(&mut self, roots: BTreeSet<u64>) -> Result<(), Refuse> {
+        let mut arena = Arena::new()?;
+        let translation = translate_roots_with_options(
+            &self.region,
+            self.entry,
+            &roots,
+            self.profile,
+            arena.base as u64,
+            arena.data_addr(),
+            TranslateOptions {
+                exit_style: ExitStyle::ReturnToDispatcher,
+                rcb_budget: self.rcb_budget,
+            },
+        )?;
+        arena.install_code(&translation.code)?;
+        let index = build_index(&self.region, &translation, self.profile)?;
+        self.data = arena.data_addr() as *mut JitData;
+        self.arena = arena;
+        self.translation = translation;
+        self.index = index;
+        self.roots = roots;
+        self.retranslations += 1;
+        Ok(())
+    }
+
+    /// The P1b.1 INDIRECT arm (`P1B-DESIGN.md` §2, P1b.1), from the
+    /// state before the instruction at `src`: decode it from the
+    /// admitted bytes, read the target, check the region BEFORE any
+    /// push, translate new roots, then push (call only) and return
+    /// the state at the target. A stop leaves `state` as it was.
+    fn resolve_indirect(
+        &mut self,
+        state: &GuestState,
+        mem: &dyn GuestMemory,
+        src: u64,
+    ) -> Result<GuestState, IndirectStop> {
+        let unresolved = || IndirectStop::Refuse(Refuse::IndirectUnresolved { src_pc: src });
+        let insn = self
+            .translation
+            .blocks
+            .range(..=src)
+            .next_back()
+            .and_then(|(_, b)| b.term.as_ref())
+            .filter(|t| t.pc == src)
+            .cloned()
+            .ok_or_else(unresolved)?;
+        let mut read = |a: u64| mem.read_u64(a);
+        let resolved =
+            crate::indirect::resolve(&insn.instruction, insn.pc, insn.len, state, &mut read);
+        let r = match resolved {
+            Ok(r) => r,
+            Err(ResolveError::Unsupported) => return Err(unresolved()),
+            Err(ResolveError::ReadFault { addr }) => return Err(IndirectStop::Fault { addr }),
+        };
+        if !self.region.contains(r.target) {
+            return Err(unresolved());
+        }
+        let add = crate::indirect::new_roots(&r, &self.region, &self.translation.block_gen);
+        if !add.is_empty() {
+            let mut roots = self.roots.clone();
+            roots.extend(add);
+            self.retranslate(roots).map_err(IndirectStop::Refuse)?;
+        }
+        let mut next = *state;
+        if r.kind == IndirectKind::Call {
+            let slot = state.rsp.wrapping_sub(8);
+            if !mem.write_u64(slot, r.next_ip) {
+                return Err(IndirectStop::Fault { addr: slot });
+            }
+            next.rsp = slot;
+        }
+        next.rip = r.target;
+        Ok(next)
     }
 
     /// Test seam: a perf event fd (opened disabled by the test) that
@@ -1080,9 +1230,11 @@ impl Executable {
     /// Run a budgeted executable from `state.rip` until exactly
     /// `target` retired conditional branches have been credited
     /// (`BudgetEnd::Landed`, state at the successor), or until the
-    /// stretch reaches a syscall, nondet or indirect exit
-    /// (`BudgetEnd::Handoff` with the existing named refusal and the
-    /// exact count still owed), or until the guest returns to
+    /// stretch reaches a syscall or nondet exit, or an indirect
+    /// transfer P1b.1 refuses (`BudgetEnd::Handoff` with the named
+    /// refusal and the exact count still owed; a resolved indirect
+    /// transfer continues the stretch, budget unchanged), or until
+    /// the guest returns to
     /// `return_sentinel` first (`BudgetEnd::Ended`). Faults and other
     /// refusals are returned unchanged. No handler is ever asked to
     /// serve an exit inside the stretch.
@@ -1509,13 +1661,12 @@ impl Executable {
             if self.budget_run.is_some() {
                 let src = data.exit_src;
                 let handoff = |refusal: Refuse| BudgetEnd::Handoff { refusal, at: src };
+                // INDIRECT is resolved by the arm below (P1b.1); only
+                // its refusals hand off.
                 let end = match data.exit_kind {
                     exit_kind::BUDGET => Some(BudgetEnd::Landed),
                     exit_kind::SYSCALL | exit_kind::NONDET => {
                         Some(handoff(Refuse::NoHandler { src_pc: src }))
-                    }
-                    exit_kind::INDIRECT => {
-                        Some(handoff(Refuse::IndirectUnresolved { src_pc: src }))
                     }
                     _ => None,
                 };
@@ -1585,10 +1736,44 @@ impl Executable {
                     poll_remaining = POLL_BUDGET;
                 }
                 exit_kind::INDIRECT => {
-                    return Err(Refuse::IndirectUnresolved {
-                        src_pc: data.exit_src,
+                    // P1b.1 §1.2. Every stop on this arm reports the
+                    // state before the instruction, its block-head
+                    // pre-credit excluded (F3); a resolved transfer
+                    // retires it (the pre-credit stands) and leaves
+                    // the budget unchanged.
+                    let src = data.exit_src;
+                    state.rip = src;
+                    let (kind, retired_before) = self.kind_and_retired_at(
+                        FaultKind::GuestFault,
+                        data.instruction_count,
+                        src,
+                    );
+                    match self.resolve_indirect(&state, mem, src) {
+                        Ok(next) => {
+                            state = next;
+                        }
+                        Err(IndirectStop::Refuse(refusal)) => {
+                            if self.budget_run.is_some() {
+                                let out =
+                                    outcome_at(state, data.branch_count, retired_before, exits);
+                                return self
+                                    .budget_finish(BudgetEnd::Handoff { refusal, at: src }, out);
+                            }
+                            return Err(refusal.into());
+                        }
+                        Err(IndirectStop::Fault { addr }) => {
+                            return Err(RunError::Fault(Box::new(Fault {
+                                also_pending: Vec::new(),
+                                kind,
+                                src_pc: src,
+                                addr,
+                                signum: libc::SIGSEGV,
+                                state,
+                                branches: data.branch_count,
+                                instructions: retired_before,
+                            })));
+                        }
                     }
-                    .into());
                 }
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;

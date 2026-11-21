@@ -5,8 +5,11 @@
 /// stopped at (or before) the named source PC, never mid-block.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Refuse {
-    /// Indirect jump/call reached the dispatcher; P1a resolves direct
-    /// control flow only.
+    /// An indirect jump or call whose target lies outside the admitted
+    /// source region (P1b.1 resolves in-region targets through the
+    /// dispatcher), or an indirect form P1b.1 does not resolve (far,
+    /// segment-override). The guest is left at the instruction with
+    /// the state before it: no push, no memory write.
     IndirectUnresolved { src_pc: u64 },
     /// Source code is writable, shared, or its write ownership is
     /// unknown; P1a refuses self-modifying code instead of tracking it.
@@ -17,6 +20,9 @@ pub enum Refuse {
     /// The instruction cannot be copied with proven equivalence.
     Unrelocatable { src_pc: u64, reason: &'static str },
     /// A control target lands mid-instruction in the decoded stream.
+    /// Raised at an INDIRECT exit in a plain run, it names the
+    /// interior target while the guest is stopped at the jmp; only a
+    /// budget handoff's `at` names the jmp itself.
     InteriorEntry { target: u64 },
     /// A block or cache budget was exceeded.
     BudgetExceeded { what: &'static str },
@@ -47,6 +53,17 @@ pub enum Refuse {
     /// without a budget, a budget run on a translation without
     /// budget stubs, or a signal delivery inside the stretch.
     RcbBudget { what: &'static str },
+    /// Installing a retranslated code image (P1b.1) failed or was not
+    /// allowed: a live signal frame holds a generated PC (remote), the
+    /// `/proc/<pid>/mem` write failed (`errno`), or an earlier failed
+    /// install left the arena possibly torn and the executable
+    /// poisoned. `errno` is 0 when no system call failed. The guest is
+    /// left at `src_pc` with the state before the instruction.
+    CodeInstall {
+        src_pc: u64,
+        reason: &'static str,
+        errno: i32,
+    },
 }
 
 impl Refuse {
@@ -62,7 +79,8 @@ impl Refuse {
             | Refuse::BudgetExceeded { .. }
             | Refuse::Decode { .. }
             | Refuse::StaleGeneration { .. }
-            | Refuse::RcbBudget { .. } => "R-CODE",
+            | Refuse::RcbBudget { .. }
+            | Refuse::CodeInstall { .. } => "R-CODE",
             Refuse::NoHandler { .. } => "R-INSTR",
             Refuse::SignalOwnership { .. } => "R-SIGNAL",
             Refuse::MappingPolicy { .. } => "R-WX",

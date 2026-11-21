@@ -1,8 +1,6 @@
 # liteinst-jit P1b design note (draft, awaiting the external review verdict)
 
-Status: **DESIGN ONLY.** P1b implementation is gated on an
-adversarial review of the P1a code + §6 invalidation design, plus
-a project go-ahead. Nothing here is built, selectable, or claimed. Layering
+Status: **DESIGN NOTE; P1b.1 is implemented at fixture scale only.** P1b implementation is gated on (a) one fresh adversarial review seat returning APPROVE, whose brief carries the project's full goalpost-moving check (no weakened assertion, widened tolerance, added exemption, skipped case, relaxed comparator, relabelled failure or deleted check), under the project owner's 2026-11-15 one-seat rule for LiteInst; and (b) a project go-ahead, the project coordinator's GO. Nothing else here is built, selectable, or claimed, and §1 still gates every whole-program claim. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
 remains **unbuilt until M4 is met**, and merging to liteinst2 main

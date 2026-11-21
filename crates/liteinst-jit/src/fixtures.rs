@@ -344,6 +344,118 @@ pub fn all() -> Vec<Fixture> {
                 Ok(())
             }),
         },
+        // P1b.1 fixtures (dispatcher-resolved indirect transfers).
+        // Hand-assembled so every offset below is explicit; rsi is
+        // the loop count (16 in the corpus).
+        Fixture {
+            // 00 xor ecx,ecx; 02 top: cmp rcx,rsi; 05 jae done;
+            // 07 inc rcx; 0a lea rax,[rip+top]; 11 jmp rax;
+            // 13 done: mov rax,rcx; 16 ret. `top` is mid-block in
+            // the entry block: the first jump splits it.
+            name: "ind_jmp_reg",
+            bytes: vec![
+                0x31, 0xc9, 0x48, 0x39, 0xf1, 0x73, 0x0c, 0x48, 0xff, 0xc1, //
+                0x48, 0x8d, 0x05, 0xf1, 0xff, 0xff, 0xff, 0xff, 0xe0, //
+                0x48, 0x89, 0xc8, 0xc3,
+            ],
+        },
+        Fixture {
+            // 00 xor ecx,ecx; 02 xor edx,edx; 04 top: cmp rcx,rsi;
+            // 07 jae done; 09 lea rax,[rip+helper]; 10 call rax;
+            // 12 inc rcx; 15 jmp top; 17 done: mov rax,rdx; 1a ret;
+            // 1b helper: test cl,1; 1e jz even; 20 inc rdx;
+            // 23 even: ret. rax = the odd count below rsi.
+            name: "ind_call_reg",
+            bytes: vec![
+                0x31, 0xc9, 0x31, 0xd2, 0x48, 0x39, 0xf1, 0x73, 0x0e, //
+                0x48, 0x8d, 0x05, 0x0b, 0x00, 0x00, 0x00, 0xff, 0xd0, //
+                0x48, 0xff, 0xc1, 0xeb, 0xed, 0x48, 0x89, 0xd0, 0xc3, //
+                0xf6, 0xc1, 0x01, 0x74, 0x03, 0x48, 0xff, 0xc2, 0xc3,
+            ],
+        },
+        Fixture {
+            // 00 xor ecx,ecx; 02 xor r8d,r8d; 05 top: cmp rcx,rsi;
+            // 08 jae done; 0a mov rax,rcx; 0d and eax,3;
+            // 10 lea rdx,[rip+table]; 17 movsxd rax,[rdx+rax*4];
+            // 1b add rax,rdx; 1e jmp rax;
+            // 20 c0: add r8,1; 24 jmp next; 26 c1: add r8,2;
+            // 2a jmp next; 2c c2: add r8,3; 30 jmp next;
+            // 32 c3: add r8,4; 36 jmp next; 38 next: inc rcx;
+            // 3b jmp top; 3d done: mov rax,r8; 40 ret;
+            // 41 table: dd c0-table, c1-table, c2-table, c3-table.
+            name: "ind_jmp_table",
+            bytes: vec![
+                0x31, 0xc9, 0x45, 0x31, 0xc0, 0x48, 0x39, 0xf1, 0x73, 0x33, //
+                0x48, 0x89, 0xc8, 0x83, 0xe0, 0x03, //
+                0x48, 0x8d, 0x15, 0x2a, 0x00, 0x00, 0x00, //
+                0x48, 0x63, 0x04, 0x82, 0x48, 0x01, 0xd0, 0xff, 0xe0, //
+                0x49, 0x83, 0xc0, 0x01, 0xeb, 0x12, //
+                0x49, 0x83, 0xc0, 0x02, 0xeb, 0x0c, //
+                0x49, 0x83, 0xc0, 0x03, 0xeb, 0x06, //
+                0x49, 0x83, 0xc0, 0x04, 0xeb, 0x00, //
+                0x48, 0xff, 0xc1, 0xeb, 0xc8, 0x4c, 0x89, 0xc0, 0xc3, //
+                0xdf, 0xff, 0xff, 0xff, 0xe5, 0xff, 0xff, 0xff, //
+                0xeb, 0xff, 0xff, 0xff, 0xf1, 0xff, 0xff, 0xff,
+            ],
+        },
+        Fixture {
+            // As ind_call_reg, through memory: 09 lea rax,[rip+helper];
+            // 10 push rax; 11 call qword [rsp]; 14 add rsp,8;
+            // 18 inc rcx; 1b jmp top; 1d done: mov rax,rdx; 20 ret;
+            // 21 helper: test cl,1; 24 jz even; 26 inc rdx;
+            // 29 even: ret.
+            name: "ind_call_mem",
+            bytes: vec![
+                0x31, 0xc9, 0x31, 0xd2, 0x48, 0x39, 0xf1, 0x73, 0x14, //
+                0x48, 0x8d, 0x05, 0x11, 0x00, 0x00, 0x00, 0x50, 0xff, 0x14, 0x24, //
+                0x48, 0x83, 0xc4, 0x08, 0x48, 0xff, 0xc1, 0xeb, 0xe7, //
+                0x48, 0x89, 0xd0, 0xc3, //
+                0xf6, 0xc1, 0x01, 0x74, 0x03, 0x48, 0xff, 0xc2, 0xc3,
+            ],
+        },
+        Fixture {
+            // 00 xor ecx,ecx; 02 top: cmp rcx,rsi; 05 jae done;
+            // 07 inc rcx; 0a test rsi,rsi; 0d jz top (never taken:
+            // `top` is a P1a block start); 0f lea rax,[rip+top];
+            // 16 jmp rax; 18 done: mov rax,rcx; 1b ret.
+            name: "ind_jmp_known",
+            bytes: vec![
+                0x31, 0xc9, 0x48, 0x39, 0xf1, 0x73, 0x11, 0x48, 0xff, 0xc1, //
+                0x48, 0x85, 0xf6, 0x74, 0xf3, //
+                0x48, 0x8d, 0x05, 0xec, 0xff, 0xff, 0xff, 0xff, 0xe0, //
+                0x48, 0x89, 0xc8, 0xc3,
+            ],
+        },
+        Fixture {
+            // call rdi (rdi = 0: outside the region, refused before
+            // any push).
+            name: "ind_call_out",
+            bytes: vec![0xff, 0xd7],
+        },
+        Fixture {
+            // 00 xor ecx,ecx; 02 cmp rcx,rsi; 05 jae x;
+            // 07 x: jmp qword [rdx] (rdx = 0x10: the read faults).
+            name: "ind_fault_mem",
+            bytes: vec![0x31, 0xc9, 0x48, 0x39, 0xf1, 0x73, 0x00, 0xff, 0x22],
+        },
+        Fixture {
+            // 00 test rsi,rsi; 03 jz L (never taken: L is a P1a
+            // block start); 05 lea rax,[rip+L+1]; 0c jmp rax;
+            // 0e L: mov rax,0x9090909000000000; 18 ret. From L+1 the
+            // bytes decode as mov eax,0, four nops and the same ret.
+            name: "ind_interior",
+            bytes: vec![
+                0x48, 0x85, 0xf6, 0x74, 0x09, //
+                0x48, 0x8d, 0x05, 0x03, 0x00, 0x00, 0x00, 0xff, 0xe0, //
+                0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0xc3,
+            ],
+        },
+        Fixture {
+            // 00 xor ecx,ecx; 02 cmp rcx,rsi; 05 jae x;
+            // 07 x: jmp rdi (rdi = 0: a budget run hands off here).
+            name: "ind_jmp_out_budget",
+            bytes: vec![0x31, 0xc9, 0x48, 0x39, 0xf1, 0x73, 0x00, 0xff, 0xe7],
+        },
     ]
 }
 

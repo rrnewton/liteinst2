@@ -1,0 +1,25 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1200,9 +1200,8 @@
+         }
+         let add = crate::indirect::new_roots(&r, &self.region, &self.translation.block_gen);
+         if !add.is_empty() {
+-            let mut roots = self.roots.clone();
+-            roots.extend(add);
+-            self.retranslate(roots).map_err(IndirectStop::Refuse)?;
++            // MUTANT 15: a new root refuses as in P1a (in-process).
++            return Err(unresolved());
+         }
+         let mut next = *state;
+         if r.kind == IndirectKind::Call {
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -3053,6 +3053,8 @@
+         if add.is_empty() {
+             return Ok((r, None));
+         }
++        // MUTANT 15: a new root refuses as in P1a (remote).
++        return Err(unresolved());
+         let mut roots = self.roots.clone();
+         roots.extend(add);
+         let next = self

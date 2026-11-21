@@ -124,7 +124,16 @@ impl MappedGuest {
             "jrcxz" => (0, 0, 0, 0, 0),
             "syscall_write" => (0, src, 5, 0, 0),
             "fault_load" | "redzone_reentry" => (data, 0, 0, 0, 0),
-            "indirect_jmp" => (base, 0, 0, 0, 0),
+            // P1b.1: an in-region target now resolves, so the
+            // refusal fixtures aim outside the region (rdi = 0) and
+            // indirect_call's rax names its own `ret` (base + 2).
+            "indirect_jmp" => (0, 0, 0, 0, 0),
+            "indirect_call" => (0, 0, 0, base + 2, 0),
+            "ind_jmp_reg" | "ind_jmp_table" | "ind_jmp_known" => (0, 16, 0, 0, 0),
+            "ind_call_reg" | "ind_call_mem" => (0, 16, 0, 0, 0),
+            "ind_fault_mem" => (0, 1, 0x10, 0, 0),
+            "ind_interior" => (0, 1, 0, 0, 0),
+            "ind_jmp_out_budget" => (0, 1, 0, 0, 0),
             _ => (0, 0, 0, 0, 0),
         }
     }

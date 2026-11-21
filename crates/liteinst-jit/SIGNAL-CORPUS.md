@@ -90,12 +90,14 @@ inputs").
   exit kind) is not delivered, but its recovered stop is still
   checked wherever O1-S can run the fixture: O1-S signalled after
   the recovered retired count must deliver once, with the same
-  totals, at a frame RIP equal to the recovered source PC. The
-  INDIRECT fixture is the one exception: the O1 oracle cannot
-  verify an indirect `jmp`, so that refusal is checked against
-  the fixture's `jmp` offset and literal retired totals counted
-  from the fixture, with no O1-S leg (approved in the H2b
-  lead review, P3-2).
+  totals, at a frame RIP equal to the recovered source PC. Since
+  P1b.1 that includes the INDIRECT fixture, whose refusal leg runs
+  with the `jmp` target out of region. It is also checked against
+  the fixture's `jmp` offset and the literal retired totals counted
+  from the fixture. At H2b that fixture was the one exception with
+  no O1-S leg, because the O1 oracle could not verify an indirect
+  `jmp` (approved in the H2b lead review, P3-2). P1b.1 lets O1 step
+  `jmp r/m64` and `call r/m64`, so the leg runs again.
 
   **Arrival instance (H2a).** The survey's counting run records,
   at every hit of every PC-map entry, what recovery names there:
@@ -156,8 +158,16 @@ decoded length only where the successor depends on it:
   target is checked, not the length;
 - `ret` must land at the word at `[rsp]`, and `rt_sigreturn` at
   the frame's saved RIP: neither checks the decode;
-- an indirect `jmp`/`call` has no independent prediction and
-  fails if it retires.
+- an indirect `jmp r/m64` or `call r/m64` must land at its
+  operand's value read before the step: the register, or the 8
+  bytes at the effective address, which O1 computes with iced's
+  own `virtual_address`, not the translator's indirect resolver.
+  The target is checked, not the length. Any other
+  indirect form (a far `jmp`, 32-bit addressing), and an operand
+  O1 cannot read, has no prediction and fails if it retires. The
+  `src/o1.rs` unit tests pin this both ways: the right target
+  passes, and a wrong one (one past it, the fall-through, the
+  neighbouring table entry) fails.
 
 So a real branch decoded as a non-branch fails when it is taken.
 The mutant Mf (`Inc_rm64` decoded one byte long) demonstrates the
@@ -297,11 +307,26 @@ refusals, and 244 and 17, while W1 was held).
     observable there (the common exit's `cld` is the only flag it
     changes; no other fixture has DF set at an exit).
   - `w1_indirect_kind_arrival_is_named_refusal`: the INDIRECT
-    boundary. All 28 entries refuse by name at the `jmp`, with the
-    handler never run and literal retired totals counted from the
-    fixture (15 instructions, 1 branch). There is no O1-S leg: the
-    O1 oracle cannot verify an indirect `jmp`. Without an arrival,
-    the run refuses IndirectUnresolved.
+    boundary, with the `jmp` target out of region (the region ends
+    at `t`).
+    - Without an arrival, the run refuses IndirectUnresolved.
+    - All 28 entries refuse by name at the `jmp`, with the handler
+      never run and the literal retired totals counted from the
+      fixture (15 instructions, 1 branch).
+    - Each refusal is checked against O1-S. At H2b that leg was
+      exempt, because the O1 oracle could not verify an indirect
+      `jmp`; P1b.1 restores it.
+    - Against the full region's translation, the test checks the
+      PC-map size and each of the 28 targeted entries, compared
+      relative to its own child (class, a nonzero source offset,
+      generated offsets, phase, recovery; a zero source PC, which
+      common-exit entries carry, compares raw), with a positive and
+      a negative control on that normalization.
+  - `w1_indirect_in_region_resolves_like_o1s`: the same fixture in
+    its full region, so the target is in region. Since P1b.1 the
+    quiet run resolves the `jmp`, retranslates `t` and returns 42.
+    It equals O1-S (retired totals and the 18 final registers) and
+    the literal count (18 instructions, 1 branch).
 - **W3**, an arrival before the original `cpuid` step. A
   signal-delivery stop presented before the instruction runs is
   delivered at the `cpuid` with nothing credited for it, and the
@@ -586,7 +611,7 @@ change was intended.
 | `H2 NSpid queue` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | SI_QUEUE self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f90ec963307d9d57f6b784717dae6d5b92631cbdfdbe4fcedf7ba1ac9b40b635` |
 | `H2 O1-S ignored signal shape` | I1-H H2a | remote_signal_gate.rs o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement | SIGUSR1 ignored, re-injected over a step whose registers have the handler-argument shape | O1-S self-check (retirement, no delivery) | `c99cf2de97086b84c549ea64fecaed6bff3bb18f8eaecb5753cb899e2a943224` |
 | `H2 W1 live frame` | I1-H H2b | remote_signal_gate.rs w1_common_exit_arrival_in_live_handler | SIGUSR2 arriving in the common exit of the SIGUSR1 handler's ret (sigreturn interception exit), DF set; nested frame | O1-S at k (two deliveries, paired) | `0ddc0dc5b0ff254d5e461ad3584f69beaad48254470cff19c4963217d9dd71bc` |
-| `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal | arrival in the common exit of an INDIRECT exit (`jmp rax`) | named refusal + the survey's recovery + literal totals (15, 1); no O1-S leg (O1 cannot verify an indirect `jmp`) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
+| `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal and w1_indirect_in_region_resolves_like_o1s | arrival in the common exit of an INDIRECT exit (`jmp rax`), target out of region; and the quiet run with the target in region | out of region: named refusal + the survey's recovery + literal totals (15, 1) + O1-S at each refusal (exempt at H2b, restored by P1b.1); in region: resolved, equal to O1-S, literal totals (18, 1) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
 | `H2c W3 two cpuid` | I1-H H2c | remote_signal_gate.rs w3_retry_bound_resets_on_progress | 64 interrupts at the first `cpuid` (which then steps), 1 at the second | all 65 delivered at the right `cpuid`; the bound resets on progress | `35527a75fdc6723e170dde9ab3ff59e37ba1a049bc09fba3ed0eb3ec09caa24d` |
 | `H2c W3 W1 in handler` | I1-H H2c follow-up | remote_signal_gate.rs w3_retry_bound_counts_across_w1_delivery | 65 interrupts at the `cpuid`; on the 10th SIGUSR1 handler run, SIGUSR2 arrives in the common exit of the handler's ret | the exact named refusal after 64 SIGUSR1 and 1 SIGUSR2 deliveries: a W1 delivery does not reset the count | `9ddf94d590c2f30b292a1335175294f7020dff2c8f8166e7501651328dd199e8` |
 | `H2d handler step` | I1-H H2d | remote_signal_gate.rs w3_retry_bound_ignores_handler_syscalls, w3_retry_bound_ignores_handler_cpuid | 65 interrupts at main's `cpuid`; each handler run makes one `getpid` (mode 1) or one `cpuid` (mode 2) | the aggregate's reason (mode 1) or the per-depth `cpuid` reason (mode 2) after 64 deliveries | `8590fb3245f8acd83996ad35b931a6829cad3cc4321539a6469b8290021c7ffe` |
@@ -605,5 +630,6 @@ change was intended.
 | `H3k R4 ITIMER_REAL unblock` | H3k | remote_signal_rt.rs kgen_setitimer_alarm_pending_stops_async_at_unblock | the same, then SIGALRM unblocked | AsyncSignal after the unblock, never delivered | `c6dd6cf6bf2ef6cbe17da4e5e841c8dd499f227435241963c7679fcb1e7a367b` |
 | `H3k R5 SIGCHLD` | H3k | remote_signal_rt.rs kgen_sigchld_probe | SIGCHLD handler, SIGCHLD blocked, wake byte to the helper, pending barrier, mask read, unblock | AsyncSignal after the unblock with the helper's `CLD_EXITED`, never delivered | `bf5cd8b86831954332d438c13e1c310ccfeeb1711c52cf1c7bb96630314963ab` |
 | `H3k G7 back-to-back` | H3k | remote_signal_rt.rs kgen_back_to_back_at_stub_stops_async | eligible SIGUSR1 and SIGUSR2 handlers, SIGUSR1/SIGUSR2/SIGWINCH blocked, both self-sent, unblock; template of the SIGWINCH reference | AsyncSignal at SIGUSR1's handler entry after one frame | `b91ce8cf4becc6f221df49b6024108859599efe6c3431e12a65b438e58634cc9` |
+| `P1b1 indirect live frame` | P1b.1 | remote_signal.rs check_indirect_live_frame (in remote_signal_all) | SIGUSR1 SA_SIGINFO handler whose first transfer is an indirect jmp to a new in-region root, delivered by ArrivalSeam at the mid-block copied dec rcx; a live frame (gen_mid Some) | refusal CodeInstall "live signal frame"; no /proc write; not resumed; not poisoned | `b7eb8c3495deb63d7e8d0de057dd581da429b31c30bdf5d721fd30e33a4e0037` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.

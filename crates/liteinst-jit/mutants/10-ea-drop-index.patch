@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/indirect.rs
++++ b/crates/liteinst-jit/src/indirect.rs
+@@ -93,7 +93,8 @@
+         Register::None => 0,
+         r => {
+             let scale = u64::from(insn.memory_index_scale());
+-            gpr64(s, r)?.wrapping_mul(scale)
++            // MUTANT 10: the effective address drops the index term.
++            gpr64(s, r)?.wrapping_mul(scale) & 0
+         }
+     };
+     Some(base_value.wrapping_add(index_value).wrapping_add(disp))

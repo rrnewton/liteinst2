@@ -1,0 +1,24 @@
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -2932,9 +2932,7 @@
+             #[cfg(feature = "test-seams")]
+             let end = match limit {
+                 Some(n) if done >= n => {
+-                    if done > 0 {
+-                        self.poisoned.set(true);
+-                    }
++                    // MUTANT 18: a failed install never poisons.
+                     return Err(fail(libc::EIO));
+                 }
+                 Some(n) => image.len().min(n),
+@@ -2948,9 +2946,7 @@
+                 Ok(n) if n > 0 => done += n,
+                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                 other => {
+-                    if done > 0 {
+-                        self.poisoned.set(true);
+-                    }
++                    // MUTANT 18: a failed install never poisons.
+                     let errno = match other {
+                         Err(e) => e.raw_os_error().unwrap_or(0),
+                         Ok(_) => libc::EIO,

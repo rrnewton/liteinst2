@@ -6,10 +6,30 @@
 //! mutation chains keep seeing their semantic assertions first;
 //! the golden hashes are an additional byte-identity guard, not a
 //! replacement kill attribution for those mutants.
+//!
+//! P1b.1 adds five cases, each captured from the base tree (before
+//! P1b.1) and proven equal to base emission in-run: the three
+//! indirect fixtures, `indirect_jmp` under the remote trap style,
+//! and `sum_loop` with budget stubs. Closure retranslation must not
+//! change emission for a translation's one-root set.
 
 use liteinst_jit::fixtures;
-use liteinst_jit::translate::{Translation, translate};
+use liteinst_jit::translate::{
+    ExitStyle, TranslateOptions, Translation, translate, translate_with_exit_style,
+    translate_with_options,
+};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
+
+/// How a golden case is emitted.
+#[derive(Clone, Copy)]
+enum Emit {
+    /// `translate`: the in-process return style.
+    Default,
+    /// The remote `TrapToDispatcher` style.
+    Trap,
+    /// Budget stubs on (`TranslateOptions::rcb_budget`).
+    Budget,
+}
 
 fn fnv_mix(h: &mut u64, bytes: &[u8]) {
     for &b in bytes {
@@ -65,36 +85,74 @@ fn streaming_translation_matches_golden_emission() {
     // representative fixtures must remain byte-identical to
     // the pre-streaming implementation captured by these
     // golden hashes.
-    let cases: &[(&str, u64)] = &[
-        ("sum_loop", 0x7e5c_5b3d_7321_6795),
-        ("branchy_even_sum", 0x0a5a_f7e7_f3fa_453f),
-        ("flags_adc", 0x2d92_ca28_0452_24e1),
-        ("call_helper", 0x3cf4_4083_d71e_d9d1),
-        ("rip_data", 0x281b_f55a_e9f4_65d0),
-        ("loop_insn", 0xb60a_7a68_7b6a_4073),
-        ("syscall_write", 0x484e_5ea6_d0f8_ffa7),
-        ("cpuid_leaf", 0x6e72_991d_2632_07d6),
+    // (case, emission, golden); the fixture is the case name before
+    // any '/'. The last five are P1b.1's base-captured cases (see
+    // the module doc).
+    let cases: &[(&str, Emit, u64)] = &[
+        ("sum_loop", Emit::Default, 0x7e5c_5b3d_7321_6795),
+        ("branchy_even_sum", Emit::Default, 0x0a5a_f7e7_f3fa_453f),
+        ("flags_adc", Emit::Default, 0x2d92_ca28_0452_24e1),
+        ("call_helper", Emit::Default, 0x3cf4_4083_d71e_d9d1),
+        ("rip_data", Emit::Default, 0x281b_f55a_e9f4_65d0),
+        ("loop_insn", Emit::Default, 0xb60a_7a68_7b6a_4073),
+        ("syscall_write", Emit::Default, 0x484e_5ea6_d0f8_ffa7),
+        ("cpuid_leaf", Emit::Default, 0x6e72_991d_2632_07d6),
+        // The five values below are the base tree's GOLDEN lines,
+        // captured before P1b.1 (run A, 2026-11-20).
+        ("indirect_jmp", Emit::Default, 0x3bee_e988_bb4c_4ec2),
+        ("indirect_call", Emit::Default, 0x330b_4086_1a65_1ec6),
+        ("jump_table", Emit::Default, 0xf6a3_91c5_6b08_917c),
+        ("indirect_jmp/trap", Emit::Trap, 0x4b37_fad7_a580_479d),
+        ("sum_loop/budget", Emit::Budget, 0x209b_f0c1_2f62_49e5),
     ];
+    let (base, gen_base, data) = (0x10_0000u64, 0x80_0000u64, 0x81_0000u64);
+    let profile = CountProfile::BranchesAndInstructions;
     let actual: Vec<(&str, u64)> = cases
         .iter()
-        .map(|&(name, _)| {
+        .map(|&(case, emit, _)| {
+            let name = case.split('/').next().unwrap_or(case);
             let fix = fixtures::by_name(name);
             let region = RegionFacts {
-                base: 0x10_0000,
+                base,
                 bytes: fix.bytes,
                 generation: Generation(1),
                 immutable_private: true,
             };
-            let t = translate(
-                &region,
-                0x10_0000,
-                CountProfile::BranchesAndInstructions,
-                0x80_0000,
-                0x81_0000,
-            )
-            .unwrap_or_else(|e| panic!("{name} must translate for golden hash: {e:?}"));
-            (name, translation_golden_hash(&t))
+            let t = match emit {
+                Emit::Default => translate(&region, base, profile, gen_base, data),
+                Emit::Trap => translate_with_exit_style(
+                    &region,
+                    base,
+                    profile,
+                    gen_base,
+                    data,
+                    ExitStyle::TrapToDispatcher,
+                ),
+                Emit::Budget => translate_with_options(
+                    &region,
+                    base,
+                    profile,
+                    gen_base,
+                    data,
+                    TranslateOptions {
+                        exit_style: ExitStyle::ReturnToDispatcher,
+                        rcb_budget: true,
+                    },
+                ),
+            }
+            .unwrap_or_else(|e| panic!("{case} must translate for golden hash: {e:?}"));
+            (case, translation_golden_hash(&t))
         })
         .collect();
-    assert_eq!(actual, cases);
+    // Every case's value first (the base capture reads these), then
+    // one assertion per case, naming it.
+    for (case, got) in &actual {
+        println!("GOLDEN\t{case}\t{got:#018x}");
+    }
+    for (&(case, _, want), &(_, got)) in cases.iter().zip(&actual) {
+        assert_eq!(
+            got, want,
+            "golden mismatch: case={case}, got {got:#018x}, want {want:#018x}"
+        );
+    }
 }

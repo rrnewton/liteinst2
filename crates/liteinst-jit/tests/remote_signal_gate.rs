@@ -396,6 +396,10 @@ struct TArrival {
     /// The arrival's generated PC and its PC-map entry.
     target: Option<(u64, PcMapEntry)>,
     entries: usize,
+    /// The PC map's first `gen_start`, read right after `prepare`:
+    /// generated addresses relative to it compare across children,
+    /// which place the arena at different (randomized) addresses.
+    gen_base: u64,
     /// DR0/DR7 read back after the run.
     debug_regs: Option<(u64, u64)>,
     /// The child's pid.
@@ -437,6 +441,10 @@ struct Knobs {
     enter_stop_signals: Option<(usize, &'static [(usize, i32)])>,
     /// Seam (H3k): rewrite one delivery stop's `si_code`, `(code, skip)`.
     kgen: Option<(i32, u32)>,
+    /// The region's length from the fixture base (`None`: the whole
+    /// fixture). W1's INDIRECT refusal leg ends it at `t`, so the
+    /// `jmp` target is out of region.
+    region_len: Option<usize>,
 }
 
 /// Step plans for [`Knobs::step_plans`].
@@ -445,9 +453,13 @@ type Plans = &'static [(StepKind, usize, i32, &'static [u32])];
 fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     let (mut remote, deadline) = spawn_remote(&gx.bytes);
     let info = remote.info();
+    let bytes = match k.region_len {
+        Some(n) => gx.bytes[..n].to_vec(),
+        None => gx.bytes.clone(),
+    };
     let region = RegionFacts {
         base: info.base,
-        bytes: gx.bytes.clone(),
+        bytes,
         generation: Generation(1),
         immutable_private: true,
     };
@@ -458,13 +470,18 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
             CountProfile::BranchesAndInstructions,
         )
         .expect("prepare remote");
-    let (entries, target, block_starts) = {
+    let (entries, target, block_starts, gen_base) = {
         let t = remote.translation_for_test().expect("prepared");
         let target = k.arrival.map(|(idx, _)| {
             let e = t.pcmap.entries()[idx];
             (e.gen_start, e)
         });
-        (t.pcmap.len(), target, t.block_gen.keys().copied().collect())
+        (
+            t.pcmap.len(),
+            target,
+            t.block_gen.keys().copied().collect(),
+            t.pcmap.entries().first().map_or(0, |e| e.gen_start),
+        )
     };
     remote.set_arrival_for_test(
         k.arrival
@@ -522,6 +539,7 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
         info,
         target,
         entries,
+        gen_base,
         debug_regs,
         pid,
         block_starts,
@@ -689,10 +707,11 @@ struct Spec<'a> {
     /// The fixture leaves the child's own pid in RDI (`getpid`):
     /// RDI compares as the tagged own pid wherever it holds it.
     pid_in_rdi: bool,
-    /// O1-S can run the fixture. False only for an indirect `jmp`,
-    /// which the O1 oracle refuses to verify (its RIP-delta check
-    /// predicts `Unverifiable`): a refusal is then checked against
-    /// the survey's recovery only, with no O1-S leg.
+    /// O1-S can run the fixture. Every fixture here sets it. At H2b
+    /// the INDIRECT fixture did not: the O1 oracle could not step an
+    /// indirect `jmp`. Since P1b.1, O1 steps `jmp r/m64`, so that
+    /// fixture's refusals get their O1-S leg too. False checks a
+    /// refusal against the survey's recovery only, with no O1-S leg.
     o1s: bool,
 }
 
@@ -4850,6 +4869,8 @@ fn bound_inventory() {
     deadline::bound_inventory(&[
         ("budget_tail.rs", Armed),
         ("custody.rs", Armed),
+        ("indirect_budget_handoff.rs", Armed),
+        ("indirect_resolve.rs", Armed),
         ("lifecycle_dispatch.rs", Armed),
         ("o1_compare.rs", Armed),
         ("remote_compare.rs", Armed),
@@ -5398,13 +5419,25 @@ fn w1_common_exit_arrival_in_live_handler() {
 /// not-taken `jne` (O1-S counts Jcc/loop/jrcxz only).
 const INDIRECT_REFUSAL_TOTALS: (u64, u64) = (15, 1);
 
+/// The in-region run's retired totals (instructions, branches),
+/// counted by hand from `build_indirect` the same way: main's 15,
+/// then the resolved `jmp rax`, `t`'s `mov eax, 42` and its `ret`.
+/// Still one conditional branch, the not-taken `jne`: an indirect
+/// `jmp` is not one.
+const INDIRECT_RESOLVED_TOTALS: (u64, u64) = (18, 1);
+
 /// The INDIRECT fixture (I1-H H2b, Q-c): main installs the SIGUSR1
-/// handler, then `lea rax, [rip + t]; jmp rax`; `t` returns 42.
-/// The translated run refuses at the `jmp` (IndirectUnresolved).
-/// O1-S cannot run it: the O1 oracle refuses to verify an indirect
-/// `jmp`, so the INDIRECT test pins `INDIRECT_REFUSAL_TOTALS`
-/// instead. Returns the fixture and the `jmp` offset.
-fn build_indirect() -> (Gx, u64) {
+/// handler, then `lea rax, [rip + t]; jmp rax`; `t` returns 42, and
+/// `t` is the fixture's last instructions.
+/// - In the full region, `t` is in region: since P1b.1 the
+///   translated run resolves the `jmp`, retranslates `t` and returns
+///   42.
+/// - With the region ending at `t` (`Knobs::region_len`), the target
+///   is out of region, and the run refuses at the `jmp`
+///   (IndirectUnresolved).
+///
+/// Returns the fixture, the `jmp` offset and `t`'s offset.
+fn build_indirect() -> (Gx, u64, u64) {
     let mut a = CodeAssembler::new(64).unwrap();
     let mut handler = a.create_label();
     let mut restorer = a.create_label();
@@ -5453,39 +5486,69 @@ fn build_indirect() -> (Gx, u64) {
             exit_offs: None,
         },
         res.label_ip(&jmp_l).unwrap(),
+        res.label_ip(&target).unwrap(),
     )
 }
 
-/// W1's INDIRECT boundary (I1-H H2b, Q-c; the Q5 non-claim): an
-/// arrival in the common exit of an INDIRECT exit keeps the named
-/// refusal at every one of the 28 entries: AsyncSignal at the `jmp`
-/// (`exit_src`), the handler never run, the debug registers
-/// cleared, the arrival instance (source offset and totals) equal
-/// to the survey's recovery at that hit, and the refusal's totals
-/// equal to the literal `INDIRECT_REFUSAL_TOTALS`. The survey
-/// shares `recover` with the arrival, so only the literal pin
-/// checks the totals independently. There is no O1-S leg: the O1
-/// oracle refuses to verify an indirect `jmp`, so the native run
-/// cannot get past it (H2b record-pass finding: the leg panicked
-/// in O1's RIP-delta check; the lead review approved the exemption on the
-/// condition of the literal pin). Without an arrival the run
-/// refuses IndirectUnresolved at the `jmp`.
+/// W1's INDIRECT boundary (I1-H H2b, Q-c; the Q5 non-claim), with
+/// the `jmp` target OUT of region: the region ends at `t`
+/// (`Knobs::region_len`), the case the dispatcher still refuses
+/// since P1b.1. `t` is reached only through the `jmp`, so the
+/// translation is expected to be the full region's. The test checks
+/// the PC-map size, and each of the 28 targeted entries compared
+/// relative to its own child (class, a nonzero source offset,
+/// generated offsets, phase, recovery). A zero source PC, which
+/// common-exit entries carry, compares raw. A positive and a
+/// negative control check the normalization itself.
+/// - Without an arrival, the run refuses IndirectUnresolved at the
+///   `jmp`.
+/// - An arrival in the common exit of the INDIRECT exit keeps the
+///   named refusal at every one of the 28 entries: AsyncSignal at
+///   the `jmp` (`exit_src`), the handler never run, the debug
+///   registers cleared, and the arrival instance (source offset and
+///   totals) equal to the survey's recovery at that hit.
+/// - The refusal's totals equal the literal
+///   `INDIRECT_REFUSAL_TOTALS`. The survey shares `recover` with the
+///   arrival, so this literal pin checks the totals independently.
+/// - Each refusal is also checked against O1-S: signalled after the
+///   recovered retired count, O1-S delivers once, at the recovered
+///   source PC, with the same totals.
+///
+/// At H2b that O1-S leg was exempt, because the O1 oracle could not
+/// step an indirect `jmp`: the leg panicked in O1's RIP-delta check
+/// (H2b record-pass finding). The lead review approved the exemption
+/// on the condition of the literal pin. Since P1b.1 O1 steps
+/// `jmp r/m64`, so the leg runs again, beside the pin. The in-region
+/// case, where the run resolves, is
+/// `w1_indirect_in_region_resolves_like_o1s`.
 #[test]
 fn w1_indirect_kind_arrival_is_named_refusal() {
     let _g = lock();
-    let (gx, jmp_off) = build_indirect();
-    let label = "W1 indirect";
-    let quiet = run_translated(&gx, Knobs::default());
+    let (gx, jmp_off, target_off) = build_indirect();
+    let label = "W1 indirect, out of region";
+    let out_of_region = Some(target_off as usize);
+    let refused = run_translated(
+        &gx,
+        Knobs {
+            region_len: out_of_region,
+            ..Knobs::default()
+        },
+    );
     assert_eq!(
-        quiet.out.as_ref().err(),
+        refused.out.as_ref().err(),
         Some(&RunError::Refuse(
             liteinst_jit::Refuse::IndirectUnresolved {
-                src_pc: quiet.info.base + jmp_off,
+                src_pc: refused.info.base + jmp_off,
             }
         )),
         "{label}: no arrival: IndirectUnresolved at the jmp"
     );
-    let (map, _) = pcmap_of(&gx);
+    let (map, map_base) = pcmap_of(&gx);
+    assert_eq!(
+        refused.entries,
+        map.len(),
+        "{label}: PC-map size, region ending at t vs the full region"
+    );
     let common: Vec<usize> = map
         .iter()
         .enumerate()
@@ -5493,6 +5556,56 @@ fn w1_indirect_kind_arrival_is_named_refusal() {
         .map(|(i, _)| i)
         .collect();
     assert_eq!(common.len(), 28, "{label}: common-exit entries");
+    // Each child places the fixture and the arena at its own
+    // (randomized) address, so an entry compares relative to its own
+    // child: a nonzero source PC from the fixture base, the generated
+    // range from the map's first entry. A zero source PC is not an
+    // address (a common-exit entry has none) and compares raw.
+    let rel = |e: &PcMapEntry, base: u64, gen_base: u64| {
+        (
+            class_of(e),
+            (e.src_pc != 0).then(|| e.src_pc.wrapping_sub(base)),
+            e.gen_start.wrapping_sub(gen_base),
+            e.gen_end.wrapping_sub(gen_base),
+            e.phase,
+            e.recovery,
+        )
+    };
+    let map_gen_base = map.first().map_or(0, |e| e.gen_start);
+    // The normalization's own controls, on real entries of this map.
+    // Positive: the same entry in a child placed elsewhere compares
+    // equal. Negative: a nonzero source PC one byte off does not.
+    let real = *map
+        .iter()
+        .find(|e| e.src_pc != 0)
+        .expect("an entry with a source PC");
+    let moved = PcMapEntry {
+        src_pc: real.src_pc.wrapping_add(0x1000),
+        gen_start: real.gen_start.wrapping_add(0x10_0000),
+        gen_end: real.gen_end.wrapping_add(0x10_0000),
+        ..real
+    };
+    let moved_base = map_base.wrapping_add(0x1000);
+    let moved_gen_base = map_gen_base.wrapping_add(0x10_0000);
+    assert_eq!(
+        rel(&moved, moved_base, moved_gen_base),
+        rel(&real, map_base, map_gen_base),
+        "{label}: control: the same entry in a child placed elsewhere compares equal"
+    );
+    let off = PcMapEntry {
+        src_pc: real.src_pc.wrapping_add(1),
+        ..real
+    };
+    assert_ne!(
+        rel(&off, map_base, map_gen_base),
+        rel(&real, map_base, map_gen_base),
+        "{label}: control: a nonzero source PC one byte off fails the comparison"
+    );
+    let common_entry = map[common[0]];
+    assert_eq!(
+        common_entry.src_pc, 0,
+        "{label}: a common-exit entry carries no source PC"
+    );
     use liteinst_jit::state::exit_kind::INDIRECT;
     for idx in common {
         // Survey: the counting run refuses at the jmp, so it is read
@@ -5501,6 +5614,7 @@ fn w1_indirect_kind_arrival_is_named_refusal() {
             &gx,
             Knobs {
                 arrival: Some((idx, u64::MAX)),
+                region_len: out_of_region,
                 ..Knobs::default()
             },
         );
@@ -5522,14 +5636,17 @@ fn w1_indirect_kind_arrival_is_named_refusal() {
             &gx,
             Knobs {
                 arrival: Some((idx, hit)),
+                region_len: out_of_region,
                 ..Knobs::default()
             },
             &l,
             recs[h0],
-            &Spec {
-                o1s: false,
-                ..SINGLE
-            },
+            &SINGLE,
+        );
+        assert_eq!(
+            t.target.map(|(_, e)| rel(&e, t.info.base, t.gen_base)),
+            Some(rel(&map[idx], map_base, map_gen_base)),
+            "{l}: the arrival's PC-map entry, child-relative, vs the full region's"
         );
         assert_eq!(v, Verdict::RefusedW1, "{l}: named refusal");
         match &t.out {
@@ -5549,6 +5666,33 @@ fn w1_indirect_kind_arrival_is_named_refusal() {
         }
         assert_eq!(word(&t.data, COUNT as usize), 0, "{l}: handler never ran");
     }
+}
+
+/// W1's INDIRECT fixture with the `jmp` target IN region, the full
+/// region (P1b.1). The quiet translated run resolves `jmp rax`,
+/// retranslates `t` and returns 42.
+/// - `quiet` checks it against O1-S, which steps the `jmp` since
+///   P1b.1: the same retired totals and the same 18 final
+///   registers, address-normalized, with O1-S returning and no
+///   delivery.
+/// - The totals also equal the literal `INDIRECT_RESOLVED_TOTALS`.
+///
+/// The refusal leg, with the target out of region, is
+/// `w1_indirect_kind_arrival_is_named_refusal`.
+#[test]
+fn w1_indirect_in_region_resolves_like_o1s() {
+    let _g = lock();
+    let (gx, _, _) = build_indirect();
+    let label = "W1 indirect, in region";
+    let (resolved, native) = quiet(&gx, None, label);
+    let out = resolved.out.as_ref().expect("quiet: translated Ok");
+    assert_eq!(out.state.rax, 42, "{label}: result");
+    assert_eq!(native.state.rax, 42, "{label}: O1-S result");
+    assert_eq!(
+        (out.instructions, out.branches),
+        INDIRECT_RESOLVED_TOTALS,
+        "{label}: retired totals vs the literal count from the fixture"
+    );
 }
 
 /// W2 evidence: the "generated PC with no PC-map entry" class is
@@ -6394,7 +6538,7 @@ fn o1_oracle_imports_no_translator_classification() {
         .collect();
     assert_eq!(
         x86,
-        ["use liteinst_x86::{Code, Instruction, Mnemonic, OpKind, decoder64};"],
+        ["use liteinst_x86::{Code, Instruction, Mnemonic, OpKind, Register, decoder64};"],
         "o1.rs shared-decoder import"
     );
     // Module graph closure from the allowed modules.
@@ -6470,9 +6614,10 @@ fn corpus_hash_known_answers_and_table() {
     );
     // Every pinned ID, exactly: a row added or dropped is a
     // reviewed edit here too. (Each test's own `check` proves its
-    // IDs are present and current.)
+    // IDs are present and current.) 101 since P1b.1's
+    // `P1b1 indirect live frame` row.
     let table = corpus::table();
-    assert_eq!(table.len(), 100, "pinned fixtures");
+    assert_eq!(table.len(), 101, "pinned fixtures");
 }
 
 // ---------------------------------------------------------------

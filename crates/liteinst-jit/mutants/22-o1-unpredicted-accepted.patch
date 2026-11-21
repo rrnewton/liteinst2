@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/o1.rs
++++ b/crates/liteinst-jit/src/o1.rs
+@@ -342,7 +342,8 @@
+     let ok = match predicted {
+         NextRip::Exact(x) => after == x,
+         NextRip::FallOrTaken { fall, taken } => after == fall || after == taken,
+-        NextRip::Unverifiable | NextRip::Unreadable => false,
++        // MUTANT 22: an unpredicted or unreadable step may retire.
++        NextRip::Unverifiable | NextRip::Unreadable => true,
+     };
+     assert!(
+         ok,

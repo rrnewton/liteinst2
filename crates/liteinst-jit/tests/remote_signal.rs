@@ -29,8 +29,9 @@ mod deadline;
 use liteinst_jit::exec::{FaultKind, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::o1::O1sEnd;
-use liteinst_jit::remote::{GuestAction, RemoteChildInfo, RemoteExecutable};
+use liteinst_jit::remote::{ArrivalSeam, GuestAction, RemoteChildInfo, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
+use liteinst_jit::{Phase, Refuse};
 
 const REMOTE_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
 const NATIVE_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-signal-native-child");
@@ -67,6 +68,14 @@ const HANDLER: &[u8] = &[
     0xc3, // ret
 ];
 const RESTORER: &[u8] = &[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05];
+
+// P1b.1 T9 handler: its first transfer is an indirect jmp to `N`,
+// which only the jmp reaches, so `N` is a new root.
+const IND_LIVE_HANDLER: &[u8] = &[
+    0x48, 0x8d, 0x05, 0x02, 0x00, 0x00, 0x00, // lea rax, [rip+2] (N)
+    0xff, 0xe0, // jmp rax
+    0xc3, // N: ret
+];
 
 // I1-F mask handler: records fields, queries its own current
 // mask via rt_sigprocmask into [rbx+624] (rc at [rbx+616],
@@ -1459,6 +1468,112 @@ fn check_disposition_change() {
     );
 }
 
+/// P1b.1 T9: remote retranslation refuses by name while a signal
+/// frame is live, because the frame holds a generated PC of the old
+/// layout. ArrivalSeam delivers SIGUSR1 on the first arrival at the
+/// loop's mid-block `dec rcx`; the handler's first transfer is an
+/// indirect jmp to a new root. Asserted in this order: (0) the
+/// arrival is mid-block; (1) the refusal; (2) no `/proc` write;
+/// (3) the frame is not resumed; (4) no retranslation; (5) with the
+/// seam cleared, not poisoned, and a fresh stretch runs.
+fn check_indirect_live_frame() {
+    let fix = fixture_v(
+        FLAGS_SIGINFO,
+        libc::SIGUSR1 as u8,
+        RESTORER,
+        false,
+        1,
+        0,
+        IND_LIVE_HANDLER,
+        false,
+    );
+    corpus::check("P1b1 indirect live frame", &fix.bytes);
+    let dec_rcx = [0x48u8, 0xff, 0xc9];
+    let hits: Vec<u64> = (fix.resume_off as usize..fix.bytes.len().saturating_sub(2))
+        .filter(|&i| fix.bytes[i..i + 3] == dec_rcx)
+        .map(|i| i as u64)
+        .collect();
+    assert_eq!(hits.len(), 1, "one dec rcx after resume_off: {hits:?}");
+    let dec_off = hits[0];
+    let spawned = deadline::remote_bytes(REMOTE_CHILD, &fix.bytes);
+    let (mut remote, _deadline) = spawned.expect("spawn remote");
+    let info = remote.info();
+    let region = RegionFacts {
+        base: info.base,
+        bytes: fix.bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    remote
+        .prepare(
+            &region,
+            info.base + fix.main_off,
+            CountProfile::BranchesAndInstructions,
+        )
+        .expect("prepare remote");
+    let dec_pc = info.base + dec_off;
+    let (gen_dec, dec_is_block_start) = {
+        let t = remote.translation_for_test().expect("prepared");
+        let gen_dec = t
+            .pcmap
+            .entries()
+            .iter()
+            .find(|e| e.src_pc == dec_pc && e.phase == Phase::Copied)
+            .map(|e| e.gen_start)
+            .expect("the Copied gen PC of dec rcx");
+        (gen_dec, t.block_gen.contains_key(&dec_pc))
+    };
+    remote.set_arrival_for_test(Some(ArrivalSeam {
+        gen_pc: gen_dec,
+        hit: 1,
+        sig: libc::SIGUSR1,
+    }));
+    let out = remote.run(guest_state(&remote, info, &fix), RETURN_SENTINEL);
+    let report = remote.arrival_report_for_test();
+    // (0) The arrival hit dec rcx, which is not a block start.
+    assert_eq!(
+        report.hit_stops.first().map(|h| h.src_pc),
+        Some(info.base + dec_off),
+        "arrival recovered at dec rcx: {:?}",
+        report.hit_stops
+    );
+    assert!(!dec_is_block_start, "dec rcx must be mid-block");
+    // (1) The refusal, at the handler's `jmp rax` (after the 7-byte
+    // lea; the handler sits at fixture offset 0).
+    assert!(
+        matches!(
+            out,
+            Err(RunError::Refuse(Refuse::CodeInstall {
+                src_pc,
+                reason: "live signal frame",
+                ..
+            })) if src_pc == info.base + 7
+        ),
+        "expected CodeInstall \"live signal frame\" at the handler's jmp, got {out:?}"
+    );
+    // (2) Immediately: nothing was written through /proc/<pid>/mem.
+    assert_eq!(
+        remote.proc_mem_writes(),
+        0,
+        "proc_mem_writes after a live-frame refusal"
+    );
+    // (3) The frame was never resumed.
+    assert_eq!(report.sigreturn_pops, 0, "live frame resumed");
+    // (4) No retranslation was installed.
+    assert_eq!(remote.retranslations(), 0, "retranslations");
+    // (5) Last: clear the seam; the refusal did not poison, and a
+    // fresh stretch (from DONE) runs to its result.
+    remote.set_arrival_for_test(None);
+    assert!(!remote.is_poisoned(), "poisoned by a refusal");
+    let mut fresh = guest_state(&remote, info, &fix);
+    fresh.rip = info.base + fix.done_off;
+    let again = remote.run(fresh, RETURN_SENTINEL);
+    assert!(
+        matches!(&again, Ok(o) if o.state.rax == 42),
+        "a fresh stretch after the refusal (not refused poisoned): {again:?}"
+    );
+}
+
 #[test]
 fn remote_signal_all() {
     let _bound = deadline::TestBound::arm();
@@ -1498,6 +1613,7 @@ fn remote_signal_all() {
     check_same_signal_reentry();
     check_disposition_change();
     check_nested_distinct();
+    check_indirect_live_frame();
 }
 
 /// Spawn census (I1-H H2c): every child this binary starts carries
