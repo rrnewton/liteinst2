@@ -4,6 +4,7 @@
 //! low-page execution on a VA-0-capable host or exits 42 with the named
 //! low-page refusal. The parent never treats that refusal as a positive run.
 #![deny(unsafe_op_in_unsafe_fn)]
+#![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
 use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, LegalEntry, LegalEntrySet,

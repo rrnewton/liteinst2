@@ -1,6 +1,6 @@
 //! Fabricated copy controls, not loaded modules, callbacks or native returns.
 use super::*;
-use check::{Error, Expected};
+use self::check::{Error, Expected};
 use rapid_profiler::frontend::{Action, ActionKind, ControllerSnapshot, ControllerStatus, Payload};
 use rapid_profiler::frontend_native::{NormalModuleRecord, NormalRecord, RawTimestamp};
 use rapid_profiler::generation::{Admission, Epoch, Record};

@@ -1,7 +1,3 @@
-//! Separately invoked target / produce / verify / controls / run stages.
-//! Ordinary tests never execute this example. Output bindings are written last.
-#![cfg(all(target_os = "linux", target_arch = "x86_64"))]
-extern crate li2core as liteinst2;
 #[allow(dead_code)]
 #[path = "../../../tests/support/quiescent_oracle.rs"]
 mod oracle;

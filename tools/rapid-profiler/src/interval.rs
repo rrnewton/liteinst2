@@ -8,6 +8,7 @@ use liteinst::trampoline::HookContext;
 use crate::BoxError;
 use crate::pmu::{CounterDelta, CounterSet, CounterSnapshot};
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 core::arch::global_asm!(
     r#"
     .text
@@ -35,6 +36,7 @@ rapid_profiler_exit_trampoline_notrack_jump:
 "#
 );
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 unsafe extern "C" {
     fn rapid_profiler_exit_trampoline();
     #[cfg(test)]
@@ -416,8 +418,17 @@ extern "C" fn rapid_profiler_finish(return_value: u64) -> u64 {
     frame.original_return
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn exit_trampoline_address() -> u64 {
     rapid_profiler_exit_trampoline as *const () as usize as u64
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn exit_trampoline_address() -> u64 {
+    // The exit trampoline is x86-64 assembly; an epoch must never be armed
+    // where it does not exist, so refuse by name instead of publishing a
+    // zero return address.
+    panic!("rapid profiler exit trampoline requires Linux x86-64");
 }
 
 fn take_sample(counter: &AtomicU64, limit: u64) -> Option<bool> {
@@ -452,7 +463,9 @@ fn ensure_thread_epoch_finished() -> Result<(), BoxError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AtomicDistribution, rapid_profiler_exit_trampoline_notrack_jump, take_sample};
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    use super::rapid_profiler_exit_trampoline_notrack_jump;
+    use super::{AtomicDistribution, take_sample};
     use core::sync::atomic::AtomicU64;
 
     const CET_NOTRACK_JMP_R11: [u8; 4] = [0x3e, 0x41, 0xff, 0xe3];
@@ -461,6 +474,9 @@ mod tests {
         bytes == CET_NOTRACK_JMP_R11
     }
 
+    // Reads the trampoline's x86-64 instruction bytes, so it only exists
+    // where the trampoline does.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
     fn exit_continuation_emits_cet_notrack_indirect_jump() {
         let address = rapid_profiler_exit_trampoline_notrack_jump as *const () as *const u8;

@@ -1,4 +1,7 @@
 #![deny(warnings)]
+// fetch_update is the name available at this crate's MSRV; its successor
+// try_update is not, so the deprecation rename cannot be adopted yet.
+#![allow(deprecated)]
 //! Bounded rapid-probe profiling for compiler-marked x86-64 functions.
 
 #![forbid(unsafe_op_in_unsafe_fn)]
@@ -16,10 +19,20 @@ use liteinst::scanner::InstructionScanner;
 use object::{Object, ObjectSection, ObjectSymbol};
 
 /// Bounded frontend lifecycle model, with no native entry/exit or code publication.
+// Off Linux x86-64 the native frontend that consumes this model is gated
+// out, so parts of the model are intentionally unused there.
+#[cfg_attr(
+    not(all(target_os = "linux", target_arch = "x86_64")),
+    allow(dead_code, unused_imports)
+)]
 #[forbid(unsafe_code)]
 pub mod frontend;
 
 /// Ordinary Rust TLS intervals retaining the original bounded frontend owner.
+#[cfg_attr(
+    not(all(target_os = "linux", target_arch = "x86_64")),
+    allow(dead_code, unused_imports)
+)]
 pub mod frontend_tls;
 
 /// Generation-bound point observations using managed data controls.
@@ -27,9 +40,14 @@ pub mod frontend_tls;
 pub mod data_flag;
 
 /// Opt-in fixed-leaf native intervals; process-lifetime owners and no unwind escape.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub mod frontend_native;
 
 /// Generation-owned bookkeeping, independent of the active profiler frontend.
+#[cfg_attr(
+    not(all(target_os = "linux", target_arch = "x86_64")),
+    allow(dead_code, unused_imports)
+)]
 pub mod generation;
 
 /// Lossless counter endpoints and exact arithmetic; no acquisition or activation.
@@ -39,7 +57,15 @@ pub mod counter_reading;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub mod counter_probe;
 
+#[cfg_attr(
+    not(all(target_os = "linux", target_arch = "x86_64")),
+    allow(dead_code, unused_imports)
+)]
 mod interval;
+#[cfg_attr(
+    not(all(target_os = "linux", target_arch = "x86_64")),
+    allow(dead_code, unused_imports)
+)]
 mod pmu;
 
 pub use interval::{EpochReport, FunctionCount, MetricSummary, SampleClassSummary};

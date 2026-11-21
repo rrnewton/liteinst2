@@ -816,6 +816,12 @@ impl SavedExtendedStateLayout {
         })
     }
 
+    /// Whether an XCR0 value enables only components this layout
+    /// preserves; the pure value form is meaningful on every target.
+    pub fn xcr0_within_preserved_mask_value(xcr0: u64) -> bool {
+        xcr0 & !PRESERVED_USER_STATE_MASK == 0
+    }
+
     /// No XCR0 exists off x86-64, so no byte-exact xstate comparison may
     /// proceed on the strength of this probe.
     pub fn xcr0_within_preserved_mask() -> bool {
@@ -6537,6 +6543,9 @@ mod tests {
         }
     }
 
+    // Uses this host's AVX extent from CPUID, so it only exists where
+    // component_extent does; the synthetic matrix above covers other targets.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
     fn semantic_eq_extended_component_matrix() {
         // Uses this host's AVX (bit 2) extent via the shared derivation;

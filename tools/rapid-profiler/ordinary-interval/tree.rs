@@ -10,7 +10,7 @@ mod check;
 pub(super) mod throughput;
 #[path = "../tree-work/truth.rs"]
 pub mod truth;
-use check::{Batch, ReportRow, Spec};
+use self::check::{Batch, ReportRow, Spec};
 
 const CALLS: usize = 24;
 const PER_BATCH: usize = 8;

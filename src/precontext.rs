@@ -45,7 +45,7 @@ impl PreContextSelector {
         Arc::as_ptr(&self.0) as usize as u64
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
     pub(crate) fn downgrade(&self) -> std::sync::Weak<AtomicU64> {
         Arc::downgrade(&self.0)
     }

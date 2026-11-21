@@ -107,6 +107,22 @@ pub(crate) struct CounterSet {
     l2_misses: Option<PerfCounter>,
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn timestamp_ticks() -> u64 {
+    // SAFETY: rapid-profiler's documented execution target is x86-64.
+    unsafe { core::arch::x86_64::_rdtsc() }
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn timestamp_ticks() -> u64 {
+    // No TSC exists off x86-64; wall-clock nanoseconds keep the snapshot
+    // arithmetic meaningful without claiming cycle accuracy.
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_nanos() as u64)
+        .unwrap_or(0)
+}
+
 impl CounterSet {
     pub(crate) fn open() -> Self {
         Self {
@@ -128,8 +144,7 @@ impl CounterSet {
             instructions: self.instructions.as_ref().and_then(PerfCounter::read),
             branches: self.branches.as_ref().and_then(PerfCounter::read),
             l2_misses: self.l2_misses.as_ref().and_then(PerfCounter::read),
-            // SAFETY: rapid-profiler's documented execution target is x86-64.
-            timestamp: unsafe { core::arch::x86_64::_rdtsc() },
+            timestamp: timestamp_ticks(),
         }
     }
 }

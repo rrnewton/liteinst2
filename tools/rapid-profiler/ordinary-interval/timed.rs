@@ -5,7 +5,7 @@ use std::sync::OnceLock;
 #[path = "timed/check.rs"]
 mod check;
 use super::exact::truth;
-use check::{Call, Expected, Transition};
+use self::check::{Call, Expected, Transition};
 
 fn two_cpus() -> [usize; 2] {
     const WORDS: usize = std::mem::size_of::<libc::cpu_set_t>() / std::mem::size_of::<usize>();

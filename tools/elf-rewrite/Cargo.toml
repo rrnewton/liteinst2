@@ -42,7 +42,7 @@ test = true
 # Explicit source-authenticated native campaign; no automatic test execution.
 [[example]]
 name = "adjacent_b2_native"
-path = "examples/adjacent_b2_native.rs"
+path = "examples/adjacent_b2_native_entry.rs"
 test = false
 bench = false
 

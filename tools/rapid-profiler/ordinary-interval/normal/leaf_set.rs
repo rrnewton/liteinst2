@@ -23,7 +23,7 @@ pub(in crate::normal) use check::selected_controls as selected_output_controls;
 pub(in crate::normal) use expectation::controls as expected_controls;
 use expectation::{Expectation, Expectations};
 #[cfg(test)]
-pub(in crate::normal) use selected::controls as selected_controls;
+pub(in crate::normal) use self::selected::controls as selected_controls;
 #[cfg(test)]
 pub(in crate::normal) use worker::selected_controls as selected_worker_controls;
 mod preparation_diagnostic;

@@ -1,11 +1,12 @@
 //! Explicit standalone native campaign; ordinary Cargo tests never run it.
 #![deny(warnings)]
-#![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[allow(dead_code)]
 #[path = "quiescent_oracle.rs"]
 mod oracle;
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn main() {
     if std::env::args_os().nth(1).as_deref()
         == Some(std::ffi::OsStr::new("common-core-router-controls"))
@@ -35,4 +36,9 @@ fn main() {
         return;
     }
     oracle::elf_exec_oracle::main();
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn main() {
+    panic!("ELF exec native campaign requires Linux x86-64");
 }

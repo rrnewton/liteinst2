@@ -1,6 +1,6 @@
 //! Fabricated immutable data controls; never create a native attachment or call.
 use super::*;
-use check::{Error, Expected, Metadata};
+use self::check::{Error, Expected, Metadata};
 use rapid_profiler::frontend::{Action, ActionKind, ControllerSnapshot, ControllerStatus, Payload};
 use rapid_profiler::frontend_native::{NormalRecord, RawTimestamp};
 use rapid_profiler::generation::{Admission, Epoch, Record};

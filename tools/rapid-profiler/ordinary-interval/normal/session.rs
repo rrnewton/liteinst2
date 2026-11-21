@@ -15,7 +15,7 @@ pub(in crate::normal) mod phase_totals;
 mod protocol;
 pub(crate) mod two;
 pub(in crate::normal) mod worker;
-use check::Ledger;
+use self::check::Ledger;
 use epoch_storage::Slot;
 use io::Io;
 use protocol::Command;
