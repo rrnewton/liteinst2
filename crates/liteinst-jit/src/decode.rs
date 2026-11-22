@@ -283,9 +283,9 @@ const FS_GS_ON_STRING: &str = "FS/GS override on string instruction outside P1a 
 /// RIP-relative operands; this form has no known compiler source and
 /// is refused instead of relocated.
 const FS_GS_RIP_RELATIVE: &str = "FS/GS override on RIP-relative operand outside P1a envelope";
-/// An FS/GS override that forms no memory access: no memory operand,
-/// or one that is not accessed (`lea`, `nop r/m`). Iced then reports
-/// no read of the segment.
+/// An FS/GS override that forms no address through the segment: no
+/// memory operand, or one iced does not report as formed through it
+/// (`lea`, `nop r/m`; a prefetch hint does, and is admitted).
 const FS_GS_WITHOUT_MEMORY_ACCESS: &str =
     "FS/GS override without a memory access outside P1a envelope";
 /// A segment override register outside ES, CS, SS, DS, FS and GS.
@@ -317,11 +317,11 @@ fn refused_segment_register_operand(ins: &Instruction) -> Option<&'static str> {
 ///   writes (it sets only the general registers, RIP and RFLAGS); in
 ///   process the host thread's, which is the thread the code runs
 ///   on. An FS/GS override is admitted only where it forms the
-///   address of an explicit memory operand (load, store or
-///   read-modify-write): this returns it, and the caller requires
-///   iced to report that segment as read (iced reports it only for
-///   an accessed memory operand) and allows it as the one non-GPR
-///   register.
+///   address of an explicit memory operand (load, store, RMW,
+///   push/pop r/m, moffs, prefetch hint): this returns it, and the
+///   caller requires iced to report that segment as read (iced does
+///   for an address-forming operand, not for `lea` or `nop r/m`) and
+///   allows it as the one non-GPR register.
 /// - Refused, each by name: FS/GS on a string instruction or on a
 ///   RIP-relative operand (here), and FS/GS without a memory access
 ///   (in the caller: no memory operand, or `lea`/`nop r/m`).
@@ -594,7 +594,7 @@ fn admit_supported(
                 });
             }
             let info = factory.info(ins);
-            // An FS/GS read stands for an accessed memory operand only
+            // An FS/GS read stands for an address-forming operand only
             // because explicit segment-register operands (`push fs`,
             // `mov eax, fs`, which also report an FS read) are refused
             // above, by `refused_segment_register_operand`.
