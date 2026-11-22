@@ -25,7 +25,8 @@ run_suite() {
 # mapping events dropped; 25c: the stamp never updated; 25d: no hole
 # check at entry; 25e: a direct edge into a hole queued; 25f/25h: a
 # handler Err skips its events, syscall/nondet; 25g: a refused batch
-# leaves no holes) and 03
+# leaves no holes; 25i: a refused batch's error wins over the handler's)
+# and 03
 # (invalidation disabled) run only their named tests, each as
 # "binary:fn"; every listed test must show its own FAILED line (see
 # named_failures_ok). 03 names the O1 test, whose invalidation half
@@ -46,6 +47,7 @@ targets_for() {
         25f*) echo "generation_events:handler_err_still_applies_events_syscall" ;;
         25g*) echo "generation_events:refused_batch_admits_nothing_and_holes_every_range" ;;
         25h*) echo "generation_events:handler_err_still_applies_events_nondet" ;;
+        25i*) echo "generation_events:handler_err_with_refused_batch_returns_the_handler_refusal" ;;
         23a*) echo "indirect_resolve:push_crossing_inprocess" ;;
         23b*) echo "indirect_resolve:push_crossing_remote" ;;
         24a*) echo "indirect_resolve:push_fault_inprocess" ;;
@@ -170,7 +172,8 @@ expected_for() {
         25e*) echo "hole: want UnmappedCode at the jump" ;;
         25f*) echo "handler err: want the events applied" ;;
         25g*) echo "refused batch: want UnmappedCode" ;;
-        25h*) echo "handler err (nondet): want the events applied" ;;
+        25h*) echo "handler err \(nondet\): want the events applied" ;;
+        25i*) echo "handler err \+ refused batch: want the handler's refusal" ;;
         23*) echo "mov fs, eax: refusal reason" ;;
         24*) echo "fs movsb: refusal reason" ;;
         25*) echo "mov rax, fs:\[rip\+0x10\]: refusal reason" ;;

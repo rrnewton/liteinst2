@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 34896239..4cad75d8 100644
+index fc64b5a1..2920ea65 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1420,7 +1420,8 @@ impl Executable {
+@@ -1423,7 +1423,8 @@ impl Executable {
      /// through here, so a saved PC (a return address, a resume PC) is
      /// revalidated when it is used, never trusted by address.
      fn entry_for(&mut self, pc: u64) -> Result<u64, Refuse> {

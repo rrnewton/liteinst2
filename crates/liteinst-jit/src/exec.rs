@@ -1353,7 +1353,10 @@ impl Executable {
     /// hole (guest memory there may have changed in ways the report
     /// does not describe, so none of it may run from an old
     /// translation), and the batch refuses `StaleGeneration`. A later
-    /// event with a valid snapshot re-admits a range.
+    /// event with a valid snapshot re-admits a range, but such an event
+    /// arrives only through a handler exit. When the holes cover the
+    /// entry, every later run refuses `UnmappedCode` at the entry before
+    /// any exit, so that executable cannot recover; prepare a new one.
     fn apply_mapping_events(&mut self, events: Vec<MappingEvent>) -> Result<(), Refuse> {
         let mut last = self.region.generation;
         let mut refusal = None;

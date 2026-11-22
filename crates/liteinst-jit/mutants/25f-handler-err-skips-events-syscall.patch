@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 34896239..78d8116e 100644
+index fc64b5a1..ed606740 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1913,8 +1913,9 @@ impl Executable {
+@@ -1916,8 +1916,9 @@ impl Executable {
                      // Before the guest resumes, and also when the handler
                      // refuses: a change it made to guest memory stays made,
                      // so the next entry must revalidate either way.

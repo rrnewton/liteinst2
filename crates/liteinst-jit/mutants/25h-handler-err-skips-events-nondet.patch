@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 34896239..5978246d 100644
+index fc64b5a1..7dc64336 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1947,8 +1947,9 @@ impl Executable {
+@@ -1950,8 +1950,9 @@ impl Executable {
                          })?;
                      let served = handler.nondet(&mut state, kind, data.exit_src, data.exit_next);
                      // As in the SYSCALL arm: applied even when refused.

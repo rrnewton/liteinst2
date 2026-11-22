@@ -50,8 +50,11 @@ pub enum Refuse {
     /// Invalid or truncated instruction bytes at the source PC.
     Decode { src_pc: u64 },
     /// A cache entry, or a mapping event, was offered under a
-    /// superseded generation: `expected` is the oldest generation
-    /// that would be accepted, `found` the one offered.
+    /// superseded generation: `expected` is the oldest generation that
+    /// would have been accepted when it was offered, `found` the one
+    /// offered. A refused event batch still moves the executable on
+    /// (its ranges become holes), so afterwards even `expected` is
+    /// no longer accepted.
     StaleGeneration { expected: u64, found: u64 },
     /// Control reached, or a direct edge leads into, a range the
     /// caller reported unmapped (a `MappingEvent` without a region),

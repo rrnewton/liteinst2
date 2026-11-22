@@ -26,6 +26,11 @@
 //!   an event that is not strictly newer admits no snapshot; every range
 //!   it names becomes a hole, so the next run refuses instead of running
 //!   old code.
+//! - `refused_batch_stale_first_holes_every_range`: the same with the
+//!   stale event first, followed by a hole that must not be dropped.
+//! - `handler_err_with_refused_batch_returns_the_handler_refusal`: when
+//!   the handler refuses and its batch is refused too, the handler's
+//!   refusal comes back and the batch's holes are still made.
 //! - `direct_edge_into_hole_refuses_away_from_resume`: a refusal found
 //!   while rebuilding names the jump that leads into the hole, not the
 //!   PC the guest resumes at.
@@ -537,6 +542,104 @@ fn refused_batch_admits_nothing_and_holes_every_range() {
         "refused batch: want UnmappedCode at the entry on the next run, got {next:?}"
     );
     assert_eq!(quiet.served, 0, "refused batch: nothing may run");
+}
+
+#[test]
+fn refused_batch_stale_first_holes_every_range() {
+    let _g = lock();
+    let (guest, mut exec) = prepared(OLD);
+    let mut h = MapHandler::new(guest.base);
+    h.remap_to = Some(NEW);
+    // A stale region event first (generation 1 is not newer), then a
+    // hole: the events after a stale one must not be dropped.
+    h.events = vec![
+        MappingEvent {
+            start: guest.base,
+            end: guest.base + PAGE as u64,
+            region: Some(guest.region(NEW, Generation(1))),
+        },
+        MappingEvent {
+            start: guest.base,
+            end: guest.base + PAGE as u64,
+            region: None,
+        },
+    ];
+    let r = exec.run(
+        guest.initial_state(),
+        &mut h,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    assert!(
+        matches!(
+            r,
+            Err(RunError::Refuse(Refuse::StaleGeneration {
+                expected: 2,
+                found: 1
+            }))
+        ),
+        "refused batch (stale first): want StaleGeneration {{ expected: 2, found: 1 }}, got {r:?}"
+    );
+    let mut quiet = MapHandler::new(guest.base);
+    let next = exec.run(
+        guest.initial_state(),
+        &mut quiet,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    let entry = guest.base;
+    assert!(
+        matches!(
+            next,
+            Err(RunError::Refuse(Refuse::UnmappedCode { src_pc, generation: 3 })) if src_pc == entry
+        ),
+        "refused batch (stale first): want UnmappedCode at the entry on the next run, got {next:?}"
+    );
+    assert_eq!(
+        quiet.served, 0,
+        "refused batch (stale first): nothing may run"
+    );
+}
+
+#[test]
+fn handler_err_with_refused_batch_returns_the_handler_refusal() {
+    let _g = lock();
+    let (guest, mut exec) = prepared(OLD);
+    let mut h = MapHandler::new(guest.base);
+    h.remap_to = Some(NEW);
+    let page = || MappingEvent {
+        start: guest.base,
+        end: guest.base + PAGE as u64,
+        region: Some(guest.region(NEW, Generation(2))),
+    };
+    h.events = vec![page(), page()];
+    h.fail = true;
+    let r = exec.run(
+        guest.initial_state(),
+        &mut h,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    assert!(
+        matches!(r, Err(RunError::Refuse(Refuse::NoHandler { .. }))),
+        "handler err + refused batch: want the handler's refusal, got {r:?}"
+    );
+    // The refused batch still made its holes.
+    let mut quiet = MapHandler::new(guest.base);
+    let next = exec.run(
+        guest.initial_state(),
+        &mut quiet,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    let entry = guest.base;
+    assert!(
+        matches!(
+            next,
+            Err(RunError::Refuse(Refuse::UnmappedCode { src_pc, generation: 3 })) if src_pc == entry
+        ),
+        "handler err + refused batch: want UnmappedCode at the entry on the next run, got {next:?}"
+    );
 }
 
 #[test]

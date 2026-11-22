@@ -1,0 +1,15 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index fc64b5a1..958ac564 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1917,8 +1917,9 @@ impl Executable {
+                     // refuses: a change it made to guest memory stays made,
+                     // so the next entry must revalidate either way.
+                     let applied = self.apply_mapping_events(handler.take_mapping_events());
+-                    let resume = served?;
++                    // MUTANT 25i: the batch's refusal wins over the handler's.
+                     applied?;
++                    let resume = served?;
+                     tot_instructions += 1;
+                     match resume {
+                         Resume::Done => {

@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 34896239..c9be9f9d 100644
+index fc64b5a1..b64c0a48 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1371,9 +1371,7 @@ impl Executable {
+@@ -1374,9 +1374,7 @@ impl Executable {
              }
          }
          if let Some(refusal) = refusal {
