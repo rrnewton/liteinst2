@@ -41,6 +41,7 @@ targets_for() {
         23*|24*|25*|26*) echo "lib:decode::tests::segment_override_refuses_by_name" ;;
         27*|28*) echo "lib:decode::tests::segment_override_admits o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
         29*) echo "lib:translate::tests::segment_prefixed_copies_keep_their_prefix o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
+        34*) echo "remote_compare:seg_override_remote_matches" ;;
         *) echo "" ;;
     esac
 }
@@ -146,6 +147,7 @@ expected_for() {
         27*) echo "segment override outside P1a envelope" ;;
         28*) echo "non-GPR register effect outside P1a envelope" ;;
         29*) echo "segment-prefixed copy is byte-exact|seg_fs_canary (jit|in-process): " ;;
+        34*) echo "seg_fs_canary remote: " ;;
         *) echo "FAILED" ;;
     esac
 }

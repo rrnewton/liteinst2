@@ -778,8 +778,9 @@ fn p1b1_indirect_remote_matches() {
 /// and stack window) is exact. `seg_gs_fault` faults identically
 /// (GS base 0: linear 0x40, same instruction, counts and recovered
 /// state). `seg_fs_self` pins the remote read itself: the `fs:[0]`
-/// that translated code returns names a word in the child that holds
-/// its own address, the TCB self pointer.
+/// that translated code returns equals the tracee's FS base
+/// (PTRACE_GETREGS), and names a word in the child that holds its own
+/// address, the TCB self pointer.
 #[test]
 fn seg_override_remote_matches() {
     let _g = lock();
@@ -871,6 +872,32 @@ fn seg_override_remote_matches() {
             u64::from_le_bytes(word),
             tp,
             "seg_fs_self: remote fs:[0] is the child's TCB self pointer"
+        );
+        // Absolute: the value equals the tracee's own FS base, read
+        // from the stopped child (this test thread is its tracer).
+        let pid = remote.child_pid_for_test();
+        // SAFETY: zeroed plain-data register struct, filled by the
+        // kernel below.
+        let mut regs: libc::user_regs_struct = unsafe { core::mem::zeroed() };
+        // SAFETY: PTRACE_GETREGS on this test's own stopped tracee,
+        // writing one user_regs_struct through the pointer.
+        let rc = unsafe {
+            libc::ptrace(
+                libc::PTRACE_GETREGS,
+                pid,
+                core::ptr::null_mut::<libc::c_void>(),
+                core::ptr::addr_of_mut!(regs).cast::<libc::c_void>(),
+            )
+        };
+        assert_eq!(
+            rc,
+            0,
+            "seg_fs_self: PTRACE_GETREGS: {}",
+            std::io::Error::last_os_error()
+        );
+        assert_eq!(
+            tp, regs.fs_base,
+            "seg_fs_self: remote fs:[0] is the tracee's FS base"
         );
         assert_eq!(
             (out.branches, out.instructions),
