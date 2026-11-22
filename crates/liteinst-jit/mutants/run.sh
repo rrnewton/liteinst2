@@ -19,16 +19,22 @@ run_suite() {
     return $?
 }
 
-# The P1b.1 mutants (08-19) run only their named tests, each as
-# "binary:fn"; every listed test must show its own FAILED line (see
-# named_failures_ok). Empty for every other mutant. The O1 mutants
-# (20-22) run the full default suite: their kill tests are
-# src/o1.rs unit tests, which run before the integration binaries.
-# The segment-override (23-29) and 66h-prefix (30-33) mutants run
-# their named tests too; "lib:path::to::fn" names a unit test of the
-# library itself.
+# The P1b.1 mutants (08-19) and the push mutants (23a/23b: no page
+# crossing check; 24a/24b: a failed push write ignored) run only their
+# named tests, each as "binary:fn"; every listed test must show its own
+# FAILED line (see named_failures_ok). Empty for every other mutant.
+# The O1 mutants (20-22) run the full default suite: their kill tests
+# are src/o1.rs unit tests, which run before the integration binaries.
+# The segment-override mutants (23-29, 34) run their named tests too;
+# "lib:path::to::fn" names a unit test of the library itself. In each
+# case below the 23a/23b/24a/24b arms come before the 23*/24* arms.
+# The 66h-prefix mutants (30-33) run their named tests too.
 targets_for() {
     case "$1" in
+        23a*) echo "indirect_resolve:push_crossing_inprocess" ;;
+        23b*) echo "indirect_resolve:push_crossing_remote" ;;
+        24a*) echo "indirect_resolve:push_fault_inprocess" ;;
+        24b*) echo "indirect_resolve:push_fault_remote" ;;
         08*|09*) echo "o1_compare:p1b1_indirect_matches_o1 remote_compare:p1b1_indirect_remote_matches" ;;
         10*|11*) echo "indirect_resolve:resolver_forms" ;;
         12*) echo "indirect_resolve:refusal_inprocess indirect_resolve:refusal_remote" ;;
@@ -44,6 +50,7 @@ targets_for() {
         29*) echo "lib:translate::tests::segment_prefixed_copies_keep_their_prefix o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
         30*|31*|32*) echo "lib:decode::tests::operand_size_prefixed_control_refuses_by_name remote_compare:osz_control_refuses_in_both_modes" ;;
         33*) echo "lib:decode::tests::operand_size_prefixed_control_refuses_by_name" ;;
+        34*) echo "remote_compare:seg_override_remote_matches" ;;
         *) echo "" ;;
     esac
 }
@@ -142,6 +149,8 @@ expected_for() {
         19*) echo "instructions" ;;
         20*) echo "O1 indirect prediction" ;;
         21*|22*) echo "passed the RIP-delta check" ;;
+        23a*|23b*) echo "push crossing: want a named refusal" ;;
+        24a*|24b*) echo "push fault: expected a fault" ;;
         23*) echo "mov fs, eax: refusal reason" ;;
         24*) echo "fs movsb: refusal reason" ;;
         25*) echo "mov rax, fs:\[rip\+0x10\]: refusal reason" ;;
@@ -153,6 +162,7 @@ expected_for() {
         31*) echo "66 ret: (refusal reason|in-process prepare admitted)" ;;
         32*) echo "66 jmp rax: refusal reason|66 jmp rdi: in-process prepare admitted" ;;
         33*) echo "rex then 66 jmp rel32: refusal reason" ;;
+        34*) echo "seg_fs_canary remote: " ;;
         *) echo "FAILED" ;;
     esac
 }

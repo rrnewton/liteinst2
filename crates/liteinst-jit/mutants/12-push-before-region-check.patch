@@ -13,13 +13,13 @@
          }
 --- a/crates/liteinst-jit/src/remote.rs
 +++ b/crates/liteinst-jit/src/remote.rs
-@@ -3046,6 +3046,10 @@
+@@ -2921,6 +2921,10 @@
          let Some(region) = self.region.as_ref() else {
              return Err(unresolved());
          };
 +        // MUTANT 12: the call's push is written before the region check (remote).
 +        if r.kind == IndirectKind::Call {
-+            let _ = write_mem(pid, state.rsp.wrapping_sub(8), &r.next_ip.to_le_bytes());
++            let _ = write_mem(&tracee, state.rsp.wrapping_sub(8), &r.next_ip.to_le_bytes());
 +        }
          if !region.contains(r.target) {
              return Err(unresolved());
