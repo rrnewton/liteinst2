@@ -594,6 +594,10 @@ fn admit_supported(
                 });
             }
             let info = factory.info(ins);
+            // An FS/GS read stands for an accessed memory operand only
+            // because explicit segment-register operands (`push fs`,
+            // `mov eax, fs`, which also report an FS read) are refused
+            // above, by `refused_segment_register_operand`.
             if let Some(seg) = tls_segment
                 && !info
                     .used_registers()
@@ -820,6 +824,46 @@ mod tests {
             ("fs ds mov", &[0x64, 0x3e, 0x48, 0x8b, 0x03], Register::FS),
             ("ds fs mov", &[0x3e, 0x64, 0x48, 0x8b, 0x03], Register::FS),
             ("fs fs mov", &[0x64, 0x64, 0x48, 0x8b, 0x03], Register::FS),
+            // FS and GS together: iced takes the last one.
+            ("fs gs mov", &[0x64, 0x65, 0x48, 0x8b, 0x03], Register::GS),
+            ("gs fs mov", &[0x65, 0x64, 0x48, 0x8b, 0x03], Register::FS),
+            (
+                "cmove rax, fs:[0x28]",
+                &[0x64, 0x48, 0x0f, 0x44, 0x04, 0x25, 0x28, 0, 0, 0],
+                Register::FS,
+            ),
+            (
+                "sete byte fs:[0x10]",
+                &[0x64, 0x0f, 0x94, 0x04, 0x25, 0x10, 0, 0, 0],
+                Register::FS,
+            ),
+            (
+                "movzx eax, byte fs:[0x10]",
+                &[0x64, 0x0f, 0xb6, 0x04, 0x25, 0x10, 0, 0, 0],
+                Register::FS,
+            ),
+            (
+                "movsxd rax, dword fs:[0x10]",
+                &[0x64, 0x48, 0x63, 0x04, 0x25, 0x10, 0, 0, 0],
+                Register::FS,
+            ),
+            (
+                "bt dword fs:[0x10], 3",
+                &[0x64, 0x0f, 0xba, 0x24, 0x25, 0x10, 0, 0, 0, 0x03],
+                Register::FS,
+            ),
+            (
+                "mov ax, fs:[0x28] (66h)",
+                &[0x64, 0x66, 0x8b, 0x04, 0x25, 0x28, 0, 0, 0],
+                Register::FS,
+            ),
+            // A prefetch forms its address through FS (iced reports the
+            // read); it is a hint that cannot fault, copied natively.
+            (
+                "prefetcht0 fs:[rax]",
+                &[0x64, 0x0f, 0x18, 0x08],
+                Register::FS,
+            ),
             ("mov rax, ds:[rbx]", &[0x3e, 0x48, 0x8b, 0x03], Register::DS),
             ("mov rax, cs:[rbx]", &[0x2e, 0x48, 0x8b, 0x03], Register::CS),
             ("mov rax, es:[rbx]", &[0x26, 0x48, 0x8b, 0x03], Register::ES),
