@@ -880,6 +880,72 @@ fn seg_override_remote_matches() {
     }
 }
 
+/// 66h-prefixed near control transfers (AMD honours the prefix, the
+/// Intel decode here does not): both dispatchers refuse at prepare,
+/// before any guest instruction runs, with the same name at the same
+/// source offset. Each program reaches its 66h form by straight-line
+/// discovery.
+#[test]
+fn osz_control_refuses_in_both_modes() {
+    let _g = lock();
+    let cases: &[(&str, &[u8], u64, &str)] = &[
+        (
+            "66 jmp rel32",
+            &[0x66, 0xe9, 0x00, 0x00, 0x00, 0x00, 0xc3],
+            0,
+            "66h-prefixed near direct branch outside P1a envelope",
+        ),
+        (
+            "66 jz rel8",
+            &[0x48, 0x85, 0xff, 0x66, 0x74, 0x00, 0xc3],
+            3,
+            "66h-prefixed near direct branch outside P1a envelope",
+        ),
+        (
+            "66 ret",
+            &[0x31, 0xc0, 0x66, 0xc3],
+            2,
+            "66h-prefixed near return outside P1a envelope",
+        ),
+        (
+            "66 jmp rdi",
+            &[0x31, 0xc0, 0x66, 0xff, 0xe7],
+            2,
+            "66h-prefixed near indirect branch outside P1a envelope",
+        ),
+    ];
+    for (name, bytes, off, reason) in cases {
+        let guest = MappedGuest::map(bytes).expect("map");
+        let region = guest.region(bytes, Generation(1));
+        match Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions) {
+            Err(Refuse::Unrelocatable { src_pc, reason: r }) => {
+                assert_eq!(r, *reason, "{name}: in-process reason");
+                assert_eq!(src_pc - guest.base, *off, "{name}: in-process offset");
+            }
+            Err(e) => panic!("{name}: in-process refused otherwise: {e:?}"),
+            Ok(_) => panic!("{name}: in-process prepare admitted a 66h control transfer"),
+        }
+        drop(guest);
+        let (mut remote, _deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn remote");
+        let info = remote.info();
+        let rregion = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: bytes.to_vec(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        match remote.prepare(&rregion, info.base, CountProfile::BranchesAndInstructions) {
+            Err(Refuse::Unrelocatable { src_pc, reason: r }) => {
+                assert_eq!(r, *reason, "{name}: remote reason");
+                assert_eq!(src_pc - info.base, *off, "{name}: remote offset");
+            }
+            Err(e) => panic!("{name}: remote refused otherwise: {e:?}"),
+            Ok(()) => panic!("{name}: remote prepare admitted a 66h control transfer"),
+        }
+        println!("{name}: refused by name in both modes");
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]
