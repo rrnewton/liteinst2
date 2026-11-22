@@ -456,12 +456,323 @@ pub fn all() -> Vec<Fixture> {
             name: "ind_jmp_out_budget",
             bytes: vec![0x31, 0xc9, 0x48, 0x39, 0xf1, 0x73, 0x00, 0xff, 0xe7],
         },
+        // Call/return corpus: every one completes on today's code.
+        // Each takes no arguments (the default all-zero ones) and
+        // leaves no stack address in a register, so both engines
+        // compare every register exactly. The counts in the comments
+        // are worked out by hand from the code, not read from a run.
+        Fixture {
+            // fib(12) as a call tree: 465 calls (232 inner, 233
+            // leaves), one `jb` each. rax = 144; branches = 465;
+            // instructions = 3 + 14*232 + 4*233 = 4183; 466 rets.
+            name: "ret_fib",
+            bytes: asm(|a| {
+                let mut fib = a.create_label();
+                let mut base = a.create_label();
+                a.mov(edi, 12)?;
+                a.call(fib)?;
+                a.ret()?;
+                a.set_label(&mut fib)?;
+                a.cmp(rdi, 2)?;
+                a.jb(base)?;
+                a.push(rbx)?;
+                a.push(rdi)?;
+                a.lea(rdi, ptr(rdi - 1))?;
+                a.call(fib)?;
+                a.mov(rbx, rax)?;
+                a.mov(rdi, qword_ptr(rsp))?;
+                a.lea(rdi, ptr(rdi - 2))?;
+                a.call(fib)?;
+                a.add(rax, rbx)?;
+                a.pop(rdi)?;
+                a.pop(rbx)?;
+                a.ret()?;
+                a.set_label(&mut base)?;
+                a.mov(rax, rdi)?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // Linear recursion 1000 frames deep: rsum(n) = n +
+            // rsum(n-1). 1001 calls, one `jz` each. rax = 500500;
+            // branches = 1001; instructions = 3 + 8*1000 + 4 =
+            // 8007; 1002 rets, the deepest 1000 frames above the
+            // first.
+            name: "ret_deep_chain",
+            bytes: asm(|a| {
+                let mut rsum = a.create_label();
+                let mut zero = a.create_label();
+                a.mov(edi, 1000)?;
+                a.call(rsum)?;
+                a.ret()?;
+                a.set_label(&mut rsum)?;
+                a.test(rdi, rdi)?;
+                a.jz(zero)?;
+                a.push(rdi)?;
+                a.dec(rdi)?;
+                a.call(rsum)?;
+                a.pop(rdi)?;
+                a.add(rax, rdi)?;
+                a.ret()?;
+                a.set_label(&mut zero)?;
+                a.xor(eax, eax)?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // Mutual recursion even/odd from 20: 21 calls, each
+            // returning straight into a caller's `ret` (a chain of
+            // 21 returns). rax = 1; branches = 21; instructions =
+            // 3 + 5*20 + 4 = 107; 22 rets.
+            name: "ret_mutual",
+            bytes: asm(|a| {
+                let mut even = a.create_label();
+                let mut odd = a.create_label();
+                let mut e_yes = a.create_label();
+                let mut o_no = a.create_label();
+                a.mov(edi, 20)?;
+                a.call(even)?;
+                a.ret()?;
+                a.set_label(&mut even)?;
+                a.test(rdi, rdi)?;
+                a.jz(e_yes)?;
+                a.dec(rdi)?;
+                a.call(odd)?;
+                a.ret()?;
+                a.set_label(&mut e_yes)?;
+                a.mov(eax, 1)?;
+                a.ret()?;
+                a.set_label(&mut odd)?;
+                a.test(rdi, rdi)?;
+                a.jz(o_no)?;
+                a.dec(rdi)?;
+                a.call(even)?;
+                a.ret()?;
+                a.set_label(&mut o_no)?;
+                a.xor(eax, eax)?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // Tail calls through `jmp`: f and g jump to each other
+            // ten times, then f's `ret` returns to the original
+            // caller. rax = 55 + 2*10 + 1000 = 1075; branches = 11;
+            // instructions = 5 + 5*10 + 2*10 + 3 = 78; 2 rets.
+            name: "ret_tail_jmp",
+            bytes: asm(|a| {
+                let mut f = a.create_label();
+                let mut f_done = a.create_label();
+                let mut g = a.create_label();
+                a.mov(edi, 10)?;
+                a.xor(eax, eax)?;
+                a.call(f)?;
+                a.add(rax, 1000)?;
+                a.ret()?;
+                a.set_label(&mut f)?;
+                a.test(rdi, rdi)?;
+                a.jz(f_done)?;
+                a.add(rax, rdi)?;
+                a.dec(rdi)?;
+                a.jmp(g)?;
+                a.set_label(&mut f_done)?;
+                a.ret()?;
+                a.set_label(&mut g)?;
+                a.add(rax, 2)?;
+                a.jmp(f)?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // push+ret used as a jump: the loop's back edge is
+            // `lea rax,[rip+top]; push rax; ret`. The direct `jmp`
+            // makes `top` a block start. rax = 8; branches = 9;
+            // instructions = 2 + 6*8 + 4 = 54; 9 rets.
+            name: "ret_push_jmp",
+            bytes: asm(|a| {
+                let mut top = a.create_label();
+                let mut done = a.create_label();
+                a.xor(ecx, ecx)?;
+                a.jmp(top)?;
+                a.set_label(&mut top)?;
+                a.cmp(rcx, 8)?;
+                a.jae(done)?;
+                a.inc(rcx)?;
+                a.lea(rax, ptr(top))?;
+                a.push(rax)?;
+                a.ret()?;
+                a.set_label(&mut done)?;
+                a.mov(rax, rcx)?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // The callee overwrites its own return slot with `alt`
+            // and returns there, skipping the call's return site.
+            // The never-taken `jnz` makes `alt` a block start.
+            // rax = 2; branches = 1; instructions = 4 + 3 + 2 = 9;
+            // 2 rets.
+            name: "ret_overwrite_slot",
+            bytes: asm(|a| {
+                let mut alt = a.create_label();
+                let mut f = a.create_label();
+                a.xor(ecx, ecx)?;
+                a.test(ecx, ecx)?;
+                a.jnz(alt)?;
+                a.call(f)?;
+                a.mov(eax, 1)?;
+                a.ret()?;
+                a.set_label(&mut alt)?;
+                a.mov(eax, 2)?;
+                a.ret()?;
+                a.set_label(&mut f)?;
+                a.lea(rcx, ptr(alt))?;
+                a.mov(qword_ptr(rsp), rcx)?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // longjmp-style: three calls deep, the innermost resets
+            // rsp to the outer frame's saved slot and returns two
+            // frames up at once (a and b never return). rdx, which
+            // held a stack address, is cleared before the end.
+            // rax = 107; branches = 0; instructions = 2 + 1 + 1 + 3
+            // + 3 = 10; 2 rets.
+            name: "ret_longjmp",
+            bytes: asm(|a| {
+                let mut fa = a.create_label();
+                let mut fb = a.create_label();
+                let mut fc = a.create_label();
+                a.mov(rdx, rsp)?;
+                a.call(fa)?;
+                a.xor(edx, edx)?;
+                a.add(rax, 100)?;
+                a.ret()?;
+                a.set_label(&mut fa)?;
+                a.call(fb)?;
+                a.ret()?;
+                a.set_label(&mut fb)?;
+                a.call(fc)?;
+                a.ret()?;
+                a.set_label(&mut fc)?;
+                a.lea(rsp, ptr(rdx - 8))?;
+                a.mov(eax, 7)?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            // Callee-pops convention: five calls of add2(10, rcx),
+            // each cleaning its two stack arguments with `ret 16`.
+            // rax = rbx = (10+5)+(10+4)+...+(10+1) = 65; branches =
+            // 5; instructions = 2 + 9*5 + 2 = 49; 6 rets.
+            name: "ret_imm16_loop",
+            bytes: asm(|a| {
+                let mut top = a.create_label();
+                let mut add2 = a.create_label();
+                a.xor(ebx, ebx)?;
+                a.mov(ecx, 5)?;
+                a.set_label(&mut top)?;
+                a.push(rcx)?;
+                a.push(10i32)?;
+                a.call(add2)?;
+                a.add(rbx, rax)?;
+                a.dec(rcx)?;
+                a.jnz(top)?;
+                a.mov(rax, rbx)?;
+                a.ret()?;
+                a.set_label(&mut add2)?;
+                a.mov(rax, qword_ptr(rsp + 8))?;
+                a.add(rax, qword_ptr(rsp + 16))?;
+                a.ret_1(16u32)?;
+                Ok(())
+            }),
+        },
+    ]
+}
+
+/// Return-corpus fixtures whose expected outcome on today's code is
+/// a named stop, not completion. They are reached through
+/// [`by_name`] (the oracle and remote children, and the tests), but
+/// are not listed in [`all`], whose every fixture the standalone
+/// driver runs against its own expectation table.
+pub fn named_stops() -> Vec<Fixture> {
+    let mut remap = vec![0xccu8; 0x1000];
+    // Page 0: 00 call helper (0x1000); 05 mov eax,1; 0a ret. The
+    // rest of the page is int3.
+    remap[..11].copy_from_slice(&[
+        0xe8, 0xfb, 0x0f, 0x00, 0x00, 0xb8, 0x01, 0x00, 0x00, 0x00, 0xc3,
+    ]);
+    // Page 1, the helper:
+    // 1000 lea rbx,[rip-0x1007] (page 0's base);
+    // 1007 munmap(rbx, 0x1000): mov eax,11; mov rdi,rbx;
+    //      mov esi,0x1000; syscall;
+    // 1016 mmap(rbx, 0x1000, PROT_READ|PROT_WRITE,
+    //      MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED_NOREPLACE, -1, 0):
+    //      mov eax,9; mov rdi,rbx; mov esi,0x1000; mov edx,3;
+    //      mov r10d,0x100022; mov r8,-1; xor r9d,r9d; syscall;
+    // 103a write page 0's new first 11 bytes, identical except
+    //      that the return site now reads `mov eax,2`:
+    //      mov rax,0x0002b800000ffbe8; mov [rbx],rax;
+    //      mov dword [rbx+7],0xc3000000;
+    // 104e mprotect(rbx, 0x1000, PROT_READ|PROT_EXEC): mov eax,10;
+    //      mov rdi,rbx; mov esi,0x1000; mov edx,5; syscall;
+    // 1062 xor ecx,ecx; xor r11d,r11d (the syscall clobbers);
+    // 1067 ret, into the remapped page 0 at 05.
+    remap.extend_from_slice(&[
+        0x48, 0x8d, 0x1d, 0xf9, 0xef, 0xff, 0xff, //
+        0xb8, 0x0b, 0x00, 0x00, 0x00, 0x48, 0x89, 0xdf, //
+        0xbe, 0x00, 0x10, 0x00, 0x00, 0x0f, 0x05, //
+        0xb8, 0x09, 0x00, 0x00, 0x00, 0x48, 0x89, 0xdf, //
+        0xbe, 0x00, 0x10, 0x00, 0x00, 0xba, 0x03, 0x00, 0x00, 0x00, //
+        0x41, 0xba, 0x22, 0x00, 0x10, 0x00, //
+        0x49, 0xc7, 0xc0, 0xff, 0xff, 0xff, 0xff, 0x45, 0x31, 0xc9, 0x0f, 0x05, //
+        0x48, 0xb8, 0xe8, 0xfb, 0x0f, 0x00, 0x00, 0xb8, 0x02, 0x00, //
+        0x48, 0x89, 0x03, 0xc7, 0x43, 0x07, 0x00, 0x00, 0x00, 0xc3, //
+        0xb8, 0x0a, 0x00, 0x00, 0x00, 0x48, 0x89, 0xdf, //
+        0xbe, 0x00, 0x10, 0x00, 0x00, 0xba, 0x05, 0x00, 0x00, 0x00, 0x0f, 0x05, //
+        0x31, 0xc9, 0x45, 0x31, 0xdb, 0xc3,
+    ]);
+    vec![
+        Fixture {
+            // 00 lea rax,[rip+2]; 07 push rax; 08 ret; 09 mov eax,5;
+            // 0e ret. The push+ret target 09 is in the region but no
+            // direct edge reaches it, so it is not a block start.
+            // Natively: rax = 5 after 5 instructions.
+            name: "ret_push_unknown",
+            bytes: vec![
+                0x48, 0x8d, 0x05, 0x02, 0x00, 0x00, 0x00, 0x50, 0xc3, //
+                0xb8, 0x05, 0x00, 0x00, 0x00, 0xc3,
+            ],
+        },
+        Fixture {
+            // 00 mov eax,0x1000; 05 push rax; 06 ret: a return that
+            // leaves the admitted region for an address below
+            // mmap_min_addr, which nothing can map. Natively the
+            // fetch at 0x1000 faults after 3 instructions.
+            name: "ret_out_of_region",
+            bytes: vec![0xb8, 0x00, 0x10, 0x00, 0x00, 0x50, 0xc3],
+        },
+        Fixture {
+            // Two pages. The helper on page 1 unmaps page 0, maps a
+            // fresh page at the same address, writes page 0's bytes
+            // back with one changed immediate, makes it executable
+            // and returns into it. Natively: rax = 2 (the new
+            // bytes), branches = 0, instructions = 1 + 24 + 2 = 27.
+            name: "ret_remap",
+            bytes: remap,
+        },
     ]
 }
 
 pub fn by_name(name: &str) -> Fixture {
     all()
         .into_iter()
+        .chain(named_stops())
         .find(|f| f.name == name)
         .unwrap_or_else(|| panic!("fixture {name}"))
 }
