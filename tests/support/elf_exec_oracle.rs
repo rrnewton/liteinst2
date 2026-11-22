@@ -420,7 +420,7 @@ impl Executable {
         let auxv = std::fs::read(format!("/proc/{}/auxv", child.pid)).unwrap();
         assert!(auxv.len() <= 8192 && auxv.len() % 16 == 0);
         let mut pairs = Vec::new();
-        for pair in auxv.chunks_exact(16) {
+        for pair in auxv.as_chunks::<16>().0 {
             pairs.push((word(pair, 0), word(pair, 8)));
         }
         let actual_aux = |key| {

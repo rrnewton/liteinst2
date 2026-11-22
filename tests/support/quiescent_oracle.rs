@@ -237,7 +237,7 @@ impl NativeOracle {
     fn initialize_seeded_memory_and_flags(&mut self, memory_seed: u64) {
         let mut state = memory_seed;
         let mut memory = [0_u8; PAGE];
-        for chunk in memory.chunks_exact_mut(8) {
+        for chunk in memory.as_chunks_mut::<8>().0 {
             state = state.wrapping_add(0x9e37_79b9_7f4a_7c15);
             let mut word = state;
             word = (word ^ (word >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);

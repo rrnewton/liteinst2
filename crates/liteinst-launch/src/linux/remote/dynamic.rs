@@ -602,6 +602,10 @@ impl DynamicSession {
         until: Instant,
         #[cfg(test)] cleanup_probe: Option<owner::launch_cleanup_probe::Probe>,
     ) -> Result<Self, launch_cleanup::OwnedLaunchFailure> {
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         let session = NEXT_SESSION
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
             .map_err(|_| {
@@ -703,6 +707,10 @@ impl DynamicSession {
         (Self, launch::anchor::AnchorArchive, SignalProgressReader),
         DynamicSignalLaunchFailure,
     > {
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         let session = NEXT_SESSION
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
             .map_err(|_| {

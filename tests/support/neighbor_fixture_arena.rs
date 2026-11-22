@@ -26,6 +26,10 @@ pub(crate) struct NeighborFixtureArena {
 
 impl NeighborFixtureArena {
     fn new() -> Self {
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         let ordinal = NEXT_ARENA
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
                 if next < ARENA_SLOTS {

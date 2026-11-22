@@ -432,6 +432,10 @@ fn run_parent(name: &str) {
     let stderr = anonymous_file(c"liteinst-runtime-err").unwrap();
     let receipt = anonymous_file(c"liteinst-runtime-receipt").unwrap();
     let (device, inode) = regular_unlinked(&receipt).unwrap();
+    #[expect(
+        deprecated,
+        reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+    )]
     let identity = Identity {
         case: CASES
             .iter()

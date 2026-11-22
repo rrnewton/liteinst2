@@ -384,7 +384,7 @@ fn auxv(raw: &[u8]) -> Result<std::collections::BTreeMap<u64, u64>, E> {
     }
     let mut a = std::collections::BTreeMap::new();
     let mut ended = false;
-    for p in raw.chunks_exact(16) {
+    for p in raw.as_chunks::<16>().0 {
         let k = u64::from_ne_bytes(p[..8].try_into().map_err(|_| E::Ownership)?);
         let v = u64::from_ne_bytes(p[8..].try_into().map_err(|_| E::Ownership)?);
         if ended || (k == 0 && v != 0) || a.insert(k, v).is_some() {

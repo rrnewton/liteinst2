@@ -131,7 +131,7 @@ impl Witness {
             }
             assert!(report[0] != 0 && (1..=2).contains(&report[1]));
             total += report[1];
-            for (n, record) in report[2..].chunks_exact(22).enumerate() {
+            for (n, record) in report[2..].as_chunks::<22>().0.iter().enumerate() {
                 if n < report[1] as usize {
                     observation(record);
                 } else {
@@ -147,7 +147,7 @@ impl Witness {
             self.history[18].checked_sub(self.history[17]).unwrap(),
             self.history[25]
         );
-        for (i, action) in self.history[26..].chunks_exact(8).enumerate() {
+        for (i, action) in self.history[26..].as_chunks::<8>().0.iter().enumerate() {
             if i < self.history[25] as usize {
                 assert!((1..=7).contains(&action[0]) && action[1] != 0);
                 optional(&action[2..4]);
@@ -186,8 +186,10 @@ pub fn encode(value: &Witness) -> [u8; BYTES] {
 pub fn decode(bytes: &[u8]) -> Witness {
     assert_eq!(bytes.len(), BYTES, "complete single postflight packet");
     let mut words = bytes
-        .chunks_exact(8)
-        .map(|b| u64::from_le_bytes(b.try_into().unwrap()));
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| u64::from_le_bytes(*b));
     fn take<const N: usize>(words: &mut impl Iterator<Item = u64>) -> [u64; N] {
         std::array::from_fn(|_| words.next().unwrap())
     }

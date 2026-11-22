@@ -521,7 +521,9 @@ fn auxv(pid: i32) -> BTreeMap<u64, u64> {
     let bytes = fs::read(format!("/proc/{pid}/auxv")).unwrap();
     assert_eq!(bytes.len() % 16, 0);
     bytes
-        .chunks_exact(16)
+        .as_chunks::<16>()
+        .0
+        .iter()
         .map(|b| {
             (
                 u64::from_ne_bytes(b[..8].try_into().unwrap()),

@@ -31,7 +31,7 @@ pub(super) fn registers_bytes(value: &RegisterSnapshot) -> [u8; 216] {
         value.gs,
     ];
     let mut bytes = [0; 216];
-    for (part, value) in bytes.chunks_exact_mut(8).zip(words) {
+    for (part, value) in bytes.as_chunks_mut::<8>().0.iter_mut().zip(words) {
         part.copy_from_slice(&value.to_ne_bytes());
     }
     bytes

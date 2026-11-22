@@ -778,8 +778,10 @@ impl OrdinaryOracle {
         // u64 fields. Never expose an arming API or write any private state.
         let words: Vec<_> = child
             .memory(actual.rdi, 14 * 8)
-            .chunks_exact(8)
-            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|b| u64::from_le_bytes(*b))
             .collect();
         assert_eq!(&words[..2], &[1, 1], "first real ARMED invocation");
         assert_ne!(words[2], 0, "actual immutable gate identity");
