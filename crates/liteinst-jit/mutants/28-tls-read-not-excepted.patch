@@ -1,0 +1,15 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -606,11 +606,7 @@
+             }
+             for used in info.used_registers() {
+                 let r: Register = used.register();
+-                // The admitted FS/GS override: the segment is read to
+-                // form the memory operand's address, and nothing else.
+-                if Some(r) == tls_segment && used.access() == OpAccess::Read {
+-                    continue;
+-                }
++                // MUTANT 28: the admitted FS/GS read is no longer excepted.
+                 if r != Register::None && !r.is_gpr() && !r.is_ip() {
+                     return Err(Refuse::Unrelocatable {
+                         src_pc: pc,

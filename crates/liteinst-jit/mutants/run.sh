@@ -24,6 +24,8 @@ run_suite() {
 # named_failures_ok). Empty for every other mutant. The O1 mutants
 # (20-22) run the full default suite: their kill tests are
 # src/o1.rs unit tests, which run before the integration binaries.
+# The segment-override mutants (23-29) run their named tests too;
+# "lib:path::to::fn" names a unit test of the library itself.
 targets_for() {
     case "$1" in
         08*|09*) echo "o1_compare:p1b1_indirect_matches_o1 remote_compare:p1b1_indirect_remote_matches" ;;
@@ -36,6 +38,9 @@ targets_for() {
         17*) echo "remote_signal:remote_signal_all" ;;
         18*) echo "indirect_resolve:install_failure_remote" ;;
         19*) echo "indirect_budget_handoff:budget_handoff_inprocess indirect_budget_handoff:budget_handoff_remote" ;;
+        23*|24*|25*|26*) echo "lib:decode::tests::segment_override_refuses_by_name" ;;
+        27*|28*) echo "lib:decode::tests::segment_override_admits o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
+        29*) echo "lib:translate::tests::segment_prefixed_copies_keep_their_prefix o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
         *) echo "" ;;
     esac
 }
@@ -64,6 +69,9 @@ run_mutant() {
             if [ "$bin" = budget_tail ]; then
                 cargo test --locked -p liteinst-jit --test "$bin" -- \
                     --ignored --exact "$fn" >>"$2" 2>&1 || mrc=1
+            elif [ "$bin" = lib ]; then
+                cargo test --locked -p liteinst-jit --lib -- \
+                    --exact "$fn" >>"$2" 2>&1 || mrc=1
             else
                 cargo test --locked -p liteinst-jit --test "$bin" -- \
                     --exact "$fn" >>"$2" 2>&1 || mrc=1
@@ -131,6 +139,13 @@ expected_for() {
         19*) echo "instructions" ;;
         20*) echo "O1 indirect prediction" ;;
         21*|22*) echo "passed the RIP-delta check" ;;
+        23*) echo "mov fs, eax: refusal reason" ;;
+        24*) echo "fs movsb: refusal reason" ;;
+        25*) echo "mov rax, fs:\[rip\+0x10\]: refusal reason" ;;
+        26*) echo "fs nop: refusal reason" ;;
+        27*) echo "segment override outside P1a envelope" ;;
+        28*) echo "non-GPR register effect outside P1a envelope" ;;
+        29*) echo "segment-prefixed copy is byte-exact|seg_fs_canary (jit|in-process): " ;;
         *) echo "FAILED" ;;
     esac
 }

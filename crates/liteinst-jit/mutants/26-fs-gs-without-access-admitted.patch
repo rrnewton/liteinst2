@@ -1,0 +1,21 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -594,16 +594,8 @@
+                 });
+             }
+             let info = factory.info(ins);
+-            if let Some(seg) = tls_segment
+-                && !info
+-                    .used_registers()
+-                    .any(|u| u.register() == seg && u.access() == OpAccess::Read)
+-            {
+-                return Err(Refuse::Unrelocatable {
+-                    src_pc: pc,
+-                    reason: FS_GS_WITHOUT_MEMORY_ACCESS,
+-                });
+-            }
++            // MUTANT 26: FS/GS without a memory access is no longer refused.
++            let _ = FS_GS_WITHOUT_MEMORY_ACCESS;
+             for used in info.used_registers() {
+                 let r: Register = used.register();
+                 // The admitted FS/GS override: the segment is read to
