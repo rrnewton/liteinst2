@@ -9,17 +9,26 @@ from the cache.
 
 P1a envelope, honestly bounded:
 
-- Straight-line code plus direct branches/calls; indirect control flow
-  stops at the dispatcher and is refused by name.
-- Private, non-writable source mappings only; writable or
-  self-modifying code is refused, not tracked.
-- Single-threaded guests; `execve` successors refuse by name.
+- Straight-line code plus direct branches/calls. P1b.1 adds in-region
+  indirect jumps and calls, resolved through the dispatcher;
+  out-of-region and unsupported indirect forms refuse by name.
+- Private, non-writable source mappings only, as asserted by the
+  caller: admission checks the caller's
+  `RegionFacts::immutable_private` flag and does not read the
+  mapping's protections ([#107]). Self-modifying code is not tracked,
+  and nothing invalidates a translation when a mapping changes yet:
+  dispatch looks translations up by address ([#104]).
+- Single-threaded guests; `execve` successors refuse by name. One
+  in-process `run` at a time per host process: its signal state is
+  process-global, and a second concurrent `run` is not refused
+  ([#105]).
 - Asynchronous signals are never guest-delivered mid-cache: they
   are blocked during a run, a per-block poll stops the run with a
   recovered async outcome once one is pending, and a process with
   an installed async handler is refused at admission. This is a
-  disclosed reduction from transparent delivery, pending an
-  explicit owner scope decision. The remote ptrace substrate
+  disclosed reduction from transparent delivery, accepted for P1a
+  by the 2026-11-05 scope decision recorded in P1B-DESIGN.md
+  ([#106]). The remote ptrace substrate
   (`src/remote.rs`, P1B-DESIGN §8) additionally performs
   tested genuine delivery shapes (I1-D/I1-E, I1-F masks,
   altstack, and capped nesting, I1-G1 real-time ordering,
@@ -51,4 +60,10 @@ P1a envelope, honestly bounded:
 
 This crate makes no whole-program claim. Counting every branch on a
 real program such as `/bin/ls` is the later P1b/M4 slice and stays
-gated on the oracle suite plus adversarial review of invalidation.
+gated on the oracle suite and on the invalidation work that the
+adversarial review found missing ([#104]).
+
+[#104]: https://github.com/rrnewton/liteinst2/issues/104
+[#105]: https://github.com/rrnewton/liteinst2/issues/105
+[#106]: https://github.com/rrnewton/liteinst2/issues/106
+[#107]: https://github.com/rrnewton/liteinst2/issues/107
