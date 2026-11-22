@@ -487,7 +487,7 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
                     let mut stop = self.inner.process.hold()?;
                     stop.acknowledge_owned_signal(&signal)?;
                     let after = stop.read_registers()?;
-                    input.validate_native_completion(&after)?;
+                    input.validate_native_single_step_completion(&after)?;
                     (after, stop.read_xstate()?)
                 }
                 ProcessEvent::Signal(signal) => {

@@ -1,8 +1,11 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Four finite original-signal trajectories and a strict corruption control.
 //! Pristine expected frames never pass through production signal parsing.
+#[path = "support/host_cpuid_step.rs"]
+mod host_cpuid_step;
 #[path = "support/b3_signal/mod.rs"]
 mod oracle;
+use host_cpuid_step::require_calibrated;
 use liteinst_launch::gate::SelectedExecution;
 use liteinst_launch::selected::{
     InstructionProvider, ProviderDecision, SelectedInput, SemanticsError,
@@ -656,14 +659,26 @@ fn run_pair(trajectory: Trajectory, nonzero: Option<Metadata>, corrupt: bool) {
 
 #[test]
 fn ordinary_stack_frame_matches_pristine_original() {
+    require_calibrated(
+        &FILE_FORK,
+        "b3_signal_admission::ordinary_stack_frame_matches_pristine_original",
+    );
     run_pair(Trajectory::Ordinary, None, false);
 }
 #[test]
 fn configured_altstack_frame_matches_pristine_original() {
+    require_calibrated(
+        &FILE_FORK,
+        "b3_signal_admission::configured_altstack_frame_matches_pristine_original",
+    );
     run_pair(Trajectory::Altstack, None, false);
 }
 #[test]
 fn edited_frame_returns_to_untouched_nx_landing() {
+    require_calibrated(
+        &FILE_FORK,
+        "b3_signal_admission::edited_frame_returns_to_untouched_nx_landing",
+    );
     run_pair(Trajectory::Edited, None, false);
 }
 #[test]
@@ -674,11 +689,21 @@ fn inherited_nonzero_exception_metadata_matches_pristine_original() {
         run_pair(Trajectory::Ordinary, Some(metadata), false);
         completion.finish(metadata);
     } else {
+        // The inner run single-steps native CPUIDs with its output discarded,
+        // so the gate runs here, where a refusal keeps its name.
+        require_calibrated(
+            &FILE_FORK,
+            "b3_signal_admission::inherited_nonzero_exception_metadata_matches_pristine_original",
+        );
         let directory = Directory::new();
         predecessor::isolated(&directory.0);
     }
 }
 #[test]
 fn pristine_comparator_rejects_metadata_and_unrelated_state_corruption() {
+    require_calibrated(
+        &FILE_FORK,
+        "b3_signal_admission::pristine_comparator_rejects_metadata_and_unrelated_state_corruption",
+    );
     run_pair(Trajectory::Ordinary, None, true);
 }

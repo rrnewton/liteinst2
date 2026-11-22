@@ -622,6 +622,10 @@ fn scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions() {
 
 #[test]
 fn native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field() {
+    super::host_cpuid_step::require_calibrated(
+        &super::FILE_FORK,
+        "dynamic_admission::matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+    );
     let mut evaluation = Vec::new();
     for flags in [FLAGS_CLEAR, FLAGS_SET] {
         for kind in [
@@ -1013,6 +1017,10 @@ fn literal_first_case(kind: Kind, scripted: bool) -> EvaluationRow {
 
 #[test]
 fn literal_first_cpu_instructions_complete_once_native_and_scripted() {
+    super::host_cpuid_step::require_calibrated(
+        &super::FILE_FORK,
+        "dynamic_admission::matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+    );
     let mut evaluation = Vec::new();
     for kind in [
         Kind::Cpuid {

@@ -37,7 +37,7 @@ pub const APP_MASK: u64 = (1 << (libc::SIGUSR1 - 1)) | (1 << (libc::SIGUSR2 - 1)
 const TRACER_MASK: u64 = !((1_u64 << (libc::SIGKILL - 1)) | (1_u64 << (libc::SIGSTOP - 1)));
 pub const TIMEOUT: Duration = Duration::from_secs(3);
 static NEXT: AtomicUsize = AtomicUsize::new(0);
-static FILE_FORK: Mutex<()> = Mutex::new(());
+pub(crate) static FILE_FORK: Mutex<()> = Mutex::new(());
 
 struct Mask(u64);
 impl Mask {

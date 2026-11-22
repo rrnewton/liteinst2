@@ -748,25 +748,49 @@ fn run_failure(case: FailureCase) {
 
 #[test]
 fn admitted_exec_native_prefix_capacity_refuses_before_restore() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_prefix_capacity_refuses_before_restore",
+    );
     run_failure(FailureCase::Capacity);
 }
 #[test]
 fn admitted_exec_native_getregs_capture_failure_retains_other_reads() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_getregs_capture_failure_retains_other_reads",
+    );
     run_failure(FailureCase::Getregs);
 }
 #[test]
 fn admitted_exec_native_bootstrap_failure_retains_first_user_prefix() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_bootstrap_failure_retains_first_user_prefix",
+    );
     run_failure(FailureCase::WriteStub);
 }
 #[test]
 fn admitted_exec_native_input_bound_refuses_before_restore() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_input_bound_refuses_before_restore",
+    );
     run_failure(FailureCase::InputBound);
 }
 #[test]
 fn admitted_exec_native_source_profile_bound_refuses_after_exec() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_source_profile_bound_refuses_after_exec",
+    );
     run_failure(FailureCase::SourceBound);
 }
 #[test]
 fn admitted_exec_native_pending_flags_change_refuses_before_restore() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_pending_flags_change_refuses_before_restore",
+    );
     run_failure(FailureCase::PendingFlags);
 }

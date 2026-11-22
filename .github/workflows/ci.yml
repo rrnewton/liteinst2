@@ -90,10 +90,21 @@ jobs:
           LITEINST_CHAIN_EXTENSION_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/eviction-chain-extension-driver
           LITEINST_SYNC_CORE_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/sync-core-capability-driver
           LITEINST_T2_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/successor-eviction-oracle-driver
-        run: >
-          cargo test --locked ${{ matrix.profile == 'release' && '--release' || '' }}
-          ${{ matrix.group.packages }}
-          --all-targets --all-features
+        # --no-fail-fast: one binary's failures never hide the other binaries'
+        # results. pipefail keeps cargo's exit status through tee, so this
+        # step alone decides red or green; the log feeds the summary below.
+        run: |
+          set -o pipefail
+          cargo test --locked ${{ matrix.profile == 'release' && '--release' || '' }} \
+            ${{ matrix.group.packages }} \
+            --all-targets --all-features --no-fail-fast 2>&1 | tee "$RUNNER_TEMP/tests.log"
+      # Native-CPUID tests FAIL by name ("UNCALIBRATED HOST: ...") on a host
+      # that loses the single-step trap after CPUID (issues 112, 115). This
+      # step only counts them apart from other failures; it always exits 0
+      # and cannot turn the job green.
+      - name: Uncalibrated-host summary (${{ matrix.group.name }}, ${{ matrix.profile }})
+        if: always()
+        run: bash .github/scripts/uncalibrated-host-summary.sh "$RUNNER_TEMP/tests.log"
       - name: Verify published package consumer
         if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: |
