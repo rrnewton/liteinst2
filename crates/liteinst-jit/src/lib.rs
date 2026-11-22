@@ -19,7 +19,9 @@
 //! cache. The remote substrate (`remote`) adds the tested
 //! genuine signal-delivery shapes (P1B I1-D through I1-G2, see
 //! `P1B-DESIGN.md` §8) and stops every other shape as a
-//! recovered outcome. This crate makes no whole-program claim.
+//! recovered outcome; its ptrace, cross-process memory and wait
+//! requests go through the tracee seam (`tracee`). This crate
+//! makes no whole-program claim.
 #![deny(unsafe_op_in_unsafe_fn)]
 
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -38,6 +40,7 @@ pub mod recovery;
 pub mod refuse;
 pub mod remote;
 pub mod state;
+pub mod tracee;
 pub mod translate;
 pub mod types;
 
