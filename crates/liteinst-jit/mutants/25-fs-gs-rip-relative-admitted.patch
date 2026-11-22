@@ -1,0 +1,14 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -351,9 +351,8 @@
+             }) {
+                 return Err(FS_GS_ON_STRING);
+             }
+-            if ins.is_ip_rel_memory_operand() {
+-                return Err(FS_GS_RIP_RELATIVE);
+-            }
++            // MUTANT 25: FS/GS on a RIP-relative operand is no longer refused.
++            let _ = FS_GS_RIP_RELATIVE;
+             Ok(Some(seg))
+         }
+         _ => Err(SEGMENT_OVERRIDE_UNKNOWN),

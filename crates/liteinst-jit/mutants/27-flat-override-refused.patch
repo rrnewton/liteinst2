@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -333,7 +333,8 @@
+ fn admitted_segment_override(ins: &Instruction) -> Result<Option<Register>, &'static str> {
+     let seg = ins.segment_prefix();
+     match seg {
+-        Register::None | Register::ES | Register::CS | Register::SS | Register::DS => Ok(None),
++        // MUTANT 27: ES, CS, SS and DS overrides are refused again.
++        Register::None => Ok(None),
+         Register::FS | Register::GS => {
+             if (0..ins.op_count()).any(|i| {
+                 matches!(

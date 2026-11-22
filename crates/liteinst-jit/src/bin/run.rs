@@ -34,7 +34,8 @@ fn main() -> std::process::ExitCode {
             | "rep_stosb_partial"
             | "rip_store_fault"
             | "fault_before_branch"
-            | "ind_fault_mem" => "FAULT",
+            | "ind_fault_mem"
+            | "seg_gs_fault" => "FAULT",
             _ => "OK",
         };
         let mut exec =
