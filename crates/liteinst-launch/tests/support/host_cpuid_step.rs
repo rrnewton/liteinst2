@@ -3,14 +3,17 @@
 //! Some hosted virtual machines emulate CPUID without delivering the pending
 //! single-step trap, so the next instruction also retires before the trace
 //! stop (issues 112 and 115). A native CPUID completion cannot be verified
-//! on such a host. Every test that single-steps a native CPUID calls
-//! [`require_calibrated`] as its first line. On a calibrated host it returns
-//! and the test runs unchanged; on an uncalibrated host the test FAILS by
-//! name. No environment variable or feature changes either outcome, and a
-//! probe that cannot run is a hard failure, never "uncalibrated".
+//! on such a host. Each test that single-steps a native CPUID calls
+//! [`require_calibrated`] as its first line, whether it steps the CPUID
+//! through a validated selected completion (the static and dynamic selected
+//! gates), through the reference page gate, or directly. On a calibrated
+//! host it returns and the test runs unchanged; on an uncalibrated host the
+//! test FAILS by name. No environment variable or feature changes either
+//! outcome, and a probe that cannot run is a hard failure, never
+//! "uncalibrated".
 
 use std::io;
-use std::sync::{Mutex, OnceLock, PoisonError};
+use std::sync::{Mutex, OnceLock, PoisonError, RwLock};
 use std::time::{Duration, Instant};
 
 /// Single-steps the probe makes, once per test binary.
@@ -128,16 +131,41 @@ pub fn classify(stops: &[StepStop]) -> ProbeResult {
     }
 }
 
+/// A test binary's own fork lock, held only while the probe forks, so the
+/// child inherits no concurrent fixture's writable executable descriptor.
+pub trait ForkLock {
+    /// Holds the lock in the mode the binary's own forks use.
+    fn hold_for_fork(&self) -> Box<dyn Held + '_>;
+}
+
+/// Any lock guard; dropping it releases the lock.
+pub trait Held {}
+impl<T> Held for T {}
+
+impl ForkLock for Mutex<()> {
+    fn hold_for_fork(&self) -> Box<dyn Held + '_> {
+        Box::new(self.lock().unwrap_or_else(PoisonError::into_inner))
+    }
+}
+
+// Launches share the lock and fixture writers hold it exclusively, so a
+// fork holds it shared, as the binary's own launches do.
+impl ForkLock for RwLock<()> {
+    fn hold_for_fork(&self) -> Box<dyn Held + '_> {
+        Box::new(self.read().unwrap_or_else(PoisonError::into_inner))
+    }
+}
+
 /// This binary's probe verdict. The probe runs at most once per binary; a
 /// probe that panics caches nothing, so every later gated test fails too.
-pub fn host_result(fork: &Mutex<()>) -> ProbeResult {
+pub fn host_result(fork: &impl ForkLock) -> ProbeResult {
     static RESULT: OnceLock<ProbeResult> = OnceLock::new();
-    *RESULT.get_or_init(|| classify(&run_probe(fork)))
+    *RESULT.get_or_init(|| classify(&record_steps(fork, 0, PROBE_STEPS)))
 }
 
 /// The first line of every test that single-steps a native CPUID. `fork` is
 /// the binary's own fork lock; `name` is `<binary>::<test path>`.
-pub fn require_calibrated(fork: &Mutex<()>, name: &str) {
+pub fn require_calibrated(fork: &impl ForkLock, name: &str) {
     require_calibrated_with(host_result(fork), name);
 }
 
@@ -158,30 +186,45 @@ pub fn require_calibrated_with(result: ProbeResult, name: &str) {
     }
 }
 
-/// Kills and reaps the probe child on every path.
-struct Traced(libc::pid_t);
+/// The probe's child. It is signalled only while still unreaped: once a wait
+/// has consumed its exit, or reports it is no longer this process's child,
+/// its pid may already belong to another process.
+struct Traced {
+    pid: libc::pid_t,
+    reaped: bool,
+}
 
 impl Drop for Traced {
     fn drop(&mut self) {
-        // SAFETY: plain syscalls on this probe's own unreaped child.
-        unsafe { libc::kill(self.0, libc::SIGKILL) };
+        if self.reaped {
+            return;
+        }
+        // SAFETY: this probe's own child, not yet reaped, so the pid is ours.
+        unsafe { libc::kill(self.pid, libc::SIGKILL) };
         loop {
             let mut status = 0;
-            let waited = unsafe { libc::waitpid(self.0, &raw mut status, libc::__WALL) };
-            if waited == self.0 && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
+            let waited = unsafe { libc::waitpid(self.pid, &raw mut status, libc::__WALL) };
+            if waited == self.pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
+                self.reaped = true;
                 return;
             }
             if waited < 0 && io::Error::last_os_error().kind() != io::ErrorKind::Interrupted {
+                self.reaped = true;
                 return;
             }
         }
     }
 }
 
-fn run_probe(fork: &Mutex<()>) -> Vec<StepStop> {
+/// Single-steps a fresh traced child `steps` times, each from the probe's
+/// address plus `start_offset`, and records every stop as an offset from
+/// the probe's address. It never panics: a failure is recorded as
+/// [`StepStop::Failed`] and ends the record. The child is killed and reaped
+/// on every path, and never signalled once reaped.
+pub fn record_steps(fork: &impl ForkLock, start_offset: u64, steps: usize) -> Vec<StepStop> {
     // The binary's fork lock keeps writable executable descriptors of
     // concurrent fixtures out of the child, as for every other fork here.
-    let guard = fork.lock().unwrap_or_else(PoisonError::into_inner);
+    let guard = fork.hold_for_fork();
     // SAFETY: the child calls only async-signal-safe functions and never
     // returns into Rust code.
     let pid = unsafe { libc::fork() };
@@ -200,9 +243,9 @@ fn run_probe(fork: &Mutex<()>) -> Vec<StepStop> {
             io::Error::last_os_error()
         ))];
     }
-    let child = Traced(pid);
-    let mut stops = Vec::with_capacity(PROBE_STEPS);
-    match wait_stop(pid) {
+    let mut child = Traced { pid, reaped: false };
+    let mut stops = Vec::with_capacity(steps);
+    match wait_stop(&mut child) {
         Ok(libc::SIGSTOP) => {}
         Ok(signal) => stops.push(StepStop::Failed(format!(
             "initial stop by signal {signal}, not SIGSTOP"
@@ -213,8 +256,8 @@ fn run_probe(fork: &Mutex<()>) -> Vec<StepStop> {
         let base = liteinst_cpuid_step_probe as *const () as u64;
         match get_registers(pid) {
             Ok(initial) => {
-                for _ in 0..PROBE_STEPS {
-                    let stop = step_once(pid, &initial, base)
+                for _ in 0..steps {
+                    let stop = step_once(&mut child, &initial, base, start_offset)
                         .map_or_else(StepStop::Failed, |offset| StepStop::Trace { offset });
                     let failed = matches!(stop, StepStop::Failed(_));
                     stops.push(stop);
@@ -230,9 +273,15 @@ fn run_probe(fork: &Mutex<()>) -> Vec<StepStop> {
     stops
 }
 
-fn step_once(pid: libc::pid_t, initial: &libc::user_regs_struct, base: u64) -> Result<u64, String> {
+fn step_once(
+    child: &mut Traced,
+    initial: &libc::user_regs_struct,
+    base: u64,
+    start_offset: u64,
+) -> Result<u64, String> {
+    let pid = child.pid;
     let mut registers = *initial;
-    registers.rip = base;
+    registers.rip = base + start_offset;
     registers.rax = 0;
     registers.rcx = 0;
     // No syscall-restart adjustment may move the new rip.
@@ -244,7 +293,7 @@ fn step_once(pid: libc::pid_t, initial: &libc::user_regs_struct, base: u64) -> R
     if unsafe { libc::ptrace(libc::PTRACE_SINGLESTEP, pid, NULL, NULL) } != 0 {
         return Err(format!("PTRACE_SINGLESTEP: {}", io::Error::last_os_error()));
     }
-    let signal = wait_stop(pid)?;
+    let signal = wait_stop(child)?;
     if signal != libc::SIGTRAP {
         return Err(format!(
             "single-step stopped by signal {signal}, not SIGTRAP"
@@ -269,8 +318,11 @@ fn get_registers(pid: libc::pid_t) -> Result<libc::user_regs_struct, String> {
     Ok(registers)
 }
 
-/// The stopping signal of the child's next stop, within a bounded wait.
-fn wait_stop(pid: libc::pid_t) -> Result<i32, String> {
+/// The stopping signal of the child's next stop, within a bounded wait. A
+/// wait that consumes the child's exit, or finds it is no longer this
+/// process's child, marks it reaped so it is never signalled.
+fn wait_stop(child: &mut Traced) -> Result<i32, String> {
+    let pid = child.pid;
     let until = Instant::now() + STOP_DEADLINE;
     loop {
         let mut status = 0;
@@ -280,12 +332,16 @@ fn wait_stop(pid: libc::pid_t) -> Result<i32, String> {
             if libc::WIFSTOPPED(status) {
                 return Ok(libc::WSTOPSIG(status));
             }
+            child.reaped = true;
             return Err(format!(
                 "child left without a stop: wait status {status:#x}"
             ));
         }
         if waited < 0 {
             let error = io::Error::last_os_error();
+            if error.raw_os_error() == Some(libc::ECHILD) {
+                child.reaped = true;
+            }
             if error.kind() != io::ErrorKind::Interrupted {
                 return Err(format!("waitpid: {error}"));
             }

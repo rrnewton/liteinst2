@@ -95,6 +95,18 @@ fn host_probe_positive_control() {
         "host_cpuid_step_gate::host_probe_positive_control",
     );
     let result = host_cpuid_step::host_result(&FILE_FORK);
+    // Printed only with --nocapture; libtest hides a passing test's output.
     println!("host cpuid step probe: {result}");
     assert_eq!(result, ProbeResult::Calibrated { steps: PROBE_STEPS });
+}
+
+#[test]
+fn host_probe_measures_one_retired_nop_as_plus_three() {
+    // Live negative control of the measurement: one single-step from +2, the
+    // first nop, stops at +3, the offset a trap lost after CPUID reports.
+    // Unlike CPUID, a nop never leaves the guest, so this holds on every host.
+    assert_eq!(
+        host_cpuid_step::record_steps(&FILE_FORK, DELIVERED_OFFSET, 1),
+        vec![trace(DELIVERED_OFFSET + 1)]
+    );
 }
