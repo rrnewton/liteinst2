@@ -21,6 +21,14 @@ Patch SHA-256 are printed by the script at every run and were re-verified at thi
 applied, because the missing-credit decision now sits above its
 context, so it was regenerated with the same two inserted lines.
 
+Mutant 03 stopped applying when generation events replaced the
+executable's `valid` flag. It was regenerated for the new mechanism,
+with the same defect: `Executable::invalidate` drops its index records
+but leaves the executable running its old translation. Its kill
+is now the O1 test's invalidation assertion, `must refuse
+UnmappedCode`. The receipt for the regenerated mutant is in that
+change's own evidence. The table below records the `bedcc8aa` run.
+
 The five mutants were run against `bedcc8aa` (`217aaf7b` plus docs),
 each on its own `git archive` copy with its own target directory,
 under this script's criteria: the full debug suite, the named
@@ -79,7 +87,7 @@ other 25 mutants are unchanged and compile; their chains were not re-run.
 |---|---|---|---|
 | `01-pending-credit-loss` | Recovery drops the pending branch credit at stub boundaries before the credit store | `branch_stub_credit_timing_and_spill_recovery` FAILED: `retired branch credited exactly once` | green |
 | `02-missing-fallthrough-credit` | Jcc fallthrough edge bypasses its count stub | Two invocations prove different things: (1) the full-suite `run.sh` stops first at `tests/custody.rs:89` (`sum_loop: branches`, 1 vs 17) in the custody Ok test — that is this script's kill evidence, **not** O1 evidence; (2) a separate targeted invocation with only this mutant applied, `cargo test --locked -p liteinst-jit --test o1_compare`, FAILED at `tests/o1_compare.rs:117` (`sum_loop: branches`, 1 vs 17, rc 101) — that is the O1 kill evidence. The targeted patch was reversed and the tree verified clean before the full script ran. | green |
-| `03-disabled-invalidation` | `Executable::invalidate` leaves the executable runnable | O1 integration FAILED: expected `StaleGeneration` refusal | green |
+| `03-disabled-invalidation` | `Executable::invalidate` leaves the executable runnable | O1 integration FAILED: expected `StaleGeneration` refusal (this `bedcc8aa` run; since the generation change, the kill is `must refuse UnmappedCode`, see the note above) | green |
 | `04-cache-pc-fault` | Fault reports the raw generated PC | O1 integration FAILED at the checked range assertion (`pc … outside source range from …`), before offset comparison — no subtraction overflow | green |
 | `05-before-retirement-emission` | Branch credit emitted at block entry (successor stubs credit a dead field) | O1 integration FAILED: `fault_before_branch branches` left 1, right 0 — a fault before the branch must not credit it | green |
 

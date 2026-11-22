@@ -25,10 +25,10 @@ use crate::state::{
     ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
 use crate::translate::{
-    ExitStyle, TranslateOptions, Translation, translate, translate_roots_with_options,
-    translate_with_options,
+    ExitStyle, TranslateOptions, Translation, discover_roots_excluding, translate,
+    translate_blocks, translate_with_options,
 };
-use crate::types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
+use crate::types::{CacheKey, CountProfile, Generation, MappingEvent, RegionFacts, byte_hash};
 
 pub const CODE_CAP: usize = 1 << 18;
 /// Block entries between pending-signal polls (progress bound).
@@ -139,6 +139,19 @@ pub trait Handler {
         _next_pc: u64,
     ) -> Result<Resume, Refuse> {
         Err(Refuse::NoHandler { src_pc: insn_pc })
+    }
+    /// Mapping changes made or observed while serving the exit just
+    /// returned, as the caller classifies them (this crate never
+    /// interprets the system call). The dispatcher takes them after
+    /// every `syscall` or `nondet` call, also when that call returned
+    /// `Err` (a change already made to guest memory stays made), and
+    /// applies them before the guest resumes or the error returns.
+    /// The batch is applied all or none (a batch with a region event
+    /// that is not strictly newer admits no snapshot, makes every range
+    /// it names a hole, and refuses `StaleGeneration`; see
+    /// [`MappingEvent`]). The default reports none.
+    fn take_mapping_events(&mut self) -> Vec<MappingEvent> {
+        Vec::new()
     }
 }
 
@@ -983,7 +996,14 @@ pub struct Executable {
     index: CacheIndex,
     data: *mut JitData,
     profile: CountProfile,
-    valid: bool,
+    /// The generation the live translation was built under. When it
+    /// differs from `region.generation`, the next entry into the cache
+    /// retranslates first (`entry_for`).
+    stamp: Generation,
+    /// Ranges reported unmapped (`MappingEvent` without a region):
+    /// never translated, and control that reaches one refuses
+    /// `UnmappedCode`.
+    holes: Vec<(u64, u64)>,
     /// The translation carries budget stubs (`prepare_budgeted`).
     rcb_budget: bool,
     /// The budget run in progress, if any (`run_budgeted`).
@@ -1113,7 +1133,8 @@ impl Executable {
             index,
             data: data_addr as *mut JitData,
             profile,
-            valid: true,
+            stamp: region.generation,
+            holes: Vec::new(),
             rcb_budget,
             budget_run: None,
             #[cfg(feature = "test-seams")]
@@ -1143,10 +1164,13 @@ impl Executable {
     /// seeded on every entry, so the fresh data page needs no copy.
     fn retranslate(&mut self, roots: BTreeSet<u64>) -> Result<(), Refuse> {
         let mut arena = Arena::new()?;
-        let translation = translate_roots_with_options(
+        // The current snapshot and holes, never the prepare-time
+        // ones: after a mapping event this re-emits the new bytes.
+        let blocks = discover_roots_excluding(&self.region, &roots, &self.holes)?;
+        let translation = translate_blocks(
             &self.region,
             self.entry,
-            &roots,
+            blocks,
             self.profile,
             arena.base as u64,
             arena.data_addr(),
@@ -1162,6 +1186,7 @@ impl Executable {
         self.translation = translation;
         self.index = index;
         self.roots = roots;
+        self.stamp = self.region.generation;
         self.retranslations += 1;
         Ok(())
     }
@@ -1310,18 +1335,120 @@ impl Executable {
         &self.translation
     }
 
-    /// Invalidate overlapping entries and advance the generation.
-    /// After any invalidation the executable refuses to run: P1a
-    /// eviction is flush-and-reprepare, never patch-in-place.
+    /// The executable's current generation: the admitted snapshot's.
+    pub fn generation(&self) -> Generation {
+        self.region.generation
+    }
+
+    /// Report `[src_start, src_end)` unmapped under `new_generation`
+    /// (strictly newer), from outside a run: the same as a
+    /// `MappingEvent` without a region. Returns the number of index
+    /// records dropped. The next entry into the cache retranslates,
+    /// and control that reaches the range refuses `UnmappedCode`.
     pub fn invalidate(
         &mut self,
         src_start: u64,
         src_end: u64,
         new_generation: Generation,
     ) -> Result<usize, Refuse> {
-        let n = self.index.invalidate(src_start, src_end, new_generation)?;
-        self.valid = false;
-        Ok(n)
+        self.apply_event(src_start, src_end, None, Some(new_generation))
+    }
+
+    /// Apply the caller's mapping events as one batch (one global
+    /// generation; flush on any event: the live translation is
+    /// rebuilt at the next entry into the cache).
+    ///
+    /// All or none: the batch is checked first. Each region event must
+    /// carry a generation strictly newer than the one before it (a
+    /// hole event advances by one). If any does not, no snapshot in
+    /// the batch is admitted, every range the batch names becomes a
+    /// hole (guest memory there may have changed in ways the report
+    /// does not describe, so none of it may run from an old
+    /// translation), and the batch refuses `StaleGeneration`. A later
+    /// event with a valid snapshot re-admits a range, but such an event
+    /// arrives only through a handler exit. When the holes cover the
+    /// entry, every later run refuses `UnmappedCode` at the entry before
+    /// any exit, so that executable cannot recover; prepare a new one.
+    fn apply_mapping_events(&mut self, events: Vec<MappingEvent>) -> Result<(), Refuse> {
+        let mut last = self.region.generation;
+        let mut refusal = None;
+        for ev in &events {
+            match &ev.region {
+                Some(r) if r.generation <= last => {
+                    refusal = Some(Refuse::StaleGeneration {
+                        expected: last.next().0,
+                        found: r.generation.0,
+                    });
+                    break;
+                }
+                Some(r) => last = r.generation,
+                None => last = last.next(),
+            }
+        }
+        if let Some(refusal) = refusal {
+            for ev in &events {
+                self.apply_event(ev.start, ev.end, None, None)?;
+            }
+            return Err(refusal);
+        }
+        for ev in events {
+            self.apply_event(ev.start, ev.end, ev.region, None)?;
+        }
+        Ok(())
+    }
+
+    /// One event. The generation check is the index's: a generation
+    /// that is not strictly newer refuses `StaleGeneration`.
+    fn apply_event(
+        &mut self,
+        start: u64,
+        end: u64,
+        region: Option<RegionFacts>,
+        generation: Option<Generation>,
+    ) -> Result<usize, Refuse> {
+        let next = match (&region, generation) {
+            (Some(r), _) => r.generation,
+            (None, Some(g)) => g,
+            (None, None) => self.region.generation.next(),
+        };
+        let dropped = self.index.invalidate(start, end, next)?;
+        match region {
+            Some(r) => {
+                // The fresh snapshot re-admits whatever it covers.
+                self.holes.retain(|&(s, e)| !(s < r.end() && r.base < e));
+                self.roots.retain(|&p| r.contains(p));
+                self.region = r;
+            }
+            None => {
+                self.region.generation = next;
+                self.holes.push((start, end));
+                self.roots.retain(|&p| !(start <= p && p < end));
+            }
+        }
+        Ok(dropped)
+    }
+
+    /// The generated entry for source `pc`, valid under the current
+    /// generation: control into a hole refuses `UnmappedCode`, and a
+    /// translation built under an older generation is rebuilt from
+    /// the current snapshot first. Every dispatcher entry goes
+    /// through here, so a saved PC (a return address, a resume PC) is
+    /// revalidated when it is used, never trusted by address.
+    fn entry_for(&mut self, pc: u64) -> Result<u64, Refuse> {
+        if self.holes.iter().any(|&(s, e)| s <= pc && pc < e) {
+            return Err(Refuse::UnmappedCode {
+                src_pc: pc,
+                generation: self.region.generation.0,
+            });
+        }
+        if self.stamp != self.region.generation {
+            self.retranslate(self.roots.clone())?;
+        }
+        self.translation
+            .block_gen
+            .get(&pc)
+            .copied()
+            .ok_or(Refuse::IndirectUnresolved { src_pc: pc })
     }
 
     /// Run from `state.rip` until a return pops `return_sentinel`, a
@@ -1363,13 +1490,9 @@ impl Executable {
         mem: &dyn GuestMemory,
         return_sentinel: u64,
     ) -> Result<Outcome, RunError> {
-        if !self.valid {
-            return Err(Refuse::StaleGeneration {
-                expected: self.index.generation().0,
-                found: self.index.generation().0,
-            }
-            .into());
-        }
+        // No generation check here: a translation older than the
+        // current generation is rebuilt at the first entry
+        // (`entry_for`), and a hole refuses `UnmappedCode` there.
         // A budgeted translation always decrements the budget; run
         // without one, it would wrap below zero and never stop.
         if self.rcb_budget && self.budget_run.is_none() {
@@ -1554,14 +1677,16 @@ impl Executable {
                 let out = outcome_at(state, tot_branches, tot_instructions, exits);
                 return self.budget_finish(BudgetEnd::Landed, out);
             }
-            let Some(&gen_entry) = self.translation.block_gen.get(&state.rip) else {
-                let refusal = Refuse::IndirectUnresolved { src_pc: state.rip };
-                if self.budget_run.is_some() {
-                    let at = state.rip;
-                    let out = outcome_at(state, tot_branches, tot_instructions, exits);
-                    return self.budget_finish(BudgetEnd::Handoff { refusal, at }, out);
+            let gen_entry = match self.entry_for(state.rip) {
+                Ok(g) => g,
+                Err(refusal) => {
+                    if self.budget_run.is_some() {
+                        let at = state.rip;
+                        let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                        return self.budget_finish(BudgetEnd::Handoff { refusal, at }, out);
+                    }
+                    return Err(refusal.into());
                 }
-                return Err(refusal.into());
             };
             let seeded_poll = poll_remaining;
             let seeded_budget = self.budget_run.as_ref().map_or(0, |b| b.remaining);
@@ -1799,7 +1924,13 @@ impl Executable {
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;
                     syscall_guard(&self.translation, data.exit_src, state.rax)?;
-                    let resume = handler.syscall(&mut state, data.exit_src, data.exit_next)?;
+                    let served = handler.syscall(&mut state, data.exit_src, data.exit_next);
+                    // Before the guest resumes, and also when the handler
+                    // refuses: a change it made to guest memory stays made,
+                    // so the next entry must revalidate either way.
+                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                    let resume = served?;
+                    applied?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {
@@ -1829,7 +1960,11 @@ impl Executable {
                         .ok_or(Refuse::NoHandler {
                             src_pc: data.exit_src,
                         })?;
-                    let resume = handler.nondet(&mut state, kind, data.exit_src, data.exit_next)?;
+                    let served = handler.nondet(&mut state, kind, data.exit_src, data.exit_next);
+                    // As in the SYSCALL arm: applied even when refused.
+                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                    let resume = served?;
+                    applied?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {

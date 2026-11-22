@@ -57,8 +57,27 @@ pub enum Refuse {
     Arch { what: &'static str },
     /// Invalid or truncated instruction bytes at the source PC.
     Decode { src_pc: u64 },
-    /// A cache entry was offered under a superseded generation.
+    /// A cache entry, or a mapping event, was offered under a
+    /// superseded generation: `expected` is the oldest generation that
+    /// would have been accepted when it was offered, `found` the one
+    /// offered. A refused event batch still moves the executable on
+    /// (its ranges become holes), so afterwards even `expected` is
+    /// no longer accepted.
     StaleGeneration { expected: u64, found: u64 },
+    /// Control reached, or a direct edge leads into, a range the
+    /// caller reported unmapped (a `MappingEvent` without a region),
+    /// under the executable's `generation`. Nothing in the range runs.
+    ///
+    /// `src_pc` names what reaches the hole, which need not be where
+    /// the guest stopped:
+    /// - at a dispatcher entry, the entry PC itself;
+    /// - while a translation is rebuilt, the branch, root or instruction
+    ///   in its reach that leads into the hole, anywhere in that reach;
+    /// - for a resolved indirect jump or call, its in-hole target.
+    ///
+    /// The guest is left with the state before the dispatcher entry or
+    /// the stopping instruction (its own `rip`), never past it.
+    UnmappedCode { src_pc: u64, generation: u64 },
     /// The remote (ptrace) substrate could not complete the named
     /// operation; the guest was left stopped or terminated, never
     /// resumed on partial state.
@@ -96,6 +115,7 @@ impl Refuse {
             | Refuse::BudgetExceeded { .. }
             | Refuse::Decode { .. }
             | Refuse::StaleGeneration { .. }
+            | Refuse::UnmappedCode { .. }
             | Refuse::RcbBudget { .. }
             | Refuse::CodeInstall { .. } => "R-CODE",
             Refuse::NoHandler { .. } => "R-INSTR",

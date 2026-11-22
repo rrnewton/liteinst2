@@ -1,0 +1,15 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index fc64b5a1..ed606740 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1916,8 +1916,9 @@ impl Executable {
+                     // Before the guest resumes, and also when the handler
+                     // refuses: a change it made to guest memory stays made,
+                     // so the next entry must revalidate either way.
+-                    let applied = self.apply_mapping_events(handler.take_mapping_events());
++                    // MUTANT 25f: a handler Err returns before the events.
+                     let resume = served?;
++                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                     applied?;
+                     tot_instructions += 1;
+                     match resume {

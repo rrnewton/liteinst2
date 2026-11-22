@@ -45,6 +45,9 @@ struct JitResult {
     stack_top: u64,
     dst_ptr: u64,
     ranges: [(u64, u64); 4],
+    /// The executable's retranslations and generation after the run.
+    retranslations: u64,
+    generation: Generation,
 }
 
 fn ranges_of(base: u64, data: u64, dst: u64, src: u64, buf_len: u64) -> [(u64, u64); 4] {
@@ -74,11 +77,24 @@ fn run_jit_bytes(
     use_args: bool,
     tweak: impl FnOnce(&mut GuestState),
 ) -> JitResult {
+    run_jit_bytes_prep(name, bytes, use_args, tweak, |_, _| {})
+}
+
+/// As `run_jit_bytes`, with `prep` applied to the prepared executable
+/// (given the guest base) before the run.
+fn run_jit_bytes_prep(
+    name: &str,
+    bytes: &[u8],
+    use_args: bool,
+    tweak: impl FnOnce(&mut GuestState),
+    prep: impl FnOnce(&mut Executable, u64),
+) -> JitResult {
     let guest = MappedGuest::map(bytes).expect("map");
     guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
     let region = guest.region(bytes, Generation(1));
     let mut exec = Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions)
         .expect("prepare");
+    prep(&mut exec, guest.base);
     let data: Vec<u64> = (0..16).collect();
     let mut dst = vec![0u8; 8192];
     let src: Vec<u8> = (0..8192u32).map(|i| i as u8).collect();
@@ -129,6 +145,8 @@ fn run_jit_bytes(
         stack_top: guest.stack_top(),
         dst_ptr: guarded.as_ref().map_or(dst.as_ptr() as u64, |g| g.ptr),
         ranges,
+        retranslations: exec.retranslations(),
+        generation: exec.generation(),
     }
 }
 
@@ -669,7 +687,8 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             Err(RunError::Refuse(Refuse::IndirectUnresolved { .. }))
         ));
     }
-    // Invalidation: after invalidate(), running refuses stale.
+    // Invalidation: a run ENTERING the invalidated range refuses by
+    // name (`UnmappedCode`, never the stale translation).
     {
         let fixture = fixtures::by_name("sum_loop");
         let guest = MappedGuest::map(&fixture.bytes).expect("map");
@@ -683,10 +702,47 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         let state = guest.initial_state();
         let mut handler = CaptureHandler::default();
         let r = exec.run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL);
-        assert!(matches!(
-            r,
-            Err(RunError::Refuse(Refuse::StaleGeneration { .. }))
-        ));
+        let entry = guest.base;
+        assert!(
+            matches!(
+                r,
+                Err(RunError::Refuse(Refuse::UnmappedCode { src_pc, generation: 2 })) if src_pc == entry
+            ),
+            "invalidate: a run entering the range must refuse UnmappedCode, got {r:?}"
+        );
+    }
+    // Invalidation outside the code the run reaches: the run
+    // retranslates once under the new generation and still matches
+    // O1 exactly.
+    {
+        let bytes = fixtures::by_name("sum_loop").bytes;
+        assert!(
+            bytes.len() < 0x800,
+            "sum_loop must not reach the invalidated range"
+        );
+        let jr = run_jit_bytes_prep(
+            "sum_loop",
+            &bytes,
+            true,
+            |_| {},
+            |exec, base| {
+                exec.invalidate(base + 0x800, base + 0x1000, Generation(2))
+                    .expect("invalidate");
+            },
+        );
+        assert_eq!(
+            jr.retranslations, 1,
+            "invalidate: want one retranslation before the run"
+        );
+        assert_eq!(jr.generation, Generation(2));
+        let out = jr
+            .outcome
+            .as_ref()
+            .unwrap_or_else(|e| panic!("sum_loop after invalidate: {e:?}"))
+            .clone();
+        let o1 = deadline::o1(CHILD, "sum_loop", |_, _| {});
+        assert_eq!(o1.fault, None, "sum_loop: oracle faulted");
+        assert_full_state("sum_loop after invalidate", &out, &jr, &o1);
     }
     // R5 progress bound: a pending async signal stops a long
     // in-cache loop at a poll exit instead of being deferred
@@ -1192,6 +1248,8 @@ fn ret_remap_matches_o1_or_refuses() {
             src.as_ptr() as u64,
             8192,
         ),
+        retranslations: exec.retranslations(),
+        generation: exec.generation(),
     };
     let o1 = deadline::o1(CHILD, name, |_, _| {});
     assert_eq!(o1.fault, None, "{name}: oracle faulted");
