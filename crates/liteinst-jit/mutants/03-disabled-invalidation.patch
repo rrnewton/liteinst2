@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index a302c1e4..2cc15066 100644
+index 34896239..3fff1754 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1333,7 +1333,8 @@ impl Executable {
+@@ -1339,7 +1339,8 @@ impl Executable {
          src_end: u64,
          new_generation: Generation,
      ) -> Result<usize, Refuse> {
@@ -11,4 +11,4 @@ index a302c1e4..2cc15066 100644
 +        self.index.invalidate(src_start, src_end, new_generation)
      }
  
-     /// Apply the caller's mapping events in order (one global
+     /// Apply the caller's mapping events as one batch (one global

@@ -55,8 +55,17 @@ pub enum Refuse {
     StaleGeneration { expected: u64, found: u64 },
     /// Control reached, or a direct edge leads into, a range the
     /// caller reported unmapped (a `MappingEvent` without a region),
-    /// under the executable's `generation`. Nothing in the range runs;
-    /// the guest is left at `src_pc` with the state before it.
+    /// under the executable's `generation`. Nothing in the range runs.
+    ///
+    /// `src_pc` names what reaches the hole, which need not be where
+    /// the guest stopped:
+    /// - at a dispatcher entry, the entry PC itself;
+    /// - while a translation is rebuilt, the branch, root or instruction
+    ///   in its reach that leads into the hole, anywhere in that reach;
+    /// - for a resolved indirect jump or call, its in-hole target.
+    ///
+    /// The guest is left with the state before the dispatcher entry or
+    /// the stopping instruction (its own `rip`), never past it.
     UnmappedCode { src_pc: u64, generation: u64 },
     /// The remote (ptrace) substrate could not complete the named
     /// operation; the guest was left stopped or terminated, never

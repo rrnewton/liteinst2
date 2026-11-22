@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index a302c1e4..44fb2717 100644
+index 34896239..8892d5eb 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1390,7 +1390,8 @@ impl Executable {
+@@ -1426,7 +1426,8 @@ impl Executable {
                  generation: self.region.generation.0,
              });
          }

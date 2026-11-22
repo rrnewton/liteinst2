@@ -1,0 +1,15 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index 34896239..5978246d 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1947,8 +1947,9 @@ impl Executable {
+                         })?;
+                     let served = handler.nondet(&mut state, kind, data.exit_src, data.exit_next);
+                     // As in the SYSCALL arm: applied even when refused.
+-                    let applied = self.apply_mapping_events(handler.take_mapping_events());
++                    // MUTANT 25h: a handler Err returns before the events.
+                     let resume = served?;
++                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                     applied?;
+                     tot_instructions += 1;
+                     match resume {

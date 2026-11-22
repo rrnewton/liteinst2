@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index a302c1e4..93b82c22 100644
+index 34896239..915b9ff4 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1180,7 +1180,7 @@ impl Executable {
+@@ -1186,7 +1186,7 @@ impl Executable {
          self.translation = translation;
          self.index = index;
          self.roots = roots;

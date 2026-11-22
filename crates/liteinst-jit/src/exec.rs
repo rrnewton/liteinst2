@@ -142,8 +142,14 @@ pub trait Handler {
     }
     /// Mapping changes made or observed while serving the exit just
     /// returned, as the caller classifies them (this crate never
-    /// interprets the system call). The dispatcher applies them before
-    /// the guest resumes. The default reports none.
+    /// interprets the system call). The dispatcher takes them after
+    /// every `syscall` or `nondet` call, also when that call returned
+    /// `Err` (a change already made to guest memory stays made), and
+    /// applies them before the guest resumes or the error returns.
+    /// The batch is applied all or none (a batch with a region event
+    /// that is not strictly newer admits no snapshot, makes every range
+    /// it names a hole, and refuses `StaleGeneration`; see
+    /// [`MappingEvent`]). The default reports none.
     fn take_mapping_events(&mut self) -> Vec<MappingEvent> {
         Vec::new()
     }
@@ -1336,10 +1342,40 @@ impl Executable {
         self.apply_event(src_start, src_end, None, Some(new_generation))
     }
 
-    /// Apply the caller's mapping events in order (one global
+    /// Apply the caller's mapping events as one batch (one global
     /// generation; flush on any event: the live translation is
     /// rebuilt at the next entry into the cache).
+    ///
+    /// All or none: the batch is checked first. Each region event must
+    /// carry a generation strictly newer than the one before it (a
+    /// hole event advances by one). If any does not, no snapshot in
+    /// the batch is admitted, every range the batch names becomes a
+    /// hole (guest memory there may have changed in ways the report
+    /// does not describe, so none of it may run from an old
+    /// translation), and the batch refuses `StaleGeneration`. A later
+    /// event with a valid snapshot re-admits a range.
     fn apply_mapping_events(&mut self, events: Vec<MappingEvent>) -> Result<(), Refuse> {
+        let mut last = self.region.generation;
+        let mut refusal = None;
+        for ev in &events {
+            match &ev.region {
+                Some(r) if r.generation <= last => {
+                    refusal = Some(Refuse::StaleGeneration {
+                        expected: last.next().0,
+                        found: r.generation.0,
+                    });
+                    break;
+                }
+                Some(r) => last = r.generation,
+                None => last = last.next(),
+            }
+        }
+        if let Some(refusal) = refusal {
+            for ev in &events {
+                self.apply_event(ev.start, ev.end, None, None)?;
+            }
+            return Err(refusal);
+        }
         for ev in events {
             self.apply_event(ev.start, ev.end, ev.region, None)?;
         }
@@ -1873,10 +1909,13 @@ impl Executable {
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;
                     syscall_guard(&self.translation, data.exit_src, state.rax)?;
-                    let resume = handler.syscall(&mut state, data.exit_src, data.exit_next)?;
-                    // Before the guest resumes: a mapping change the
-                    // handler reports makes the next entry revalidate.
-                    self.apply_mapping_events(handler.take_mapping_events())?;
+                    let served = handler.syscall(&mut state, data.exit_src, data.exit_next);
+                    // Before the guest resumes, and also when the handler
+                    // refuses: a change it made to guest memory stays made,
+                    // so the next entry must revalidate either way.
+                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                    let resume = served?;
+                    applied?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {
@@ -1906,8 +1945,11 @@ impl Executable {
                         .ok_or(Refuse::NoHandler {
                             src_pc: data.exit_src,
                         })?;
-                    let resume = handler.nondet(&mut state, kind, data.exit_src, data.exit_next)?;
-                    self.apply_mapping_events(handler.take_mapping_events())?;
+                    let served = handler.nondet(&mut state, kind, data.exit_src, data.exit_next);
+                    // As in the SYSCALL arm: applied even when refused.
+                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                    let resume = served?;
+                    applied?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {

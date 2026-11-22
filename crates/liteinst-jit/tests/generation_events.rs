@@ -19,10 +19,21 @@
 //!   old code.
 //! - `whole_region_unmapped_refuses`: `invalidate` over the whole
 //!   region, then a run refuses `UnmappedCode` at the entry.
+//! - `handler_err_still_applies_events_syscall` and `_nondet`: a handler
+//!   that changes the code and then refuses still has its events
+//!   applied, so the change is not lost with the refusal.
+//! - `refused_batch_admits_nothing_and_holes_every_range`: a batch with
+//!   an event that is not strictly newer admits no snapshot; every range
+//!   it names becomes a hole, so the next run refuses instead of running
+//!   old code.
+//! - `direct_edge_into_hole_refuses_away_from_resume`: a refusal found
+//!   while rebuilding names the jump that leads into the hole, not the
+//!   PC the guest resumes at.
 //!
 //! The in-process dispatcher has process-global state, so every test
 //! holds the serial lock.
 
+use liteinst_jit::decode::NondetKind;
 use liteinst_jit::exec::{Executable, Handler, ProcessMemory, Resume, RunError};
 use liteinst_jit::harness::{MappedGuest, RETURN_SENTINEL};
 use liteinst_jit::types::{CountProfile, Generation, MappingEvent};
@@ -62,6 +73,34 @@ const JUMP_INTO: &[u8] = &[
     0xc3, // 25 ret
 ];
 const JUMP_TARGET: u64 = 0x20;
+
+/// The resume PC (+7) runs a `mov` first; the jump into the hole is at
+/// +0xc, away from where the guest resumes.
+const JUMP_AWAY: &[u8] = &[
+    0xb8, 0x27, 0x00, 0x00, 0x00, // 00 mov eax, 39 (getpid)
+    0x0f, 0x05, // 05 syscall
+    0xb8, 0x01, 0x00, 0x00, 0x00, // 07 mov eax, 1
+    0xe9, 0x0f, 0x00, 0x00, 0x00, // 0c jmp 0x20
+    0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, // 11 nop (never reached)
+    0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, // 19 nop
+    0xb8, 0x03, 0x00, 0x00, 0x00, // 20 mov eax, 3
+    0xc3, // 25 ret
+];
+const AWAY_JUMP: u64 = 0x0c;
+
+/// `rdtsc; mov eax, 1; ret`: the block at +2 starts right after the
+/// nondet exit.
+const NONDET_OLD: &[u8] = &[
+    0x0f, 0x31, // 00 rdtsc
+    0xb8, 0x01, 0x00, 0x00, 0x00, // 02 mov eax, 1
+    0xc3, // 07 ret
+];
+/// NONDET_OLD with `mov eax, 2` at +2.
+const NONDET_NEW: &[u8] = &[
+    0x0f, 0x31, // 00 rdtsc
+    0xb8, 0x02, 0x00, 0x00, 0x00, // 02 mov eax, 2
+    0xc3, // 07 ret
+];
 
 static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -114,8 +153,10 @@ struct MapHandler {
     remap_to: Option<&'static [u8]>,
     /// Unmap the code page during the syscall.
     unmap: bool,
-    /// The event reported after the syscall, once.
-    event: Option<MappingEvent>,
+    /// The events reported after the exit, once.
+    events: Vec<MappingEvent>,
+    /// After making its change, refuse the exit instead of resuming.
+    fail: bool,
     served: u32,
 }
 
@@ -125,23 +166,14 @@ impl MapHandler {
             base,
             remap_to: None,
             unmap: false,
-            event: None,
+            events: Vec::new(),
+            fail: false,
             served: 0,
         }
     }
-}
 
-impl Handler for MapHandler {
-    fn syscall(
-        &mut self,
-        state: &mut GuestState,
-        _insn_pc: u64,
-        next_pc: u64,
-    ) -> Result<Resume, Refuse> {
-        // SAFETY: getpid has no arguments and cannot fail.
-        state.rax = unsafe { libc::getpid() } as u64;
-        state.rcx = next_pc;
-        state.r11 = state.rflags;
+    /// The scripted mapping change, then resume at `next_pc` or refuse.
+    fn change(&mut self, insn_pc: u64, next_pc: u64) -> Result<Resume, Refuse> {
         if let Some(bytes) = self.remap_to.take() {
             remap(self.base, bytes);
         }
@@ -154,11 +186,42 @@ impl Handler for MapHandler {
             );
         }
         self.served += 1;
+        if self.fail {
+            return Err(Refuse::NoHandler { src_pc: insn_pc });
+        }
         Ok(Resume::At(next_pc))
+    }
+}
+
+impl Handler for MapHandler {
+    fn syscall(
+        &mut self,
+        state: &mut GuestState,
+        insn_pc: u64,
+        next_pc: u64,
+    ) -> Result<Resume, Refuse> {
+        // SAFETY: getpid has no arguments and cannot fail.
+        state.rax = unsafe { libc::getpid() } as u64;
+        state.rcx = next_pc;
+        state.r11 = state.rflags;
+        self.change(insn_pc, next_pc)
+    }
+
+    fn nondet(
+        &mut self,
+        state: &mut GuestState,
+        _kind: NondetKind,
+        insn_pc: u64,
+        next_pc: u64,
+    ) -> Result<Resume, Refuse> {
+        // A fixed timestamp: the fixture overwrites rax at once.
+        state.rax = 0;
+        state.rdx = 0;
+        self.change(insn_pc, next_pc)
     }
 
     fn take_mapping_events(&mut self) -> Vec<MappingEvent> {
-        self.event.take().into_iter().collect()
+        std::mem::take(&mut self.events)
     }
 }
 
@@ -175,11 +238,11 @@ fn prepared(bytes: &[u8]) -> (MappedGuest, Executable) {
 fn remap_handler(guest: &MappedGuest) -> MapHandler {
     let mut h = MapHandler::new(guest.base);
     h.remap_to = Some(NEW);
-    h.event = Some(MappingEvent {
+    h.events = vec![MappingEvent {
         start: guest.base,
         end: guest.base + PAGE as u64,
         region: Some(guest.region(NEW, Generation(2))),
-    });
+    }];
     h
 }
 
@@ -212,11 +275,11 @@ fn unmapped_return_refuses_inprocess() {
     let (guest, mut exec) = prepared(OLD);
     let mut h = MapHandler::new(guest.base);
     h.unmap = true;
-    h.event = Some(MappingEvent {
+    h.events = vec![MappingEvent {
         start: guest.base,
         end: guest.base + PAGE as u64,
         region: None,
-    });
+    }];
     let r = exec.run(
         guest.initial_state(),
         &mut h,
@@ -277,11 +340,11 @@ fn stale_event_refuses() {
     let _g = lock();
     let (guest, mut exec) = prepared(OLD);
     let mut h = MapHandler::new(guest.base);
-    h.event = Some(MappingEvent {
+    h.events = vec![MappingEvent {
         start: guest.base,
         end: guest.base + PAGE as u64,
         region: Some(guest.region(NEW, Generation(1))),
-    });
+    }];
     let r = exec.run(
         guest.initial_state(),
         &mut h,
@@ -323,11 +386,11 @@ fn direct_edge_into_hole_refuses() {
     let _g = lock();
     let (guest, mut exec) = prepared(JUMP_INTO);
     let mut h = MapHandler::new(guest.base);
-    h.event = Some(MappingEvent {
+    h.events = vec![MappingEvent {
         start: guest.base + JUMP_TARGET,
         end: guest.base + JUMP_INTO.len() as u64,
         region: None,
-    });
+    }];
     let r = exec.run(
         guest.initial_state(),
         &mut h,
@@ -366,6 +429,142 @@ fn whole_region_unmapped_refuses() {
         "unmapped: want UnmappedCode at the entry, got {r:?}"
     );
     assert_eq!(h.served, 0, "unmapped: nothing may run");
+}
+
+#[test]
+fn handler_err_still_applies_events_syscall() {
+    let _g = lock();
+    let (guest, mut exec) = prepared(OLD);
+    let mut h = remap_handler(&guest);
+    h.fail = true;
+    let r = exec.run(
+        guest.initial_state(),
+        &mut h,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    assert!(
+        matches!(r, Err(RunError::Refuse(Refuse::NoHandler { .. }))),
+        "the handler's own refusal must come back, got {r:?}"
+    );
+    let g = exec.generation();
+    assert_eq!(
+        g,
+        Generation(2),
+        "handler err: want the events applied (generation 2), got {g:?}"
+    );
+    assert!(
+        h.events.is_empty(),
+        "handler err: the events were not taken"
+    );
+}
+
+#[test]
+fn handler_err_still_applies_events_nondet() {
+    let _g = lock();
+    let (guest, mut exec) = prepared(NONDET_OLD);
+    let mut h = MapHandler::new(guest.base);
+    h.remap_to = Some(NONDET_NEW);
+    h.events = vec![MappingEvent {
+        start: guest.base,
+        end: guest.base + PAGE as u64,
+        region: Some(guest.region(NONDET_NEW, Generation(2))),
+    }];
+    h.fail = true;
+    let r = exec.run(
+        guest.initial_state(),
+        &mut h,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    assert!(
+        matches!(r, Err(RunError::Refuse(Refuse::NoHandler { .. }))),
+        "the handler's own refusal must come back, got {r:?}"
+    );
+    assert_eq!(h.served, 1, "the nondet exit was not served once");
+    let g = exec.generation();
+    assert_eq!(
+        g,
+        Generation(2),
+        "handler err (nondet): want the events applied (generation 2), got {g:?}"
+    );
+}
+
+#[test]
+fn refused_batch_admits_nothing_and_holes_every_range() {
+    let _g = lock();
+    let (guest, mut exec) = prepared(OLD);
+    let mut h = MapHandler::new(guest.base);
+    h.remap_to = Some(NEW);
+    let page = || MappingEvent {
+        start: guest.base,
+        end: guest.base + PAGE as u64,
+        region: Some(guest.region(NEW, Generation(2))),
+    };
+    // The second event repeats generation 2: not strictly newer.
+    h.events = vec![page(), page()];
+    let r = exec.run(
+        guest.initial_state(),
+        &mut h,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    assert!(
+        matches!(
+            r,
+            Err(RunError::Refuse(Refuse::StaleGeneration {
+                expected: 3,
+                found: 2
+            }))
+        ),
+        "refused batch: want StaleGeneration {{ expected: 3, found: 2 }}, got {r:?}"
+    );
+    // No snapshot was admitted and the page is a hole: the next run must
+    // refuse at its entry rather than run any translation of the page.
+    let mut quiet = MapHandler::new(guest.base);
+    let next = exec.run(
+        guest.initial_state(),
+        &mut quiet,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    let entry = guest.base;
+    assert!(
+        matches!(
+            next,
+            Err(RunError::Refuse(Refuse::UnmappedCode { src_pc, generation: 3 })) if src_pc == entry
+        ),
+        "refused batch: want UnmappedCode at the entry on the next run, got {next:?}"
+    );
+    assert_eq!(quiet.served, 0, "refused batch: nothing may run");
+}
+
+#[test]
+fn direct_edge_into_hole_refuses_away_from_resume() {
+    let _g = lock();
+    let (guest, mut exec) = prepared(JUMP_AWAY);
+    let mut h = MapHandler::new(guest.base);
+    h.events = vec![MappingEvent {
+        start: guest.base + JUMP_TARGET,
+        end: guest.base + JUMP_AWAY.len() as u64,
+        region: None,
+    }];
+    let r = exec.run(
+        guest.initial_state(),
+        &mut h,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    let jmp = guest.base + AWAY_JUMP;
+    let resume = guest.base + AFTER_SYSCALL;
+    assert_ne!(jmp, resume);
+    assert!(
+        matches!(
+            r,
+            Err(RunError::Refuse(Refuse::UnmappedCode { src_pc, generation: 2 })) if src_pc == jmp
+        ),
+        "hole: want UnmappedCode at the jump {jmp:#x}, not the resume PC {resume:#x}, got {r:?}"
+    );
 }
 
 /// Spawn census (I1-H H2c): this binary starts no child.

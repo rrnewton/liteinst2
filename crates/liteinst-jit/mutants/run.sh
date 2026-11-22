@@ -23,7 +23,9 @@ run_suite() {
 # crossing check; 24a/24b: a failed push write ignored) and the
 # generation mutants (25a: a stale translation used; 25b: reported
 # mapping events dropped; 25c: the stamp never updated; 25d: no hole
-# check at entry; 25e: a direct edge into a hole queued) and 03
+# check at entry; 25e: a direct edge into a hole queued; 25f/25h: a
+# handler Err skips its events, syscall/nondet; 25g: a refused batch
+# leaves no holes) and 03
 # (invalidation disabled) run only their named tests, each as
 # "binary:fn"; every listed test must show its own FAILED line (see
 # named_failures_ok). 03 names the O1 test, whose invalidation half
@@ -38,6 +40,9 @@ targets_for() {
         25c*) echo "generation_events:retranslate_after_event_keeps_generation" ;;
         25d*) echo "generation_events:unmapped_return_refuses_inprocess" ;;
         25e*) echo "generation_events:direct_edge_into_hole_refuses" ;;
+        25f*) echo "generation_events:handler_err_still_applies_events_syscall" ;;
+        25g*) echo "generation_events:refused_batch_admits_nothing_and_holes_every_range" ;;
+        25h*) echo "generation_events:handler_err_still_applies_events_nondet" ;;
         23a*) echo "indirect_resolve:push_crossing_inprocess" ;;
         23b*) echo "indirect_resolve:push_crossing_remote" ;;
         24a*) echo "indirect_resolve:push_fault_inprocess" ;;
@@ -153,6 +158,9 @@ expected_for() {
         25c*) echo "generation: want one retranslation in all" ;;
         25d*) echo "unmapped: want UnmappedCode" ;;
         25e*) echo "hole: want UnmappedCode at the jump" ;;
+        25f*) echo "handler err: want the events applied" ;;
+        25g*) echo "refused batch: want UnmappedCode" ;;
+        25h*) echo "handler err (nondet): want the events applied" ;;
         *) echo "FAILED" ;;
     esac
 }

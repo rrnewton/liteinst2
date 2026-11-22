@@ -1,0 +1,15 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index 34896239..c9be9f9d 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1371,9 +1371,7 @@ impl Executable {
+             }
+         }
+         if let Some(refusal) = refusal {
+-            for ev in &events {
+-                self.apply_event(ev.start, ev.end, None, None)?;
+-            }
++            // MUTANT 25g: a refused batch leaves no holes.
+             return Err(refusal);
+         }
+         for ev in events {

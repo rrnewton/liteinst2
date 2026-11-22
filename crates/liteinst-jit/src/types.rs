@@ -56,6 +56,12 @@ impl RegionFacts {
 /// Every event advances the executable's generation, and the live
 /// translation is rebuilt on the next transfer into the cache (one
 /// global generation, flushed on any mapping event).
+///
+/// Events reported together are applied all or none. If any region
+/// event in the batch is not strictly newer than the one before it
+/// (a hole event counts as one step), no snapshot in the batch is
+/// admitted, every range the batch names becomes a hole, and the batch
+/// refuses `Refuse::StaleGeneration`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MappingEvent {
     /// Start of the changed range.

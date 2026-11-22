@@ -1,14 +1,15 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index a302c1e4..7830fdf4 100644
+index 34896239..02fee473 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1876,7 +1876,8 @@ impl Executable {
-                     let resume = handler.syscall(&mut state, data.exit_src, data.exit_next)?;
-                     // Before the guest resumes: a mapping change the
-                     // handler reports makes the next entry revalidate.
--                    self.apply_mapping_events(handler.take_mapping_events())?;
+@@ -1913,7 +1913,9 @@ impl Executable {
+                     // Before the guest resumes, and also when the handler
+                     // refuses: a change it made to guest memory stays made,
+                     // so the next entry must revalidate either way.
+-                    let applied = self.apply_mapping_events(handler.take_mapping_events());
 +                    // MUTANT 25b: the reported events are dropped.
 +                    let _ = handler.take_mapping_events();
++                    let applied: Result<(), Refuse> = Ok(());
+                     let resume = served?;
+                     applied?;
                      tot_instructions += 1;
-                     match resume {
-                         Resume::Done => {
