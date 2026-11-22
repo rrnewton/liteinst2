@@ -360,6 +360,37 @@ fn admitted_segment_override(ins: &Instruction) -> Result<Option<Register>, &'st
     }
 }
 
+/// A 66h operand-size prefix on a near control transfer. In 64-bit
+/// mode Intel ignores it, and AMD honours it: a 16-bit target or
+/// pop, and a 2-byte displacement for rel32 forms, so even the
+/// instruction length differs. This crate decodes Intel's form
+/// (`DecoderOptions::NONE`), so on an AMD host a translated
+/// branch, exit or resolved target would silently differ from
+/// native execution. Each class refuses by name, fail-closed: every
+/// 66h in the prefix run counts, including the REX.W forms that
+/// both vendors decode alike.
+const OSZ_DIRECT_BRANCH: &str = "66h-prefixed near direct branch outside P1a envelope";
+const OSZ_RETURN: &str = "66h-prefixed near return outside P1a envelope";
+const OSZ_INDIRECT_BRANCH: &str = "66h-prefixed near indirect branch outside P1a envelope";
+
+/// Whether the legacy-prefix and REX run of the `len`-byte
+/// instruction at the start of `bytes` holds a 66h byte. The run
+/// is scanned in any order and repetition, as the decoder accepts
+/// it (a REX byte followed by a legacy prefix is ignored, but the
+/// prefix still applies).
+fn has_operand_size_prefix(bytes: &[u8], len: usize) -> bool {
+    bytes
+        .iter()
+        .take(len)
+        .take_while(|&&b| {
+            matches!(
+                b,
+                0xf0 | 0xf2 | 0xf3 | 0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 | 0x66 | 0x67
+            ) || (0x40..=0x4f).contains(&b)
+        })
+        .any(|&b| b == 0x66)
+}
+
 /// Positive admission list for Ordinary instructions: every
 /// mnemonic here has effects only on GPRs, RFLAGS, the guest
 /// stack, and ordinary memory operands, which copied native
@@ -622,6 +653,28 @@ fn admit_supported(
                     });
                 }
             }
+        }
+        InsnClass::CondBranch { .. }
+        | InsnClass::DirectJump { .. }
+        | InsnClass::DirectCall { .. }
+            if has_operand_size_prefix(bytes, d.len) =>
+        {
+            return Err(Refuse::Unrelocatable {
+                src_pc: pc,
+                reason: OSZ_DIRECT_BRANCH,
+            });
+        }
+        InsnClass::Return if has_operand_size_prefix(bytes, d.len) => {
+            return Err(Refuse::Unrelocatable {
+                src_pc: pc,
+                reason: OSZ_RETURN,
+            });
+        }
+        InsnClass::Indirect if has_operand_size_prefix(bytes, d.len) => {
+            return Err(Refuse::Unrelocatable {
+                src_pc: pc,
+                reason: OSZ_INDIRECT_BRANCH,
+            });
         }
         InsnClass::Return if !matches!(ins.code(), Code::Retnq | Code::Retnq_imm16) => {
             return Err(Refuse::Unrelocatable {
@@ -957,6 +1010,182 @@ mod tests {
         ];
         for (name, bytes, reason) in cases {
             assert_eq!(seg_refusal(bytes), Some(*reason), "{name}: refusal reason");
+        }
+    }
+
+    /// The `Unrelocatable` reason a whole-instruction decode of
+    /// `bytes` refuses with, or `None` when admitted.
+    fn control_refusal(bytes: &[u8], len: usize) -> Option<&'static str> {
+        match decode_supported(bytes, 0x1000) {
+            Ok(d) => {
+                assert_eq!(d.len, len, "{bytes:02x?}: decoded length");
+                None
+            }
+            Err(Refuse::Unrelocatable { reason, .. }) => Some(reason),
+            Err(e) => panic!("{bytes:02x?}: unexpected refusal {e:?}"),
+        }
+    }
+
+    /// Intel's decode (this crate's) and AMD's of `bytes` differ in
+    /// code or length.
+    fn vendors_differ(bytes: &[u8]) -> bool {
+        let intel = decode_one(bytes, 0x1000).unwrap().instruction;
+        let amd = Decoder::with_ip(64, bytes, 0x1000, liteinst_x86::DecoderOptions::AMD).decode();
+        intel.code() != amd.code() || intel.len() != amd.len()
+    }
+
+    /// 66h-prefixed near control transfers refuse by name, one row
+    /// per form. Each row without REX.W is one where AMD's decode
+    /// differs from the Intel decode this crate uses (checked here);
+    /// the REX.W rows decode alike on both and refuse anyway,
+    /// fail-closed. Trailing bytes are padding, never decoded.
+    #[test]
+    fn operand_size_prefixed_control_refuses_by_name() {
+        let cases: &[(&str, &[u8], usize, &str, bool)] = &[
+            (
+                "66 jmp rel32",
+                &[0x66, 0xe9, 0x10, 0, 0, 0, 0x90, 0x90],
+                6,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 jmp rel8",
+                &[0x66, 0xeb, 0x10, 0x90],
+                3,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 call rel32",
+                &[0x66, 0xe8, 0x10, 0, 0, 0, 0x90, 0x90],
+                6,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 jz rel32",
+                &[0x66, 0x0f, 0x84, 0x10, 0, 0, 0, 0x90],
+                7,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 jz rel8",
+                &[0x66, 0x74, 0x10, 0x90],
+                3,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 loop",
+                &[0x66, 0xe2, 0x10, 0x90],
+                3,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 jrcxz",
+                &[0x66, 0xe3, 0x10, 0x90],
+                3,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "rex then 66 jmp rel32",
+                &[0x48, 0x66, 0xe9, 0x10, 0, 0, 0, 0x90],
+                7,
+                OSZ_DIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 rex.w jmp rel32",
+                &[0x66, 0x48, 0xe9, 0x10, 0, 0, 0, 0x90],
+                7,
+                OSZ_DIRECT_BRANCH,
+                false,
+            ),
+            ("66 ret", &[0x66, 0xc3, 0x90], 2, OSZ_RETURN, true),
+            (
+                "66 ret imm16",
+                &[0x66, 0xc2, 0x08, 0x00, 0x90],
+                4,
+                OSZ_RETURN,
+                true,
+            ),
+            (
+                "66 jmp rax",
+                &[0x66, 0xff, 0xe0, 0x90],
+                3,
+                OSZ_INDIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 call rax",
+                &[0x66, 0xff, 0xd0, 0x90],
+                3,
+                OSZ_INDIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 jmp [rax]",
+                &[0x66, 0xff, 0x20, 0x90],
+                3,
+                OSZ_INDIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 call [rip+0x10]",
+                &[0x66, 0xff, 0x15, 0x10, 0, 0, 0, 0x90],
+                7,
+                OSZ_INDIRECT_BRANCH,
+                true,
+            ),
+            (
+                "66 rex.w jmp rax",
+                &[0x66, 0x48, 0xff, 0xe0, 0x90],
+                4,
+                OSZ_INDIRECT_BRANCH,
+                false,
+            ),
+        ];
+        for (name, bytes, len, reason, diverges) in cases {
+            assert_eq!(
+                vendors_differ(bytes),
+                *diverges,
+                "{name}: AMD vs Intel decode divergence"
+            );
+            assert_eq!(
+                control_refusal(bytes, *len),
+                Some(*reason),
+                "{name}: refusal reason"
+            );
+        }
+    }
+
+    /// Control prefixes that both vendors decode alike stay admitted:
+    /// the unprefixed forms, `bnd` (F2), `notrack` (3E), branch hints
+    /// (2E/3E on Jcc) and 67h on relative branches.
+    #[test]
+    fn vendor_neutral_control_prefixes_admitted() {
+        let cases: &[(&str, &[u8], usize)] = &[
+            ("jmp rel32", &[0xe9, 0x10, 0, 0, 0, 0x90], 5),
+            ("call rel32", &[0xe8, 0x10, 0, 0, 0, 0x90], 5),
+            ("jz rel8", &[0x74, 0x10, 0x90], 2),
+            ("ret", &[0xc3, 0x90], 1),
+            ("ret imm16", &[0xc2, 0x08, 0x00, 0x90], 3),
+            ("jmp rax", &[0xff, 0xe0, 0x90], 2),
+            ("bnd jmp rel32", &[0xf2, 0xe9, 0x10, 0, 0, 0, 0x90], 6),
+            ("bnd ret", &[0xf2, 0xc3, 0x90], 2),
+            ("notrack jmp rax", &[0x3e, 0xff, 0xe0, 0x90], 3),
+            ("hint-not-taken jz", &[0x2e, 0x74, 0x10, 0x90], 3),
+            ("hint-taken jz", &[0x3e, 0x74, 0x10, 0x90], 3),
+            ("67 jz rel8", &[0x67, 0x74, 0x10, 0x90], 3),
+            ("67 jmp rel32", &[0x67, 0xe9, 0x10, 0, 0, 0, 0x90], 6),
+        ];
+        for (name, bytes, len) in cases {
+            assert!(!vendors_differ(bytes), "{name}: vendors agree");
+            assert_eq!(control_refusal(bytes, *len), None, "{name}: admitted");
         }
     }
 
