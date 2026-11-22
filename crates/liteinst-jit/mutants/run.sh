@@ -24,8 +24,9 @@ run_suite() {
 # named_failures_ok). Empty for every other mutant. The O1 mutants
 # (20-22) run the full default suite: their kill tests are
 # src/o1.rs unit tests, which run before the integration binaries.
-# The segment-override mutants (23-29) run their named tests too;
-# "lib:path::to::fn" names a unit test of the library itself.
+# The segment-override (23-29) and 66h-prefix (30-33) mutants run
+# their named tests too; "lib:path::to::fn" names a unit test of the
+# library itself.
 targets_for() {
     case "$1" in
         08*|09*) echo "o1_compare:p1b1_indirect_matches_o1 remote_compare:p1b1_indirect_remote_matches" ;;
@@ -41,6 +42,8 @@ targets_for() {
         23*|24*|25*|26*) echo "lib:decode::tests::segment_override_refuses_by_name" ;;
         27*|28*) echo "lib:decode::tests::segment_override_admits o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
         29*) echo "lib:translate::tests::segment_prefixed_copies_keep_their_prefix o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
+        30*|31*|32*) echo "lib:decode::tests::operand_size_prefixed_control_refuses_by_name remote_compare:osz_control_refuses_in_both_modes" ;;
+        33*) echo "lib:decode::tests::operand_size_prefixed_control_refuses_by_name" ;;
         *) echo "" ;;
     esac
 }
@@ -146,6 +149,10 @@ expected_for() {
         27*) echo "segment override outside P1a envelope" ;;
         28*) echo "non-GPR register effect outside P1a envelope" ;;
         29*) echo "segment-prefixed copy is byte-exact|seg_fs_canary (jit|in-process): " ;;
+        30*) echo "66 jmp rel32: (refusal reason|in-process prepare admitted)" ;;
+        31*) echo "66 ret: (refusal reason|in-process prepare admitted)" ;;
+        32*) echo "66 jmp rax: refusal reason|66 jmp rdi: in-process prepare admitted" ;;
+        33*) echo "rex then 66 jmp rel32: refusal reason" ;;
         *) echo "FAILED" ;;
     esac
 }
