@@ -35,6 +35,31 @@ KILLED by their expected assertions. The first failing tests:
 
 Baseline and restored state: the head's debug suite, green.
 
+**Re-executed 2026-11-22 (UTC)** for the tracee-seam change, which
+rewrote the indirect-call push write in `src/remote.rs` from
+`write_mem(self.guard.pid, ...)` to `write_mem(&self.guard.tracee, ...)`.
+Mutant 09 quotes that line as context and mutant 24b changes it, so
+neither applied any more. Both were regenerated with the same inserted
+defects, at commit `d97db42d`:
+- 09: its added and removed lines are byte-identical;
+- 24b: only the receiver of `write_mem` changed, and the defect is
+  still `.is_err() && false`.
+
+At `d97db42d` all 28 patches pass `git apply --check`. The two chains
+ran in the working tree under this script's criteria, with
+`cargo test --locked --offline`: apply, the named tests, the expected
+text, `test result: FAILED`, every named test's own FAILED line, no
+compile error, then reverse, clean tree and `cargo test --locked -p
+liteinst-jit` green. Both were KILLED:
+- 09: `p1b1_indirect_matches_o1` FAILED (`indirect_call: instructions`)
+  and `p1b1_indirect_remote_matches` FAILED
+  (`indirect_call: remote instructions`);
+- 24b: `push_fault_remote` FAILED (`ind_call_reg: push fault: expected a
+  fault, got Ok(...)`).
+
+Restored state after each: the debug suite green and the tree clean. The
+other 26 mutants are unchanged and were not re-run.
+
 | Mutant | Defect simulated | Killing evidence (mutant run) | Restored |
 |---|---|---|---|
 | `01-pending-credit-loss` | Recovery drops the pending branch credit at stub boundaries before the credit store | `branch_stub_credit_timing_and_spill_recovery` FAILED: `retired branch credited exactly once` | green |
