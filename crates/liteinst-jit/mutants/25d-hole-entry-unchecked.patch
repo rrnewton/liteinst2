@@ -1,0 +1,14 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index a302c1e4..985ed0e7 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1384,7 +1384,8 @@ impl Executable {
+     /// through here, so a saved PC (a return address, a resume PC) is
+     /// revalidated when it is used, never trusted by address.
+     fn entry_for(&mut self, pc: u64) -> Result<u64, Refuse> {
+-        if self.holes.iter().any(|&(s, e)| s <= pc && pc < e) {
++        // MUTANT 25d: control into a hole is not refused at entry.
++        if false && self.holes.iter().any(|&(s, e)| s <= pc && pc < e) {
+             return Err(Refuse::UnmappedCode {
+                 src_pc: pc,
+                 generation: self.region.generation.0,

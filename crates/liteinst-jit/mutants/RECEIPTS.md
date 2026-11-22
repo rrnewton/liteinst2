@@ -21,6 +21,14 @@ Patch SHA-256 are printed by the script at every run and were re-verified at thi
 applied, because the missing-credit decision now sits above its
 context, so it was regenerated with the same two inserted lines.
 
+Mutant 03 stopped applying when generation events replaced the
+executable's `valid` flag. It was regenerated for the new mechanism,
+with the same defect: `Executable::invalidate` drops its index records
+but leaves the executable running its old translation. Its kill
+is now the O1 test's invalidation assertion, `must refuse
+UnmappedCode`. The receipt for the regenerated mutant is in that
+change's own evidence. The table below records the `bedcc8aa` run.
+
 The five mutants were run against `bedcc8aa` (`217aaf7b` plus docs),
 each on its own `git archive` copy with its own target directory,
 under this script's criteria: the full debug suite, the named

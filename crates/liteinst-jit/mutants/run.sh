@@ -19,14 +19,25 @@ run_suite() {
     return $?
 }
 
-# The P1b.1 mutants (08-19) and the push mutants (23a/23b: no page
-# crossing check; 24a/24b: a failed push write ignored) run only their
-# named tests, each as "binary:fn"; every listed test must show its own
-# FAILED line (see named_failures_ok). Empty for every other mutant.
+# The P1b.1 mutants (08-19), the push mutants (23a/23b: no page
+# crossing check; 24a/24b: a failed push write ignored) and the
+# generation mutants (25a: a stale translation used; 25b: reported
+# mapping events dropped; 25c: the stamp never updated; 25d: no hole
+# check at entry; 25e: a direct edge into a hole queued) and 03
+# (invalidation disabled) run only their named tests, each as
+# "binary:fn"; every listed test must show its own FAILED line (see
+# named_failures_ok). 03 names the O1 test, whose invalidation half
+# kills it; in the full suite, generation_events would stop the run
+# first. Empty for every other mutant.
 # The O1 mutants (20-22) run the full default suite: their kill tests
 # are src/o1.rs unit tests, which run before the integration binaries.
 targets_for() {
     case "$1" in
+        03*) echo "o1_compare:jit_matches_o1_oracle_on_corpus_v1" ;;
+        25a*|25b*) echo "generation_events:remap_runs_new_bytes_inprocess" ;;
+        25c*) echo "generation_events:retranslate_after_event_keeps_generation" ;;
+        25d*) echo "generation_events:unmapped_return_refuses_inprocess" ;;
+        25e*) echo "generation_events:direct_edge_into_hole_refuses" ;;
         23a*) echo "indirect_resolve:push_crossing_inprocess" ;;
         23b*) echo "indirect_resolve:push_crossing_remote" ;;
         24a*) echo "indirect_resolve:push_fault_inprocess" ;;
@@ -116,7 +127,7 @@ expected_for() {
     case "$1" in
         01*) echo "retired branch credited exactly once" ;;
         02*) echo "sum_loop: branches" ;;
-        03*) echo "StaleGeneration" ;;
+        03*) echo "must refuse UnmappedCode" ;;
         04*) echo "outside source range|fault pc offset" ;;
         05*) echo "fault_before_branch branches" ;;
         06*|07*) echo "first: .*W1: " ;;
@@ -138,6 +149,10 @@ expected_for() {
         21*|22*) echo "passed the RIP-delta check" ;;
         23a*|23b*) echo "push crossing: want a named refusal" ;;
         24a*|24b*) echo "push fault: expected a fault" ;;
+        25a*|25b*) echo "remap: want the new bytes" ;;
+        25c*) echo "generation: want one retranslation in all" ;;
+        25d*) echo "unmapped: want UnmappedCode" ;;
+        25e*) echo "hole: want UnmappedCode at the jump" ;;
         *) echo "FAILED" ;;
     esac
 }

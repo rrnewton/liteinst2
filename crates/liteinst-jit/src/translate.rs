@@ -140,8 +140,31 @@ pub fn discover_roots(
     region: &RegionFacts,
     roots: &BTreeSet<u64>,
 ) -> Result<BTreeMap<u64, Block>, Refuse> {
+    discover_roots_excluding(region, roots, &[])
+}
+
+/// As [`discover_roots`], with `holes`: half-open ranges the caller
+/// reported unmapped (a [`crate::types::MappingEvent`] without a
+/// region). Nothing in a hole is decoded. Reaching one from a root,
+/// by straight-line flow or by a direct edge refuses
+/// [`Refuse::UnmappedCode`]; return, indirect, syscall and nondet
+/// successors in a hole are left to the dispatcher, which refuses
+/// them the same way when control gets there.
+pub fn discover_roots_excluding(
+    region: &RegionFacts,
+    roots: &BTreeSet<u64>,
+    holes: &[(u64, u64)],
+) -> Result<BTreeMap<u64, Block>, Refuse> {
+    let in_hole = |pc: u64| holes.iter().any(|&(s, e)| s <= pc && pc < e);
+    let unmapped = |pc: u64| Refuse::UnmappedCode {
+        src_pc: pc,
+        generation: region.generation.0,
+    };
     if !region.immutable_private {
         return Err(Refuse::SelfModifyingOrWritableCode { src: region.base });
+    }
+    if let Some(&r) = roots.iter().find(|r| in_hole(**r)) {
+        return Err(unmapped(r));
     }
     if let Some(&outside) = roots.iter().find(|r| !region.contains(**r)) {
         return Err(Refuse::InteriorEntry { target: outside });
@@ -191,9 +214,17 @@ pub fn discover_roots(
             if pc != start && starts.contains(&pc) {
                 break (None, Terminator::Fallthrough { next: pc }, vec![pc]);
             }
+            if in_hole(pc) {
+                return Err(unmapped(pc));
+            }
             let d = decoder.next_supported()?;
             decoded.insert(pc, d.len);
             let next = pc.wrapping_add(d.len as u64);
+            // An instruction that runs into a hole is refused whole:
+            // its tail bytes are no longer admitted code.
+            if holes.iter().any(|&(s, _)| pc < s && s < next) {
+                return Err(unmapped(pc));
+            }
             // A queued or built block start strictly inside this
             // instruction means two reachable streams disagree on
             // instruction boundaries: refuse, never pick one.
@@ -260,7 +291,17 @@ pub fn discover_roots(
             },
         );
         for s in successors {
-            if region.contains(s) {
+            if in_hole(s) {
+                // A direct edge into a hole would chain into code that
+                // is no longer admitted: refuse at the branch. Other
+                // successors exit to the dispatcher, which refuses.
+                if matches!(
+                    terminator,
+                    Terminator::Jump { .. } | Terminator::Call { .. } | Terminator::Cond { .. }
+                ) {
+                    return Err(unmapped(term_pc.unwrap_or(start)));
+                }
+            } else if region.contains(s) {
                 check_interior(&decoded, s)?;
                 if starts.insert(s) {
                     work.push(s);
@@ -892,8 +933,23 @@ pub fn translate_roots_with_options(
     data_addr: u64,
     options: TranslateOptions,
 ) -> Result<Translation, Refuse> {
-    let exit_style = options.exit_style;
     let blocks = discover_roots(region, roots)?;
+    translate_blocks(region, entry, blocks, profile, gen_base, data_addr, options)
+}
+
+/// Emit `blocks`, as discovered by [`discover_roots`] or
+/// [`discover_roots_excluding`] over `region`, exactly as
+/// [`translate_roots_with_options`] emits its own discovery.
+pub fn translate_blocks(
+    region: &RegionFacts,
+    entry: u64,
+    blocks: BTreeMap<u64, Block>,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
+    let exit_style = options.exit_style;
     let mut e = Emitter {
         buf: Vec::new(),
         gen_base,
