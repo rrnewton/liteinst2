@@ -2924,6 +2924,15 @@ impl RemoteExecutable {
         if !region.contains(r.target) {
             return Err(unresolved());
         }
+        // As the in-process arm: a call whose push slot crosses a page
+        // could store part of the slot before `write_mem` fails; refuse
+        // it before any retranslation, install or write.
+        if r.kind == IndirectKind::Call && crate::indirect::push_crosses_page(state.rsp) {
+            return Err(IndirectStop::Refuse(Refuse::IndirectPushCrossesPage {
+                src_pc: src,
+                slot: state.rsp.wrapping_sub(8),
+            }));
+        }
         let add = crate::indirect::new_roots(&r, region, &t.block_gen);
         if add.is_empty() {
             return Ok((r, None));

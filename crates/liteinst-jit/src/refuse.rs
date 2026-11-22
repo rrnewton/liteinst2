@@ -11,6 +11,13 @@ pub enum Refuse {
     /// segment-override). The guest is left at the instruction with
     /// the state before it: no push, no memory write.
     IndirectUnresolved { src_pc: u64 },
+    /// An in-region indirect call whose return-address slot
+    /// `[rsp-8, rsp)` crosses a page boundary (`slot & 0xfff > 0xff8`).
+    /// Pushing it could write the part of the slot on the first page
+    /// and then fault on the second, which a native `call` never does.
+    /// Refused before any retranslation, push or memory write; the
+    /// guest is left at the call with the state before it.
+    IndirectPushCrossesPage { src_pc: u64, slot: u64 },
     /// Source code is writable, shared, or its write ownership is
     /// unknown; P1a refuses self-modifying code instead of tracking it.
     SelfModifyingOrWritableCode { src: u64 },
@@ -73,6 +80,7 @@ impl Refuse {
     pub fn proposed_r_name(&self) -> &'static str {
         match self {
             Refuse::IndirectUnresolved { .. }
+            | Refuse::IndirectPushCrossesPage { .. }
             | Refuse::SelfModifyingOrWritableCode { .. }
             | Refuse::Unrelocatable { .. }
             | Refuse::InteriorEntry { .. }

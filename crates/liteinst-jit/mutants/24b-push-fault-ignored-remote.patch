@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -3077,7 +3077,8 @@
+         let mut next = *state;
+         if r.kind == IndirectKind::Call {
+             let slot = state.rsp.wrapping_sub(8);
+-            if write_mem(self.guard.pid, slot, &r.next_ip.to_le_bytes()).is_err() {
++            // MUTANT 24b: a failed push write is ignored (remote).
++            if write_mem(self.guard.pid, slot, &r.next_ip.to_le_bytes()).is_err() && false {
+                 return Err(IndirectStop::Fault { addr: slot });
+             }
+             next.rsp = slot;
