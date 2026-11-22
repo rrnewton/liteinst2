@@ -1219,6 +1219,18 @@ impl Executable {
             Ok(r) => r,
             Err(ResolveError::Unsupported) => return Err(unresolved()),
             Err(ResolveError::ReadFault { addr }) => return Err(IndirectStop::Fault { addr }),
+            Err(ResolveError::AddressSize32) => {
+                let bytes = self
+                    .region
+                    .slice_from(insn.pc)
+                    .and_then(|b| b.get(..insn.len))
+                    .map(<[u8]>::to_vec)
+                    .unwrap_or_default();
+                return Err(IndirectStop::Refuse(Refuse::IndirectAddressSize32 {
+                    src_pc: src,
+                    bytes,
+                }));
+            }
         };
         if !self.region.contains(r.target) {
             return Err(unresolved());

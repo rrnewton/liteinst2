@@ -1,0 +1,16 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -660,12 +660,7 @@
+                 reason: OSZ_DIRECT_BRANCH,
+             });
+         }
+-        InsnClass::Return if has_operand_size_prefix(bytes, d.len) => {
+-            return Err(Refuse::Unrelocatable {
+-                src_pc: pc,
+-                reason: OSZ_RETURN,
+-            });
+-        }
++        // MUTANT 31: 66h on a near return is no longer refused.
+         InsnClass::Indirect if has_operand_size_prefix(bytes, d.len) => {
+             return Err(Refuse::Unrelocatable {
+                 src_pc: pc,

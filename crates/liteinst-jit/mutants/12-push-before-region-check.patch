@@ -1,8 +1,8 @@
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -1195,6 +1195,10 @@
-             Err(ResolveError::Unsupported) => return Err(unresolved()),
-             Err(ResolveError::ReadFault { addr }) => return Err(IndirectStop::Fault { addr }),
+@@ -1207,6 +1207,10 @@
+                 }));
+             }
          };
 +        // MUTANT 12: the call's push is written before the region check (in-process).
 +        if r.kind == IndirectKind::Call {
@@ -13,7 +13,7 @@
          }
 --- a/crates/liteinst-jit/src/remote.rs
 +++ b/crates/liteinst-jit/src/remote.rs
-@@ -2921,6 +2921,10 @@
+@@ -2934,6 +2934,10 @@
          let Some(region) = self.region.as_ref() else {
              return Err(unresolved());
          };

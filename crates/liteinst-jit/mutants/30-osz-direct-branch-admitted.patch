@@ -1,0 +1,20 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -650,16 +650,7 @@
+                 }
+             }
+         }
+-        InsnClass::CondBranch { .. }
+-        | InsnClass::DirectJump { .. }
+-        | InsnClass::DirectCall { .. }
+-            if has_operand_size_prefix(bytes, d.len) =>
+-        {
+-            return Err(Refuse::Unrelocatable {
+-                src_pc: pc,
+-                reason: OSZ_DIRECT_BRANCH,
+-            });
+-        }
++        // MUTANT 30: 66h on a near direct branch is no longer refused.
+         InsnClass::Return if has_operand_size_prefix(bytes, d.len) => {
+             return Err(Refuse::Unrelocatable {
+                 src_pc: pc,

@@ -18,6 +18,14 @@ pub enum Refuse {
     /// Refused before any retranslation, push or memory write; the
     /// guest is left at the call with the state before it.
     IndirectPushCrossesPage { src_pc: u64, slot: u64 },
+    /// An indirect jump or call whose memory operand has a 32-bit
+    /// address size in absolute form (`67 ff /4|/2` with `[disp32]`).
+    /// The resolver claims 64-bit addressing only, so this is a policy
+    /// refusal, not an unresolved target. `bytes` are the
+    /// instruction's encoding. Refused before any retranslation, push
+    /// or memory write; the guest is left at the instruction with the
+    /// state before it.
+    IndirectAddressSize32 { src_pc: u64, bytes: Vec<u8> },
     /// Source code is writable, shared, or its write ownership is
     /// unknown; P1a refuses self-modifying code instead of tracking it.
     SelfModifyingOrWritableCode { src: u64 },
@@ -100,6 +108,7 @@ impl Refuse {
         match self {
             Refuse::IndirectUnresolved { .. }
             | Refuse::IndirectPushCrossesPage { .. }
+            | Refuse::IndirectAddressSize32 { .. }
             | Refuse::SelfModifyingOrWritableCode { .. }
             | Refuse::Unrelocatable { .. }
             | Refuse::InteriorEntry { .. }
