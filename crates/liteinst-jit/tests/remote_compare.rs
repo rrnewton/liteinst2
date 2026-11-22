@@ -880,6 +880,136 @@ fn seg_override_remote_matches() {
     }
 }
 
+/// CET `notrack` indirect branches (3E FF /4 jmp, 3E FF /2 call),
+/// pinned at today's outcome. Iced decodes the 3E byte as a DS
+/// segment prefix on `jmp`/`call r/m64`, and the indirect resolver
+/// refuses any segment prefix (`insn.segment_prefix() !=
+/// Register::None` in `indirect::resolve`). So both dispatchers
+/// refuse an in-region notrack transfer by name, as
+/// `IndirectUnresolved` at the instruction, while the same program
+/// without the 3E byte resolves and returns 7. CET builds use
+/// notrack for jump tables, so this is a stretch ender to lift
+/// later, not a guarantee to keep.
+#[test]
+fn notrack_indirect_refused_by_segment_check() {
+    let _g = lock();
+    // 00 lea rax,[rip+L]; 07 notrack jmp rax; 0a L: mov eax,7; 0f ret.
+    let notrack_jmp: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x03, 0, 0, 0, 0x3e, 0xff, 0xe0, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+    // 00 lea rax,[rip+L]; 07 jmp rax; 09 L: mov eax,7; 0e ret.
+    let plain_jmp: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x02, 0, 0, 0, 0xff, 0xe0, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+    // 00 lea rax,[rip+F]; 07 notrack call rax; 0a ret; 0b F: mov eax,7;
+    // 10 ret.
+    let notrack_call: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x04, 0, 0, 0, 0x3e, 0xff, 0xd0, 0xc3, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+    // 00 lea rax,[rip+F]; 07 call rax; 09 ret; 0a F: mov eax,7; 0f ret.
+    let plain_call: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x03, 0, 0, 0, 0xff, 0xd0, 0xc3, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+
+    // The resolver itself: the decode is the plain r/m64 form with a
+    // DS prefix, and the segment-prefix check is what refuses it.
+    for (name, insn, code) in [
+        (
+            "notrack jmp rax",
+            &notrack_jmp[7..10],
+            liteinst_x86::Code::Jmp_rm64,
+        ),
+        (
+            "notrack call rax",
+            &notrack_call[7..10],
+            liteinst_x86::Code::Call_rm64,
+        ),
+    ] {
+        let d = liteinst_jit::decode::decode_one(insn, 0x1000).expect("decode");
+        assert_eq!(d.instruction.code(), code, "{name}: decoded code");
+        assert_eq!(d.instruction.op_count(), 1, "{name}: one operand");
+        assert_eq!(
+            d.instruction.segment_prefix(),
+            liteinst_x86::Register::DS,
+            "{name}: notrack decodes as a DS segment prefix"
+        );
+        let s = GuestState {
+            rax: 0x1010,
+            ..GuestState::default()
+        };
+        let r = liteinst_jit::indirect::resolve(&d.instruction, 0x1000, d.len, &s, &mut |_| None);
+        assert_eq!(
+            r,
+            Err(liteinst_jit::indirect::ResolveError::Unsupported),
+            "{name}: the resolver refuses the segment prefix"
+        );
+        let p = liteinst_jit::decode::decode_one(&insn[1..], 0x1000).expect("decode plain");
+        let rp = liteinst_jit::indirect::resolve(&p.instruction, 0x1000, p.len, &s, &mut |_| None);
+        assert_eq!(
+            rp.map(|x| x.target),
+            Ok(0x1010),
+            "{name}: without 3E the resolver resolves"
+        );
+    }
+
+    // Through the indirect path of both dispatchers.
+    let inproc = |bytes: &[u8]| {
+        let guest = MappedGuest::map(bytes).expect("map");
+        let region = guest.region(bytes, Generation(1));
+        let mut exec =
+            Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions)
+                .expect("prepare");
+        let mut handler = CaptureHandler::default();
+        let out = exec.run(
+            guest.initial_state(),
+            &mut handler,
+            &ProcessMemory,
+            RETURN_SENTINEL,
+        );
+        (out, guest.base)
+    };
+    let remote = |bytes: &[u8]| {
+        let (mut r, _deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn remote");
+        let info = r.info();
+        let region = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: bytes.to_vec(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        r.prepare(&region, info.base, CountProfile::BranchesAndInstructions)
+            .expect("remote prepare");
+        let state = r.initial_state();
+        (r.run(state, RETURN_SENTINEL), info.base)
+    };
+    for (name, notrack, plain, off, instructions) in [
+        ("notrack jmp rax", notrack_jmp, plain_jmp, 7u64, 4u64),
+        ("notrack call rax", notrack_call, plain_call, 7, 5),
+    ] {
+        for (mode, (out, base)) in [("in-process", inproc(notrack)), ("remote", remote(notrack))] {
+            match out {
+                Err(RunError::Refuse(Refuse::IndirectUnresolved { src_pc })) => {
+                    assert_eq!(
+                        src_pc - base,
+                        off,
+                        "{name} {mode}: refused at the notrack insn"
+                    );
+                }
+                other => panic!("{name} {mode}: expected IndirectUnresolved, got {other:?}"),
+            }
+        }
+        for (mode, (out, _)) in [("in-process", inproc(plain)), ("remote", remote(plain))] {
+            let o = out.unwrap_or_else(|e| panic!("{name} {mode} control: {e:?}"));
+            assert_eq!(
+                (o.state.rax, o.instructions),
+                (7, instructions),
+                "{name} {mode}: the control without 3E resolves"
+            );
+        }
+        println!("{name}: IndirectUnresolved in both modes; the control resolves");
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]
