@@ -36,29 +36,44 @@ KILLED by their expected assertions. The first failing tests:
 Baseline and restored state: the head's debug suite, green.
 
 **Re-executed 2026-11-22 (UTC)** for the tracee-seam change, which
-rewrote the indirect-call push write in `src/remote.rs` from
-`write_mem(self.guard.pid, ...)` to `write_mem(&self.guard.tracee, ...)`.
-Mutant 09 quotes that line as context and mutant 24b changes it, so
-neither applied any more. Both were regenerated with the same inserted
-defects, at commit `d97db42d`:
-- 09: its added and removed lines are byte-identical;
-- 24b: only the receiver of `write_mem` changed, and the defect is
-  still `.is_err() && false`.
+rewrote the remote push path in `src/remote.rs`. The indirect-call push
+write became `write_mem(&self.guard.tracee, ...)`, and `indirect_steps`
+binds `tracee` where it bound `pid`. Three mutants quoted the old code:
+- 09 (as context) and 24b (as its changed line) no longer applied;
+- 12 still applied but no longer compiled. Its remote arm wrote through
+  `pid`, which is no longer in scope (`error[E0425]`), so this script
+  would report it NOT KILLED and both of its kills were lost.
 
-At `d97db42d` all 28 patches pass `git apply --check`. The two chains
-ran in the working tree under this script's criteria, with
-`cargo test --locked --offline`: apply, the named tests, the expected
-text, `test result: FAILED`, every named test's own FAILED line, no
-compile error, then reverse, clean tree and `cargo test --locked -p
-liteinst-jit` green. Both were KILLED:
+All three were regenerated with the same inserted defects:
+- 09: its added and removed lines are byte-identical;
+- 12: only the receiver of its inserted `write_mem` changed, from `pid`
+  to `&tracee`;
+- 24b: only the receiver of `write_mem` changed, and the defect is still
+  `.is_err() && false`.
+
+A build sweep then applied each of the 28 patches, compiled the crate's
+test build (`cargo test --locked --offline -p liteinst-jit --no-run`,
+the targets this script's `cargo test` compiles) and reversed it. All 28
+compile, none reporting `could not compile`. The original mutant 12
+fails this same check with `error[E0425]`, although it passes
+`git apply --check`.
+
+The three regenerated chains ran in the working tree under this
+script's criteria: apply, the named tests, the expected text,
+`test result: FAILED`, every named test's own FAILED line, no compile
+error, then reverse, clean tree and `cargo test --locked --offline -p
+liteinst-jit` green. All three were KILLED:
 - 09: `p1b1_indirect_matches_o1` FAILED (`indirect_call: instructions`)
   and `p1b1_indirect_remote_matches` FAILED
   (`indirect_call: remote instructions`);
+- 12: `refusal_inprocess` FAILED (`ind_call_out: rsp-8 written`) and
+  `refusal_remote` FAILED (`ind_call_out remote: tracer wrote the slot
+  below rsp`);
 - 24b: `push_fault_remote` FAILED (`ind_call_reg: push fault: expected a
   fault, got Ok(...)`).
 
 Restored state after each: the debug suite green and the tree clean. The
-other 26 mutants are unchanged and were not re-run.
+other 25 mutants are unchanged and compile; their chains were not re-run.
 
 | Mutant | Defect simulated | Killing evidence (mutant run) | Restored |
 |---|---|---|---|
