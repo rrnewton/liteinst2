@@ -160,3 +160,17 @@ pub fn new_roots(
     roots.retain(|pc| !block_gen.contains_key(pc));
     roots
 }
+
+/// Whether a call's 8-byte return-address slot `[rsp-8, rsp)` crosses
+/// a 4 KiB page boundary, i.e. `(rsp - 8) & 0xfff > 0xff8`. The
+/// dispatchers write the slot with one tracer or process write. When
+/// the slot spans two pages and only the second is unwritable, that
+/// write can store the first page's bytes before it fails, which a
+/// native `call` (#PF before any store) never does. So both
+/// dispatchers refuse such a call by name
+/// (`Refuse::IndirectPushCrossesPage`) before any retranslation or
+/// write. An 8-byte-aligned slot never crosses a page, so an
+/// ABI-aligned stack never meets this refusal.
+pub fn push_crosses_page(rsp: u64) -> bool {
+    (rsp.wrapping_sub(8) & 0xfff) > 0xff8
+}

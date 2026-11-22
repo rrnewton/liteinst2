@@ -1,6 +1,6 @@
-# liteinst-jit P1b design note (draft, awaiting the external review verdict)
+# liteinst-jit P1b design note (draft; the external review returned its verdict)
 
-Status: **DESIGN NOTE; P1b.1 is implemented at fixture scale only.** P1b implementation is gated on an adversarial review of the P1a code and the §6 invalidation design, plus a project go-ahead. Under the project owner's 2026-11-15 rule for LiteInst, that review is one seat, whose brief carries the project's full goalpost-moving check (no weakened assertion, widened tolerance, added exemption, skipped case, relaxed comparator, relabelled failure or deleted check). Its verdict is still awaited (§7); P1b.1 is built at fixture scale ahead of it, on §7 Q1's assumption. Nothing else here is built, selectable, or claimed, and §1 still gates every whole-program claim. Layering
+Status: **DESIGN NOTE; P1b.1 is implemented at fixture scale only.** P1b implementation is gated on an adversarial review of the P1a code and the §6 invalidation design, plus a project go-ahead. Under the project owner's 2026-11-15 rule for LiteInst, that review is one seat, whose brief carries the project's full goalpost-moving check (no weakened assertion, widened tolerance, added exemption, skipped case, relaxed comparator, relabelled failure or deleted check). That review returned on 2026-11-22 (UTC): approve with nits, and §7 Q1 answered yes with conditions (§7). Its main finding is that the invalidation basis §2 and §3 assume is not implemented yet: dispatch looks translations up by address, and no guest event advances the generation ([#104]). That work and the admission proof ([#107]) are owed before §3's code-discovery stage. P1b.1 was built at fixture scale ahead of the verdict, on §7 Q1's assumption. Nothing else here is built, selectable, or claimed, and §1 still gates every whole-program claim. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
 remains **unbuilt until M4 is met**. Merging liteinst-jit work to
@@ -98,8 +98,12 @@ Two stages, separately landable:
   Hit-path chaining (patching the indirect site to a direct jump
   after a hit) is explicitly **deferred**: it creates the
   incoming-link bookkeeping §6 of the first report reserves for
-  after quiescence is proven. Table invalidation is whole-table
-  flush on any generation advance (P1a's flush discipline).
+  after quiescence is proven. Table invalidation is to be a
+  whole-table flush on any generation advance. That is a P1b target,
+  not existing behaviour: P1a's documented flush-whole-cache
+  discipline is not wired up (`Executable` never calls
+  `CacheIndex::flush`), and no guest event advances the generation
+  yet ([#104], [#106]).
 - PLT/GOT and jump tables need no special case under either stage:
   the target is whatever value memory/register holds at run time.
   Lazy binding means the dynamic linker's resolver is itself
@@ -123,13 +127,23 @@ P1a admits one immutable private region up front. P1b admits
   executable, `munmap`/`mremap`, and `execve` are **generation
   events**: the driver records mapping identity + generation and
   calls `Executable::invalidate` equivalents before the guest
-  resumes. No region is scanned or translated at syscall time —
+  resumes. None of this path exists yet ([#104]): in-process, a
+  handler cannot reach `Executable::invalidate` while `run` holds
+  the executable, and the remote path has no generation or
+  invalidate API. No region is scanned or translated at syscall time —
   translation happens only when control actually transfers into
   the mapping (discovery by execution), from a byte snapshot taken
   at admission and hashed into the cache key.
-- Admission requires the same proof as P1a: private, non-writable,
-  file-backed or provably immutable; writable/shared/memfd
-  executable mappings keep refusing `SelfModifyingOrWritableCode`.
+- Admission requires a proof that the mapping is private,
+  non-writable, file-backed or provably immutable. P1a has no such
+  proof to reuse: it checks only the caller-asserted
+  `RegionFacts::immutable_private` flag and never reads the
+  mapping's protections, and "private, non-writable, file-backed"
+  alone does not make a mapping immutable (a private file mapping's
+  not-yet-copied pages show later writes to the file). P1b must
+  define the proof, or carry it as a named non-claim ([#107]).
+  Under that proof, writable/shared/memfd executable mappings
+  refuse `SelfModifyingOrWritableCode`.
   That refuses JIT-emitting guests by name in P1b (M5 territory);
   ordinary `dlopen`ed shared libraries (RELRO, RX after relocation)
   are the intended admittees. A library whose text is still being
@@ -137,10 +151,13 @@ P1a admits one immutable private region up front. P1b admits
   after the `mprotect` that seals it — control cannot legitimately
   transfer in before then, and if it does, refusal is correct.
 - Multiple regions need the cache index keyed per (mapping
-  identity, generation) rather than one global generation; the
-  `CacheKey` already carries generation, so the change is to stop
-  assuming a single current generation in `Executable` and key
-  validity per region. Invalidation of one mapping must not flush
+  identity, generation) rather than one global generation. The
+  `CacheKey` carries a generation, but dispatch never consults it:
+  both dispatchers enter blocks by address, and
+  `CacheIndex::lookup` is never called ([#104]). So the change is to
+  check entry validity at dispatch, keyed per (mapping identity,
+  generation), and to stop assuming a single current generation in
+  `Executable`. Invalidation of one mapping must not flush
   unrelated regions' translations, but **must** flush the indirect
   hash table entries pointing into it (whole-table flush is the
   P1b-simple correct choice).
@@ -148,7 +165,9 @@ P1a admits one immutable private region up front. P1b admits
   from the first report's §6 design: return/signal PCs into an unmapped library
   remain recorded; resuming to one faults/refuses by name, never
   silently lands in a reused mapping (generation, not address,
-  decides).
+  decides). That is the target: today no mapping identity or
+  generation is recorded with a saved return or signal PC, so a
+  saved PC resolves by address ([#104]).
 
 ## 4. The `/bin/ls` driver (standalone, no Reverie binding)
 
@@ -233,16 +252,27 @@ per-page or per-admission work — discovery is per first-transfer
 into a block, and every reported number carries DR-null ratio +
 exactly-10 median + IQR + machine or is labelled UNMEASURED.
 
-## 7. Open questions for the external review
+## 7. Questions put to the external review, and its answers
+
+The review returned on 2026-11-22 UTC (approve with nits). Its answers
+follow each question.
 
 1. Is dispatcher-side indirect resolution (P1b.1) an acceptable M4
    shape if its measured cost is honest, with the hash stub as a
-   pure optimization? (This note assumes yes. P1b.1 is built at
-   fixture scale on that assumption, ahead of this review's
-   verdict; a "no" here reopens it.)
+   pure optimization? **Answer: yes, with conditions.** The
+   measured cost includes P1b.1's whole-closure retranslation on
+   every new root; the page-crossing push and the 66h-prefixed
+   forms refuse by name before any whole-program claim ([#102],
+   [#101]); and §1 still gates every claim. P1b.1 was built at
+   fixture scale on this assumption, ahead of the verdict.
 2. Per-region generations vs one global generation with
    flush-on-any-mapping-event: is the simpler global flush
    acceptable for M4 if `dlopen`-heavy reruns retranslate?
+   **Answer: yes;** per-region generations are an optimization.
+   Conditions: "flush" means retranslate on the next transfer; the
+   event hook is tested with a byte-changing fixture; and every
+   saved PC is revalidated by mapping identity and generation,
+   never by address ([#104]).
 3. **Resolved 2026-11-05 in project review:** mid-cache transparent
    async delivery **does** gate every P1b whole-program claim
    (§1). The remaining questions are mechanism-specific: exact
@@ -250,15 +280,27 @@ exactly-10 median + IQR + machine or is labelled UNMEASURED.
    and coalescing rules, interrupted-syscall restart semantics,
    and how much of that surface must be validated before the first
    staged `/bin/ls` result may be called whole-program.
+   **Answer:** the kernel-built frame mechanism (the tracer rewrites
+   only the resume RIP) is the right basis. Its rules gain one:
+   retranslation under a live signal frame refuses (`CodeInstall`,
+   "live signal frame"), so a handler that reaches new code stops
+   the run. P1b must either remap frame resume PCs or count that
+   refusal as a named stop. H3k's undelivered positive-code class
+   stays a named non-claim.
 4. Remote-arena injection at exec-stop vs a preload-shaped child
    bootstrap: any objection to ptrace syscall injection as the
    *driver-only* mechanism (explicitly not the future V10 loader)?
+   **Answer: no objection,** as a driver-only mechanism, provided
+   registers are restored exactly and that is checked; `MAP_FIXED`
+   over the arena refuses by name; and the arena (with its
+   read-write `JitData` page) is disclosed as occupying guest
+   address space. A wild guest store that would fault natively
+   lands there silently, and can forge exit fields the tracer
+   reads.
 
-Estimated against L10 §6.4's P1b stage (15–30 agent-days, estimate):
-transparent delivery is now scope item 1 and a claim gate, so
-that stage estimate must be repriced after the external review verdict and
-P1b authorization rather than treated as already covering §1.
-Within the remaining scope, P1b.1 + driver staging is the bulk of
+Scope: transparent delivery is now scope item 1 and a claim gate
+(§1), so no earlier sizing of the P1b stage covers it. Within the
+remaining scope, P1b.1 + driver staging is the bulk of
 the work; P1b.2's hash stub is the tail risk if flag-neutral
 probing resists the simple template.
 
@@ -963,3 +1005,9 @@ replace per-stage statements in `README.md`, `src/lib.rs`, and
 dispatcher documentation with one positive claim bounded
 exactly by the admitted matrix. Only after this stage's
 review may any result be called whole-program under §1.
+
+[#101]: https://github.com/rrnewton/liteinst2/issues/101
+[#102]: https://github.com/rrnewton/liteinst2/issues/102
+[#104]: https://github.com/rrnewton/liteinst2/issues/104
+[#106]: https://github.com/rrnewton/liteinst2/issues/106
+[#107]: https://github.com/rrnewton/liteinst2/issues/107

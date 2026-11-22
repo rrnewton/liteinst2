@@ -9,6 +9,15 @@
 //!   in-region address still refuses as in P1a.
 //! - `fault_{inprocess,remote}` (T6): a faulting memory operand is a
 //!   guest fault at the instruction, which does not retire.
+//! - `push_crossing_rule` and `push_crossing_{inprocess,remote}`: a
+//!   call whose push slot crosses a page refuses by name
+//!   (`IndirectPushCrossesPage`) at the call, before any retranslation
+//!   or write, and the same executable then runs a normal stack to
+//!   completion.
+//! - `push_fault_{inprocess,remote}`: a call whose (aligned) push slot
+//!   is unwritable is a guest fault at the call with the slot address,
+//!   RSP unchanged and the call not retired. The next run, after the
+//!   remote install that preceded the push, completes correctly.
 //! - `discovery_{inprocess,remote}` and `install_failure_remote`
 //!   (T7): new targets are translated on first use and reused after,
 //!   and a failed remote install refuses and poisons the executable.
@@ -20,12 +29,12 @@ use std::collections::BTreeMap;
 
 use liteinst_jit::decode::{DecodedInsn, decode_one};
 use liteinst_jit::exec::{
-    BudgetEnd, BudgetStop, Executable, FaultKind, Outcome, ProcessMemory, RunError,
+    BudgetEnd, BudgetStop, Executable, FaultKind, GuestMemory, Outcome, ProcessMemory, RunError,
 };
 use liteinst_jit::fixtures;
 use liteinst_jit::handler::CaptureHandler;
 use liteinst_jit::harness::{MappedGuest, REDZONE_MARKER, RETURN_SENTINEL};
-use liteinst_jit::indirect::{IndirectKind, ResolveError, Resolved, resolve};
+use liteinst_jit::indirect::{IndirectKind, ResolveError, Resolved, push_crosses_page, resolve};
 use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 use liteinst_jit::{GuestState, Refuse};
@@ -411,6 +420,250 @@ fn fault_remote() {
     let bytes = fixtures::by_name(name).bytes;
     let (mut rx, _dl, state, info) = remote(name, &bytes, false);
     check_fault(name, rx.run(state, RETURN_SENTINEL), info.base, state.rsp);
+}
+
+/// The fixture the push tests drive: `ind_call_reg`, whose first
+/// `call rax` (0x10) is reached after xor, xor, cmp, jae (one branch)
+/// and lea, and needs one retranslation (its helper is a new root).
+const CALL_REG: &str = "ind_call_reg";
+const CALL_AT: u64 = 0x10;
+/// `ind_call_reg`'s result with its inputs: the odd counts below 16.
+const CALL_REG_RAX: u64 = 8;
+/// An RSP inside the fixture's RX code page, 8-byte aligned, so its
+/// push slot is unwritable and crosses no page.
+const PUSH_FAULT_RSP_OFF: u64 = 0x40;
+/// Witness qwords on both sides of the crossing slot.
+const MARK_LO: u64 = 0x0a0b_0c0d_0e0f_1011;
+const MARK_HI: u64 = 0x2122_2324_2526_2728;
+
+/// The push crossing rule at and around a page boundary.
+#[test]
+fn push_crossing_rule() {
+    let _g = lock();
+    let cases = [
+        (0x1000, false),
+        (0x1001, true),
+        (0x1004, true),
+        (0x1007, true),
+        (0x1008, false),
+        (0x1009, false),
+        (0x7fff_f000, false),
+        (0x7fff_f004, true),
+    ];
+    for (rsp, want) in cases {
+        assert_eq!(push_crosses_page(rsp), want, "rsp {rsp:#x}");
+    }
+}
+
+/// A run stopped by a push crossing: a named refusal at the call, its
+/// slot the address below `rsp`.
+fn check_crossing(what: &str, out: Result<Outcome, RunError>, base: u64, rsp: u64) {
+    match out {
+        Err(RunError::Refuse(Refuse::IndirectPushCrossesPage { src_pc, slot })) => {
+            assert_eq!(src_pc, base + CALL_AT, "{what}: src_pc");
+            assert_eq!(slot, rsp - 8, "{what}: slot");
+        }
+        other => panic!("{what}: push crossing: want a named refusal, got {other:?}"),
+    }
+}
+
+/// A budgeted run stopped by a push crossing: a handoff at the call
+/// with the state before it (one branch, five instructions retired).
+fn check_crossing_handoff(what: &str, stop: &BudgetStop, base: u64, rsp: u64) {
+    match &stop.end {
+        BudgetEnd::Handoff {
+            refusal: Refuse::IndirectPushCrossesPage { src_pc, .. },
+            at,
+        } => {
+            assert_eq!(*at, base + CALL_AT, "{what}: handoff point");
+            assert_eq!(*src_pc, base + CALL_AT, "{what}: refusal src_pc");
+        }
+        other => panic!("{what}: push crossing: want a named refusal handoff, got {other:?}"),
+    }
+    assert_eq!(stop.outcome.branches, 1, "{what}: branches");
+    assert_eq!(stop.outcome.instructions, 5, "{what}: instructions");
+    assert_eq!(stop.outcome.state.rip, base + CALL_AT, "{what}: rip");
+    assert_eq!(stop.outcome.state.rsp, rsp, "{what}: rsp");
+}
+
+/// Plant the two witnesses around the stack page boundary `page`.
+fn plant_marks(what: &str, page: u64) {
+    assert!(
+        ProcessMemory.write_u64(page - 8, MARK_LO),
+        "{what}: plant low"
+    );
+    assert!(ProcessMemory.write_u64(page, MARK_HI), "{what}: plant high");
+}
+
+/// Neither witness around `page` changed.
+fn check_marks(what: &str, page: u64) {
+    let lo = ProcessMemory.read_u64(page - 8);
+    assert_eq!(
+        lo,
+        Some(MARK_LO),
+        "{what}: bytes below the boundary written"
+    );
+    let hi = ProcessMemory.read_u64(page);
+    assert_eq!(
+        hi,
+        Some(MARK_HI),
+        "{what}: bytes above the boundary written"
+    );
+}
+
+/// Push crossing, in-process: the slot straddles the boundary between
+/// the stack's top two pages (both writable); the call refuses before
+/// any retranslation or write, plain and budgeted, and the same
+/// executable then completes with the normal stack.
+#[test]
+fn push_crossing_inprocess() {
+    let _g = lock();
+    let name = CALL_REG;
+    let bytes = fixtures::by_name(name).bytes;
+    let (guest, mut exec, state) = inproc(name, &bytes, false);
+    let page = guest.stack_top() + 8 - 4096;
+    plant_marks(name, page);
+    let mut bad = state;
+    bad.rsp = page + 4;
+    check_crossing(name, run_inproc(&mut exec, bad), guest.base, bad.rsp);
+    assert_eq!(
+        exec.retranslations(),
+        0,
+        "{name}: retranslated before refusing"
+    );
+    check_marks(name, page);
+    let out = match run_inproc(&mut exec, state) {
+        Ok(o) => o,
+        Err(e) => panic!("{name}: control run: {e:?}"),
+    };
+    assert_eq!(out.state.rax, CALL_REG_RAX, "{name}: control result");
+    let (guest, mut exec, state) = inproc(name, &bytes, true);
+    let page = guest.stack_top() + 8 - 4096;
+    plant_marks(name, page);
+    let mut bad = state;
+    bad.rsp = page + 4;
+    let r = exec.run_budgeted(bad, &ProcessMemory, RETURN_SENTINEL, BIG);
+    check_crossing_handoff(name, &budget_stop(name, r), guest.base, bad.rsp);
+    check_marks(name, page);
+}
+
+/// Push crossing, remote: as in-process, with the tracer's writes as
+/// the witness that nothing touched the slot and no install ran.
+#[test]
+fn push_crossing_remote() {
+    let _g = lock();
+    let name = CALL_REG;
+    let bytes = fixtures::by_name(name).bytes;
+    let (mut rx, _dl, state, info) = remote(name, &bytes, false);
+    let mut bad = state;
+    bad.rsp = (info.stack_top & !0xfff) + 4;
+    check_crossing(name, rx.run(bad, RETURN_SENTINEL), info.base, bad.rsp);
+    let writes = rx.tracer_writes_for_test();
+    assert!(
+        !wrote_below(&writes, bad.rsp),
+        "{name} remote: tracer wrote the push slot: {writes:?}"
+    );
+    assert_eq!(
+        rx.retranslations(),
+        0,
+        "{name} remote: retranslated before refusing"
+    );
+    assert_eq!(rx.proc_mem_writes(), 0, "{name} remote: proc_mem_writes");
+    let out = match rx.run(state, RETURN_SENTINEL) {
+        Ok(o) => o,
+        Err(e) => panic!("{name} remote: control run: {e:?}"),
+    };
+    assert_eq!(out.state.rax, CALL_REG_RAX, "{name} remote: control result");
+    let (mut rx, _dl, state, info) = remote(name, &bytes, true);
+    let mut bad = state;
+    bad.rsp = (info.stack_top & !0xfff) + 4;
+    let stop = budget_stop(name, rx.run_budgeted(bad, RETURN_SENTINEL, BIG));
+    check_crossing_handoff(name, &stop, info.base, bad.rsp);
+    let writes = rx.tracer_writes_for_test();
+    assert!(
+        !wrote_below(&writes, bad.rsp),
+        "{name} remote: tracer wrote the push slot: {writes:?}"
+    );
+}
+
+/// A run stopped by an unwritable push slot: a guest fault at the call
+/// whose address is the slot, with the state before the call.
+fn check_push_fault(what: &str, out: Result<Outcome, RunError>, base: u64, rsp: u64) {
+    let f = match out {
+        Err(RunError::Fault(f)) => f,
+        other => panic!("{what}: push fault: expected a fault, got {other:?}"),
+    };
+    assert_eq!(f.kind, FaultKind::GuestFault, "{what}: kind");
+    assert_eq!(f.src_pc, base + CALL_AT, "{what}: src_pc");
+    assert_eq!(f.addr, rsp - 8, "{what}: addr");
+    assert_eq!(f.instructions, 5, "{what}: instructions");
+    assert_eq!(f.branches, 1, "{what}: branches");
+    assert_eq!(f.state.rip, base + CALL_AT, "{what}: rip");
+    assert_eq!(f.state.rsp, rsp, "{what}: rsp");
+}
+
+/// Push fault, in-process: RSP inside the RX code page. The helper is
+/// translated first (one retranslation), then the push faults; the
+/// next run with the normal stack completes.
+#[test]
+fn push_fault_inprocess() {
+    let _g = lock();
+    let name = CALL_REG;
+    let bytes = fixtures::by_name(name).bytes;
+    let (guest, mut exec, state) = inproc(name, &bytes, false);
+    let mut bad = state;
+    bad.rsp = guest.base + PUSH_FAULT_RSP_OFF;
+    check_push_fault(name, run_inproc(&mut exec, bad), guest.base, bad.rsp);
+    assert_eq!(
+        exec.retranslations(),
+        1,
+        "{name}: retranslations at the fault"
+    );
+    let out = match run_inproc(&mut exec, state) {
+        Ok(o) => o,
+        Err(e) => panic!("{name}: run after the push fault: {e:?}"),
+    };
+    assert_eq!(
+        out.state.rax, CALL_REG_RAX,
+        "{name}: result after the push fault"
+    );
+    assert_eq!(
+        exec.retranslations(),
+        1,
+        "{name}: retranslations after the fault"
+    );
+}
+
+/// Push fault, remote: as in-process. The install of the helper
+/// precedes the push and is swapped in before the fault; the next run
+/// on the same executable completes with no further retranslation.
+#[test]
+fn push_fault_remote() {
+    let _g = lock();
+    let name = CALL_REG;
+    let bytes = fixtures::by_name(name).bytes;
+    let (mut rx, _dl, state, info) = remote(name, &bytes, false);
+    let mut bad = state;
+    bad.rsp = info.base + PUSH_FAULT_RSP_OFF;
+    check_push_fault(name, rx.run(bad, RETURN_SENTINEL), info.base, bad.rsp);
+    assert_eq!(
+        rx.retranslations(),
+        1,
+        "{name} remote: retranslations at the fault"
+    );
+    let out = match rx.run(state, RETURN_SENTINEL) {
+        Ok(o) => o,
+        Err(e) => panic!("{name} remote: run after the push fault: {e:?}"),
+    };
+    assert_eq!(
+        out.state.rax, CALL_REG_RAX,
+        "{name} remote: result after the push fault"
+    );
+    assert_eq!(
+        rx.retranslations(),
+        1,
+        "{name} remote: retranslations after the fault"
+    );
 }
 
 /// T7, in-process: retranslations on the first run, none on the
