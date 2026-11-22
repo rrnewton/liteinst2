@@ -767,6 +767,119 @@ fn p1b1_indirect_remote_matches() {
     }
 }
 
+/// Segment overrides, remote vs in process, exact.
+///
+/// What this covers in remote mode: translated code runs in the
+/// traced child's thread, whose FS/GS bases the dispatcher never
+/// writes (it sets only the general registers, RIP and RFLAGS), so
+/// FS reads that child's own TLS; the in-process reference reads
+/// this test thread's. The fixtures cancel every TLS-derived value,
+/// so the comparison (counts, exits, every register, flags, buffers
+/// and stack window) is exact. `seg_gs_fault` faults identically
+/// (GS base 0: linear 0x40, same instruction, counts and recovered
+/// state). `seg_fs_self` pins the remote read itself: the `fs:[0]`
+/// that translated code returns names a word in the child that holds
+/// its own address, the TCB self pointer.
+#[test]
+fn seg_override_remote_matches() {
+    let _g = lock();
+    for (name, rax, instructions) in [
+        ("seg_fs_canary", 0u64, 14u64),
+        ("seg_fs_tcb", 0, 11),
+        ("seg_flat_overrides", 31, 11),
+    ] {
+        let b = run_both(name);
+        assert_same_outcome(name, &b);
+        let rem = b
+            .remote
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{name} remote: {e:?}"));
+        assert_eq!(rem.state.rax, rax, "{name}: remote rax");
+        assert_eq!(
+            rem.instructions, instructions,
+            "{name}: remote instructions"
+        );
+        println!("{name}: remote == in-process");
+    }
+    {
+        let b = run_both("seg_gs_fault");
+        let jf = fault_of(&b.jit, "seg_gs_fault", "in-process");
+        let rf = fault_of(&b.remote, "seg_gs_fault", "remote");
+        assert_eq!(rf.kind, jf.kind, "seg_gs_fault: fault kind");
+        assert_eq!(rf.signum, libc::SIGSEGV, "seg_gs_fault: remote signum");
+        assert_eq!(jf.signum, libc::SIGSEGV, "seg_gs_fault: in-process signum");
+        assert_eq!(
+            (rf.branches, rf.instructions),
+            (3, 10),
+            "seg_gs_fault: remote counts"
+        );
+        assert_eq!(
+            (jf.branches, jf.instructions),
+            (3, 10),
+            "seg_gs_fault: in-process counts"
+        );
+        assert_eq!(
+            rf.src_pc - b.remote_ranges[0].0,
+            9,
+            "seg_gs_fault: remote fault pc"
+        );
+        assert_eq!(
+            jf.src_pc - b.jit_ranges[0].0,
+            9,
+            "seg_gs_fault: in-process fault pc"
+        );
+        assert_eq!(rf.state.rip, rf.src_pc, "seg_gs_fault: recovered rip");
+        assert_eq!(
+            rf.addr, 0x40,
+            "seg_gs_fault: remote fault address (GS base 0)"
+        );
+        assert_eq!(jf.addr, 0x40, "seg_gs_fault: in-process fault address");
+        assert_eq!((rf.state.rcx, jf.state.rcx), (3, 3), "seg_gs_fault: rcx");
+        assert_eq!(rf.state.rax, jf.state.rax, "seg_gs_fault: rax");
+        assert_eq!(
+            rf.state.rflags & STATUS_MASK,
+            jf.state.rflags & STATUS_MASK,
+            "seg_gs_fault: status flags"
+        );
+    }
+    {
+        let fixture = fixtures::by_name("seg_fs_self");
+        let (mut remote, _deadline) =
+            deadline::remote_named(CHILD, "seg_fs_self").expect("spawn seg_fs_self");
+        let info = remote.info();
+        let region = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: fixture.bytes.clone(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        remote
+            .prepare(&region, info.base, CountProfile::BranchesAndInstructions)
+            .expect("prepare seg_fs_self");
+        let state = remote.initial_state();
+        let out = remote
+            .run(state, RETURN_SENTINEL)
+            .expect("seg_fs_self remote run");
+        let tp = out.state.rax;
+        assert_ne!(tp, 0, "seg_fs_self: remote fs:[0]");
+        let mut word = [0u8; 8];
+        assert!(
+            remote.read_mem(tp, &mut word),
+            "seg_fs_self: read child TCB"
+        );
+        assert_eq!(
+            u64::from_le_bytes(word),
+            tp,
+            "seg_fs_self: remote fs:[0] is the child's TCB self pointer"
+        );
+        assert_eq!(
+            (out.branches, out.instructions),
+            (0, 2),
+            "seg_fs_self counts"
+        );
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]

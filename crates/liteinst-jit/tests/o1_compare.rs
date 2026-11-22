@@ -892,6 +892,94 @@ fn p1b1_indirect_matches_o1() {
     }
 }
 
+/// Segment overrides vs the O1 oracle, exact (no tolerance).
+///
+/// What this covers in process: translated code runs on this test
+/// thread, so its FS reads and writes this thread's TLS, while the
+/// oracle steps the same bytes natively in its own child, on that
+/// child's TLS (another canary, another TCB address). The fixtures
+/// cancel every TLS-derived value before `ret`, so the full-state
+/// comparison (counts, every register, flags, data, stack window)
+/// is exact, and checks the TLS invariants on each engine: three
+/// canary reads (two encodings) agree, a same-value TLS store, the
+/// TCB self pointer read through FS and through memory, and a
+/// register-base FS operand. `seg_fs_self` pins the absolute read:
+/// in process, `fs:[0]` is this thread's FS base. `seg_gs_fault`
+/// faults on both engines at linear 0x40 (GS base 0), with the same
+/// instruction, counts and registers.
+#[test]
+fn seg_override_matches_o1() {
+    let _g = lock();
+    for (name, rax, branches, instructions) in [
+        ("seg_fs_canary", 0u64, 3u64, 14u64),
+        ("seg_fs_tcb", 0, 3, 11),
+        ("seg_flat_overrides", 31, 0, 11),
+    ] {
+        let (jit, o1) = compare(name);
+        assert_eq!(jit.state.rax, rax, "{name}: rax");
+        assert_eq!(jit.branches, branches, "{name}: jit branches");
+        assert_eq!(o1.branches, branches, "{name}: oracle branches");
+        assert_eq!(jit.instructions, instructions, "{name}: jit instructions");
+        assert_eq!(o1.instructions, instructions, "{name}: oracle instructions");
+        println!("{name}: jit == o1");
+    }
+    {
+        let jr = run_jit("seg_gs_fault", |_| {});
+        let f = match jr.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("seg_gs_fault jit: {other:?}"),
+        };
+        let o1 = deadline::o1(CHILD, "seg_gs_fault", |_, _| {});
+        let (o1_pc, o1_sig) = o1.fault.expect("seg_gs_fault: oracle fault");
+        assert_eq!(f.kind, liteinst_jit::exec::FaultKind::GuestFault);
+        assert_eq!(f.signum, libc::SIGSEGV, "seg_gs_fault: jit signum");
+        assert_eq!(o1_sig, f.signum, "seg_gs_fault: signum");
+        assert_eq!(f.branches, 3, "seg_gs_fault: jit branches");
+        assert_eq!(o1.branches, 3, "seg_gs_fault: oracle branches");
+        assert_eq!(f.instructions, 10, "seg_gs_fault: jit instructions");
+        assert_eq!(o1.instructions, 10, "seg_gs_fault: oracle instructions");
+        assert_eq!(off(f.src_pc, jr.base), 9, "seg_gs_fault: jit fault pc");
+        assert_eq!(off(o1_pc, o1.base), 9, "seg_gs_fault: oracle fault pc");
+        assert_eq!(f.state.rip, f.src_pc, "seg_gs_fault: recovered rip");
+        assert_eq!(f.addr, 0x40, "seg_gs_fault: jit fault address (GS base 0)");
+        assert_eq!(o1.fault_addr, 0x40, "seg_gs_fault: oracle fault address");
+        assert_eq!(f.state.rcx, 3, "seg_gs_fault: jit rcx");
+        assert_eq!(o1.state.rcx, 3, "seg_gs_fault: oracle rcx");
+        assert_eq!(f.state.rax, o1.state.rax, "seg_gs_fault: rax");
+        assert_eq!(
+            f.state.rflags & STATUS_MASK,
+            o1.state.rflags & STATUS_MASK,
+            "seg_gs_fault: status flags"
+        );
+    }
+    {
+        let jr = run_jit("seg_fs_self", |_| {});
+        let out = jr.outcome.as_ref().expect("seg_fs_self jit").clone();
+        const ARCH_GET_FS: i32 = 0x1003;
+        let mut fs_base: u64 = 0;
+        // SAFETY: arch_prctl status query writing one u64 through
+        // the provided pointer.
+        let rc = unsafe {
+            libc::syscall(
+                libc::SYS_arch_prctl,
+                ARCH_GET_FS,
+                core::ptr::addr_of_mut!(fs_base),
+            )
+        };
+        assert_eq!(rc, 0, "ARCH_GET_FS");
+        assert_ne!(fs_base, 0, "this thread has a TLS block");
+        assert_eq!(
+            out.state.rax, fs_base,
+            "seg_fs_self: in process, fs:[0] is this thread's FS base"
+        );
+        assert_eq!(
+            (out.branches, out.instructions),
+            (0, 2),
+            "seg_fs_self counts"
+        );
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]
