@@ -1,7 +1,8 @@
 //! JIT vs O1 ptrace oracle cross-checks with full normalized
-//! architectural-state equality. One sequential test: the JIT
-//! fault path uses process-global dispatcher state (P1a
-//! single-threaded envelope), so cases must not run concurrently.
+//! architectural-state equality. The JIT fault path uses
+//! process-global dispatcher state (P1a single-threaded envelope),
+//! so cases must not run concurrently: every JIT test here holds
+//! the one serial lock (`lock()`).
 
 use liteinst_jit::exec::{Executable, Outcome, ProcessMemory, RunError};
 use liteinst_jit::fixtures;
@@ -16,6 +17,23 @@ mod deadline;
 
 const CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-o1-child");
 const STATUS_MASK: u64 = 0xcd5; // OF|DF|SF|ZF|AF|PF|CF
+
+static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// One JIT test's hold: the serial lock, then the test's bound (see
+/// `common/deadline.rs`). The bound starts only after the lock is
+/// held, and is dropped after it.
+struct Serial {
+    _lock: std::sync::MutexGuard<'static, ()>,
+    _bound: deadline::TestBound,
+}
+
+fn lock() -> Serial {
+    Serial {
+        _lock: deadline::serial_lock(&SERIAL),
+        _bound: deadline::TestBound::arm(),
+    }
+}
 
 struct JitResult {
     outcome: Result<Outcome, RunError>,
@@ -207,7 +225,7 @@ fn compare(name: &str) -> (Outcome, OracleOutcome) {
 
 #[test]
 fn jit_matches_o1_oracle_on_corpus_v1() {
-    let _bound = deadline::TestBound::arm();
+    let _g = lock();
     // Oracle self-check against hand-computed counts (an off-by-one
     // oracle must fail here, not silently agree with a wrong JIT).
     let o1 = deadline::o1(CHILD, "sum_loop", |_, _| {});
@@ -611,8 +629,11 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(f.kind, liteinst_jit::exec::FaultKind::GuestFault);
     }
 
-    // Indirect call and jump-table edges refuse by name too.
-    for name in ["indirect_call", "jump_table"] {
+    // A jump-table edge to an address outside the region refuses by
+    // name (P1b.1 resolves in-region targets only; indirect_call now
+    // resolves and is pinned by `p1b1_indirect_matches_o1`).
+    {
+        let name = "jump_table";
         let jr = run_jit(name, |_| {});
         assert!(
             matches!(
@@ -640,7 +661,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(o1.fault.map(|x| x.1), Some(f.signum));
     }
 
-    // Indirect control flow refuses by name (P1a boundary).
+    // An indirect jump outside the region refuses by name (rdi = 0).
     {
         let jr = run_jit("indirect_jmp", |_| {});
         assert!(matches!(
@@ -838,6 +859,36 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         )))
         .expect("run driver");
         assert!(status.success(), "driver rc: {status}");
+    }
+}
+
+/// P1b.1 T1 and T2: in-region indirect transfers resolve through the
+/// dispatcher and match the O1 oracle EXACTLY: every compared
+/// register, RIP, the retired count, the result, the buffers, and
+/// the stack window, which holds each pushed return address (the
+/// call's next IP). indirect_call is `call rax; ret` with rax naming
+/// its own `ret`: the call, then that `ret` twice, 3 retired.
+#[test]
+fn p1b1_indirect_matches_o1() {
+    let _g = lock();
+    for name in [
+        "ind_jmp_reg",
+        "ind_jmp_table",
+        "indirect_call",
+        "ind_call_reg",
+        "ind_call_mem",
+    ] {
+        let (jit, o1) = compare(name);
+        match name {
+            "ind_jmp_reg" => assert_eq!(jit.state.rax, 16, "{name}: rax"),
+            "ind_jmp_table" => assert_eq!(jit.state.rax, 40, "{name}: rax"),
+            "ind_call_reg" | "ind_call_mem" => assert_eq!(jit.state.rax, 8, "{name}: rax"),
+            _ => {
+                assert_eq!(jit.instructions, 3, "{name}: instructions");
+                assert_eq!(o1.instructions, 3, "{name}: oracle instructions");
+            }
+        }
+        println!("{name}: jit == o1");
     }
 }
 

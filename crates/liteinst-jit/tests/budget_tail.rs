@@ -40,8 +40,10 @@ const O1_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-o1-child");
 const REMOTE_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
 const STATUS_MASK: u64 = 0xcd5; // OF|DF|SF|ZF|AF|PF|CF
 
-/// The corpus-v1 fixtures of `jit_matches_o1_oracle_on_corpus_v1`.
-const FIXTURES: [&str; 21] = [
+/// The corpus-v1 fixtures of `jit_matches_o1_oracle_on_corpus_v1`,
+/// then the five P1b.1 corpus fixtures (in-region indirect
+/// transfers, resolved by the dispatcher with the budget unchanged).
+const FIXTURES: [&str; 26] = [
     "sum_loop",
     "branchy_even_sum",
     "flags_adc",
@@ -63,6 +65,11 @@ const FIXTURES: [&str; 21] = [
     "repne_scasb",
     "rep_lodsq",
     "r11_data",
+    "ind_jmp_reg",
+    "ind_call_reg",
+    "ind_jmp_table",
+    "ind_call_mem",
+    "ind_jmp_known",
 ];
 
 /// Ret-only calibration entries before and after the corpus.

@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/o1.rs
++++ b/crates/liteinst-jit/src/o1.rs
+@@ -295,7 +295,8 @@
+         }
+         _ => return NextRip::Unverifiable,
+     };
+-    NextRip::Exact(target)
++    // MUTANT 20: O1 predicts the indirect target plus one.
++    NextRip::Exact(target.wrapping_add(1))
+ }
+ 
+ /// A 64-bit general register's value in `regs`; `None` for any

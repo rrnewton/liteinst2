@@ -127,15 +127,29 @@ fn check_interior(decoded: &BTreeMap<u64, usize>, target: u64) -> Result<(), Ref
 
 /// Discover all blocks reachable from `entry` over direct edges.
 pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>, Refuse> {
+    discover_roots(region, &BTreeSet::from([entry]))
+}
+
+/// Discover all blocks reachable over direct edges from every root
+/// in the sorted set `roots` (P1b.1 closure retranslation), with
+/// P1a's own rules: blocks split at every start so they never
+/// overlap, and two streams that disagree on instruction boundaries
+/// refuse `InteriorEntry`. The result is a function of the region
+/// bytes and the root set; for `{entry}` it is [`discover`]'s.
+pub fn discover_roots(
+    region: &RegionFacts,
+    roots: &BTreeSet<u64>,
+) -> Result<BTreeMap<u64, Block>, Refuse> {
     if !region.immutable_private {
         return Err(Refuse::SelfModifyingOrWritableCode { src: region.base });
     }
-    if !region.contains(entry) {
-        return Err(Refuse::InteriorEntry { target: entry });
+    if let Some(&outside) = roots.iter().find(|r| !region.contains(**r)) {
+        return Err(Refuse::InteriorEntry { target: outside });
     }
     let mut blocks: BTreeMap<u64, Block> = BTreeMap::new();
-    let mut starts: BTreeSet<u64> = BTreeSet::from([entry]);
-    let mut work: Vec<u64> = vec![entry];
+    let mut starts: BTreeSet<u64> = roots.clone();
+    // Popped in ascending order; a single root is P1a's work list.
+    let mut work: Vec<u64> = roots.iter().rev().copied().collect();
     let mut decoded: BTreeMap<u64, usize> = BTreeMap::new();
     let mut decoder = SupportedDecoder::new(&region.bytes, region.base);
     while let Some(start) = work.pop() {
@@ -852,8 +866,34 @@ pub fn translate_with_options(
     data_addr: u64,
     options: TranslateOptions,
 ) -> Result<Translation, Refuse> {
+    translate_roots_with_options(
+        region,
+        entry,
+        &BTreeSet::from([entry]),
+        profile,
+        gen_base,
+        data_addr,
+        options,
+    )
+}
+
+/// As [`translate_with_options`], for every block reachable from the
+/// sorted root set `roots` (P1b.1 closure retranslation; `roots`
+/// holds `entry`). Blocks are emitted in source order exactly as
+/// for one root, so for `roots == {entry}` the emitted bytes are
+/// [`translate_with_options`]'s; a larger set re-emits the region
+/// and moves generated PCs.
+pub fn translate_roots_with_options(
+    region: &RegionFacts,
+    entry: u64,
+    roots: &BTreeSet<u64>,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
     let exit_style = options.exit_style;
-    let blocks = discover(region, entry)?;
+    let blocks = discover_roots(region, roots)?;
     let mut e = Emitter {
         buf: Vec::new(),
         gen_base,

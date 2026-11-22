@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/translate.rs
++++ b/crates/liteinst-jit/src/translate.rs
+@@ -1092,7 +1092,8 @@
+                 e.exit_stub(exit_kind::RETURN, term_pc, u64::from(pop_extra))?;
+             }
+             Terminator::Indirect => {
+-                e.exit_stub(exit_kind::INDIRECT, term_pc, 0)?;
++                // MUTANT 16: one emitted byte of the INDIRECT exit stub changes.
++                e.exit_stub(exit_kind::INDIRECT, term_pc, 1)?;
+             }
+             Terminator::SyscallExit { next } => {
+                 e.exit_stub(exit_kind::SYSCALL, term_pc, next)?;

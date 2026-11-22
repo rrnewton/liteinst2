@@ -20,12 +20,17 @@
 //! branch at `pc + len` or its decoded target; a direct
 //! `jmp`/`call` at its target; `ret` at the word at `[rsp]` before
 //! the step; a syscall at `pc + len`, except `rt_sigreturn`, which
-//! lands at the frame's saved RIP. Indirect `jmp`/`call` has no
-//! independent prediction and fails if it retires. A mismatch
-//! panics (never skipped). This verifies the decoded length only
-//! where the successor depends on it (not on a taken branch, a
-//! direct `jmp`/`call`, `ret` or `rt_sigreturn`); SIGNAL-CORPUS.md
-//! lists the limits.
+//! lands at the frame's saved RIP. An indirect `jmp r/m64` or
+//! `call r/m64` must land at its operand's value read before the
+//! step: the register, or the 8 bytes at the effective address,
+//! which iced's own `virtual_address` computes here from the
+//! step's registers (the translator's indirect resolver is not
+//! used). Any other indirect form, or an operand this
+//! oracle cannot read, has no prediction and fails if it retires.
+//! A mismatch panics (never skipped). This verifies the decoded
+//! length only where the successor depends on it (not on a taken
+//! branch, a direct or indirect `jmp`/`call`, `ret` or
+//! `rt_sigreturn`); SIGNAL-CORPUS.md lists the limits.
 //!
 //! O1-S (I1-H): [`run_o1s`] steps the same bytes in the remote
 //! fixture child (so the process signal state matches a
@@ -39,7 +44,7 @@
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
 
-use liteinst_x86::{Code, Instruction, Mnemonic, OpKind, decoder64};
+use liteinst_x86::{Code, Instruction, Mnemonic, OpKind, Register, decoder64};
 
 use crate::harness::{MappedGuest, RETURN_SENTINEL};
 use crate::remote::RemoteChildInfo;
@@ -196,7 +201,11 @@ enum NextRip {
         fall: u64,
         taken: u64,
     },
-    /// Indirect `jmp`/`call`: no independent prediction.
+    /// An indirect transfer with no independent prediction: a form
+    /// other than `jmp r/m64` and `call r/m64` (a far `jmp`, for
+    /// example), or an operand naming a register this oracle does
+    /// not read (32-bit addressing, for example). Fails if it
+    /// retires.
     Unverifiable,
     /// The prediction's memory read failed; the step can only
     /// fault, never retire.
@@ -216,25 +225,114 @@ fn predict_next(
     class: StepClass,
     regs: &libc::user_regs_struct,
 ) -> NextRip {
+    predict_next_with(ins, class, regs, &mut |addr: u64| read_u64(pid, addr))
+}
+
+/// [`predict_next`] with the child's memory read through
+/// `read_word` (the 8 bytes at an address, `None` when they cannot
+/// be read), so a test can drive the same prediction with a faked
+/// child.
+fn predict_next_with(
+    ins: &Instruction,
+    class: StepClass,
+    regs: &libc::user_regs_struct,
+    read_word: &mut dyn FnMut(u64) -> Option<u64>,
+) -> NextRip {
     let fall = regs.rip.wrapping_add(ins.len() as u64);
-    let read = |addr: u64| read_u64(pid, addr).map_or(NextRip::Unreadable, NextRip::Exact);
+    let read = |word: Option<u64>| word.map_or(NextRip::Unreadable, NextRip::Exact);
     match class {
         StepClass::Branch => NextRip::FallOrTaken {
             fall,
             taken: ins.near_branch_target(),
         },
-        StepClass::Return => read(regs.rsp),
+        StepClass::Return => read(read_word(regs.rsp)),
         StepClass::Syscall if regs.rax as u32 == NR_RT_SIGRETURN => {
-            read(regs.rsp.wrapping_add(UC_RIP))
+            read(read_word(regs.rsp.wrapping_add(UC_RIP)))
         }
         StepClass::Syscall => NextRip::Exact(fall),
         StepClass::Other => match ins.mnemonic() {
             Mnemonic::Jmp | Mnemonic::Call if ins.op0_kind() == OpKind::NearBranch64 => {
                 NextRip::Exact(ins.near_branch_target())
             }
-            Mnemonic::Jmp | Mnemonic::Call => NextRip::Unverifiable,
+            Mnemonic::Jmp | Mnemonic::Call => predict_indirect(ins, regs, read_word),
             _ => NextRip::Exact(fall),
         },
+    }
+}
+
+/// The successor of a retired indirect `jmp r/m64` or `call r/m64`
+/// is the value of its operand before the step, which is
+/// where the CPU transfers (a `call` reads its operand before it
+/// pushes). A register operand is read from `regs`; a memory
+/// operand is the 8 bytes `read_word` returns at the effective
+/// address, which iced's own `virtual_address` computes from
+/// `regs` (independent of the translator's indirect resolver).
+/// Any other form, or a register [`ea_register`] does not read,
+/// is [`NextRip::Unverifiable`]; a failed operand read is
+/// [`NextRip::Unreadable`]. Both fail if the step retires.
+fn predict_indirect(
+    ins: &Instruction,
+    regs: &libc::user_regs_struct,
+    read_word: &mut dyn FnMut(u64) -> Option<u64>,
+) -> NextRip {
+    if !matches!(ins.code(), Code::Jmp_rm64 | Code::Call_rm64) {
+        return NextRip::Unverifiable;
+    }
+    let target = match ins.op0_kind() {
+        OpKind::Register => match gpr64(regs, ins.op0_register()) {
+            Some(value) => value,
+            None => return NextRip::Unverifiable,
+        },
+        OpKind::Memory => {
+            let address = ins.virtual_address(0, 0, |reg, _, _| ea_register(regs, reg));
+            let Some(address) = address else {
+                return NextRip::Unverifiable;
+            };
+            match read_word(address) {
+                Some(value) => value,
+                None => return NextRip::Unreadable,
+            }
+        }
+        _ => return NextRip::Unverifiable,
+    };
+    NextRip::Exact(target)
+}
+
+/// A 64-bit general register's value in `regs`; `None` for any
+/// other register (a 32-bit or 16-bit name, a segment, RIP).
+fn gpr64(regs: &libc::user_regs_struct, reg: Register) -> Option<u64> {
+    Some(match reg {
+        Register::RAX => regs.rax,
+        Register::RBX => regs.rbx,
+        Register::RCX => regs.rcx,
+        Register::RDX => regs.rdx,
+        Register::RSI => regs.rsi,
+        Register::RDI => regs.rdi,
+        Register::RBP => regs.rbp,
+        Register::RSP => regs.rsp,
+        Register::R8 => regs.r8,
+        Register::R9 => regs.r9,
+        Register::R10 => regs.r10,
+        Register::R11 => regs.r11,
+        Register::R12 => regs.r12,
+        Register::R13 => regs.r13,
+        Register::R14 => regs.r14,
+        Register::R15 => regs.r15,
+        _ => return None,
+    })
+}
+
+/// A register as a 64-bit effective address reads it: a 64-bit
+/// general register's value, or a segment's base (0 for ES, CS,
+/// SS and DS; the thread's `fs_base` and `gs_base` for FS and GS).
+/// `None` for any other register, which leaves the prediction
+/// Unverifiable.
+fn ea_register(regs: &libc::user_regs_struct, reg: Register) -> Option<u64> {
+    match reg {
+        Register::ES | Register::CS | Register::SS | Register::DS => Some(0),
+        Register::FS => Some(regs.fs_base),
+        Register::GS => Some(regs.gs_base),
+        _ => gpr64(regs, reg),
     }
 }
 
@@ -1061,5 +1159,217 @@ pub fn run_o1s(
         injections,
         arrival_sent,
         dst_bytes,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! Controls for the indirect RIP-delta prediction.
+    //! Each drives the production path a step takes before it
+    //! single-steps (`decode_step`, `classify_step`,
+    //! `predict_next_with`) and then `check_next_rip`; only the child
+    //! is faked: its registers and its memory words.
+
+    use super::*;
+
+    const PC: u64 = 0x10_0000;
+    /// `jmp qword ptr [rax*8+0x3000]`, 7 bytes.
+    const JMP_TABLE: [u8; 7] = [0xff, 0x24, 0xc5, 0x00, 0x30, 0x00, 0x00];
+
+    /// Zeroed registers at `PC`, then `set` adjusts them.
+    fn regs_at_pc(set: impl FnOnce(&mut libc::user_regs_struct)) -> libc::user_regs_struct {
+        // SAFETY: user_regs_struct is plain integers; all zeros is a
+        // valid value.
+        let mut regs: libc::user_regs_struct = unsafe { core::mem::zeroed() };
+        regs.rip = PC;
+        set(&mut regs);
+        regs
+    }
+
+    /// The faked child's memory: 8-byte words by address.
+    fn word_at(memory: &[(u64, u64)], addr: u64) -> Option<u64> {
+        memory.iter().find(|&&(a, _)| a == addr).map(|&(_, v)| v)
+    }
+
+    /// Decode `bytes` at RIP, classify and predict, as a step does.
+    fn predict(
+        bytes: &[u8],
+        regs: &libc::user_regs_struct,
+        memory: &[(u64, u64)],
+    ) -> (Instruction, NextRip) {
+        let ins = decode_step(bytes, regs.rip);
+        let class = classify_step(&ins);
+        let mut read_word = |addr: u64| word_at(memory, addr);
+        let predicted = predict_next_with(&ins, class, regs, &mut read_word);
+        (ins, predicted)
+    }
+
+    /// Whether the RIP-delta check fails a retirement at `after`. A
+    /// failure must be the check's own assertion.
+    fn check_fails(ins: &Instruction, predicted: NextRip, after: u64) -> bool {
+        let step = || check_next_rip(ins, PC, predicted, after);
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(step)) {
+            Ok(()) => false,
+            Err(payload) => {
+                let message = payload
+                    .downcast_ref::<String>()
+                    .map(String::as_str)
+                    .or_else(|| payload.downcast_ref::<&str>().copied())
+                    .unwrap_or_default();
+                assert!(
+                    message.starts_with("O1 RIP-delta check failed"),
+                    "the check panicked with something else: {message}"
+                );
+                true
+            }
+        }
+    }
+
+    /// `jmp rax` predicts exactly RAX, and a retirement there passes.
+    #[test]
+    fn indirect_register_target_is_exact() {
+        let target = PC + 0x40;
+        let regs = regs_at_pc(|r| r.rax = target);
+        let (ins, predicted) = predict(&[0xff, 0xe0], &regs, &[]);
+        assert_eq!(ins.code(), Code::Jmp_rm64);
+        assert_eq!(
+            predicted,
+            NextRip::Exact(target),
+            "O1 indirect prediction: jmp rax"
+        );
+        assert!(!check_fails(&ins, predicted, target));
+    }
+
+    /// `jmp [rax*8+0x3000]` predicts the table entry RAX selects,
+    /// read from the faked child's memory.
+    #[test]
+    fn indirect_memory_target_is_the_table_entry() {
+        let (entry, other) = (PC + 0x80, PC + 0xc0);
+        let regs = regs_at_pc(|r| r.rax = 2);
+        let memory = [(0x3008, other), (0x3010, entry)];
+        let (ins, predicted) = predict(&JMP_TABLE, &regs, &memory);
+        assert_eq!(ins.code(), Code::Jmp_rm64);
+        assert_eq!(
+            predicted,
+            NextRip::Exact(entry),
+            "O1 indirect prediction: jmp [rax*8+0x3000]"
+        );
+        assert!(!check_fails(&ins, predicted, entry));
+    }
+
+    /// `jmp [rip+0x10]` reads its operand after the 6-byte
+    /// instruction, at `PC + 6 + 0x10`.
+    #[test]
+    fn indirect_rip_relative_target_is_read_after_the_instruction() {
+        let target = PC + 0x100;
+        let regs = regs_at_pc(|_| {});
+        let memory = [(PC + 0x16, target)];
+        let (ins, predicted) = predict(&[0xff, 0x25, 0x10, 0, 0, 0], &regs, &memory);
+        assert_eq!(
+            predicted,
+            NextRip::Exact(target),
+            "O1 indirect prediction: jmp [rip+0x10]"
+        );
+        assert!(!check_fails(&ins, predicted, target));
+    }
+
+    /// `call [rsp]` reads its operand at RSP before it pushes.
+    #[test]
+    fn indirect_call_reads_its_operand_before_the_push() {
+        let target = PC + 0x200;
+        let regs = regs_at_pc(|r| r.rsp = 0x7000);
+        let memory = [(0x7000, target), (0x6ff8, PC + 3)];
+        let (ins, predicted) = predict(&[0xff, 0x14, 0x24], &regs, &memory);
+        assert_eq!(ins.code(), Code::Call_rm64);
+        assert_eq!(
+            predicted,
+            NextRip::Exact(target),
+            "O1 indirect prediction: call [rsp]"
+        );
+        assert!(!check_fails(&ins, predicted, target));
+    }
+
+    /// `jmp fs:[0x10]` adds the thread's FS base.
+    #[test]
+    fn indirect_fs_relative_target_adds_the_fs_base() {
+        let target = PC + 0x300;
+        let regs = regs_at_pc(|r| r.fs_base = 0x9000);
+        let memory = [(0x9010, target), (0x10, PC)];
+        let bytes = [0x64, 0xff, 0x24, 0x25, 0x10, 0, 0, 0];
+        let (ins, predicted) = predict(&bytes, &regs, &memory);
+        assert_eq!(
+            predicted,
+            NextRip::Exact(target),
+            "O1 indirect prediction: jmp fs:[0x10]"
+        );
+        assert!(!check_fails(&ins, predicted, target));
+    }
+
+    /// The wrong-target control: `jmp rax` passes at RAX, and fails
+    /// one past it, at the fall-through `pc + len` a non-control
+    /// instruction would take, and at zero.
+    #[test]
+    fn indirect_wrong_register_target_fails() {
+        let target = PC + 0x40;
+        let regs = regs_at_pc(|r| r.rax = target);
+        let (ins, predicted) = predict(&[0xff, 0xe0], &regs, &[]);
+        assert_eq!(predicted, NextRip::Exact(target));
+        assert!(!check_fails(&ins, predicted, target));
+        for wrong in [target + 1, PC + 2, 0] {
+            assert!(
+                check_fails(&ins, predicted, wrong),
+                "jmp rax: wrong target {wrong:#x} passed the RIP-delta check"
+            );
+        }
+    }
+
+    /// The wrong-target control for a memory operand: it passes at
+    /// the selected table entry, and fails on the neighbouring entry
+    /// and on the fall-through.
+    #[test]
+    fn indirect_wrong_memory_target_fails() {
+        let (entry, other) = (PC + 0x80, PC + 0xc0);
+        let regs = regs_at_pc(|r| r.rax = 2);
+        let memory = [(0x3008, other), (0x3010, entry)];
+        let (ins, predicted) = predict(&JMP_TABLE, &regs, &memory);
+        assert_eq!(predicted, NextRip::Exact(entry));
+        assert!(!check_fails(&ins, predicted, entry));
+        for wrong in [other, PC + 7] {
+            assert!(
+                check_fails(&ins, predicted, wrong),
+                "jmp [rax*8+0x3000]: wrong target {wrong:#x} passed the RIP-delta check"
+            );
+        }
+    }
+
+    /// An operand that cannot be read predicts Unreadable: the step
+    /// could only fault, so a retirement fails the check.
+    #[test]
+    fn indirect_unreadable_operand_fails_if_it_retires() {
+        let regs = regs_at_pc(|r| r.rax = 2);
+        let (ins, predicted) = predict(&JMP_TABLE, &regs, &[]);
+        assert_eq!(predicted, NextRip::Unreadable);
+        assert!(
+            check_fails(&ins, predicted, PC + 7),
+            "unreadable operand: a retirement passed the RIP-delta check"
+        );
+    }
+
+    /// Forms this oracle does not predict stay Unverifiable and fail
+    /// if they retire, even where the CPU would really land: 32-bit
+    /// addressing (`jmp [eax]`) and a far `jmp m16:32`.
+    #[test]
+    fn indirect_unpredicted_forms_fail_if_they_retire() {
+        let regs = regs_at_pc(|r| r.rax = 0x3000);
+        let memory = [(0x3000, PC + 0x40)];
+        for bytes in [&[0x67, 0xff, 0x20][..], &[0xff, 0x2c, 0x24][..]] {
+            let (ins, predicted) = predict(bytes, &regs, &memory);
+            assert_eq!(predicted, NextRip::Unverifiable, "{:?}", ins.code());
+            assert!(
+                check_fails(&ins, predicted, PC + 0x40),
+                "{:?}: an unpredicted form passed the RIP-delta check",
+                ins.code()
+            );
+        }
     }
 }

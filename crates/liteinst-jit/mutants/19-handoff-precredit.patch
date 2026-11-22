@@ -1,0 +1,24 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1755,7 +1755,8 @@
+                         Err(IndirectStop::Refuse(refusal)) => {
+                             if self.budget_run.is_some() {
+                                 let out =
+-                                    outcome_at(state, data.branch_count, retired_before, exits);
++                                    // MUTANT 19: the handoff counts the precredited indirect (in-process).
++                                    outcome_at(state, data.branch_count, data.instruction_count, exits);
+                                 return self
+                                     .budget_finish(BudgetEnd::Handoff { refusal, at: src }, out);
+                             }
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -4761,7 +4761,8 @@
+                         IndirectStop::Refuse(refusal) => {
+                             if self.budget_run.is_some() {
+                                 let out =
+-                                    outcome_at(state, data.branch_count, retired_before, exits);
++                                    // MUTANT 19: the handoff counts the precredited indirect (remote).
++                                    outcome_at(state, data.branch_count, data.instruction_count, exits);
+                                 let end = BudgetEnd::Handoff { refusal, at: src };
+                                 return budget_finish_into(&mut self.budget_run, end, out);
+                             }

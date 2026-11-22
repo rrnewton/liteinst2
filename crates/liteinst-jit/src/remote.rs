@@ -36,24 +36,30 @@
 //! Every other delivery shape still stops as a recovered
 //! outcome by name — including async stops in the common exit
 //! of an INDIRECT exit and at generated PCs with no pcmap entry; no transparency
-//! claim is made beyond the tested shapes. Indirect resolution, threads, and exec
+//! claim is made beyond the tested shapes. In-region indirect transfers resolve
+//! as in-process (P1b.1), with new code installed through `/proc/<pid>/mem` and
+//! refused by name while a signal frame is live; threads and exec
 //! successors stay refused exactly as in-process. This module
 //! is a substrate for later P1b stages, not a public API
 //! contract, and makes no whole-program claim.
 
+use std::collections::BTreeSet;
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
 
 use crate::decode::{InsnClass, NondetKind};
 use crate::exec::{
-    BudgetEnd, BudgetRun, CODE_CAP, Fault, Outcome, POLL_BUDGET, RunError, budget_finish_into,
-    outcome_at, syscall_guard,
+    BudgetEnd, BudgetRun, CODE_CAP, Fault, IndirectStop, Outcome, POLL_BUDGET, RunError,
+    budget_finish_into, outcome_at, syscall_guard,
 };
+use crate::indirect::{IndirectKind, ResolveError, Resolved};
 use crate::pcmap::{CallStage, CommonStage, ExitStage, Phase as MapPhase, Recovery as MapRecovery};
 use crate::recovery::{FaultInput, RecoveryInput};
 use crate::refuse::Refuse;
 use crate::state::{GuestState, JitData, exit_kind};
-use crate::translate::{ExitStyle, TranslateOptions, Translation, translate_with_options};
+use crate::translate::{
+    ExitStyle, TranslateOptions, Translation, translate_roots_with_options, translate_with_options,
+};
 use crate::types::{CountProfile, RegionFacts};
 
 const PAGE: usize = 4096;
@@ -1493,6 +1499,24 @@ pub struct RemoteExecutable {
     /// started (witness W2; see `single_steps_for_test`).
     #[cfg(feature = "test-seams")]
     single_steps: core::cell::Cell<u64>,
+    /// The admitted region and entry, kept for P1b.1 closure
+    /// retranslation (`None` until prepared).
+    region: Option<RegionFacts>,
+    entry: u64,
+    /// The sorted root set the live translation was made from.
+    roots: BTreeSet<u64>,
+    /// Successful retranslations (`retranslations()` test seam).
+    retranslations: u64,
+    /// `/proc/<pid>/mem` write calls made by P1b.1 installs
+    /// (`proc_mem_writes()` test seam).
+    proc_mem_writes: core::cell::Cell<u64>,
+    /// An install failed after writing part of a new image, so the
+    /// arena may be torn: every later run refuses by name and the
+    /// guest is never resumed on it.
+    poisoned: core::cell::Cell<bool>,
+    /// Test seam, one-shot: see `force_install_failure_after`.
+    #[cfg(feature = "test-seams")]
+    install_failure_after: core::cell::Cell<Option<usize>>,
 }
 
 impl RemoteExecutable {
@@ -1738,6 +1762,14 @@ impl RemoteExecutable {
             budget_run: None,
             #[cfg(feature = "test-seams")]
             single_steps: core::cell::Cell::new(0),
+            region: None,
+            entry: 0,
+            roots: BTreeSet::new(),
+            retranslations: 0,
+            proc_mem_writes: core::cell::Cell::new(0),
+            poisoned: core::cell::Cell::new(false),
+            #[cfg(feature = "test-seams")]
+            install_failure_after: core::cell::Cell::new(None),
         })
     }
 
@@ -2832,7 +2864,217 @@ impl RemoteExecutable {
         self.translation = Some(translation);
         self.profile = profile;
         self.rcb_budget = rcb_budget;
+        self.region = Some(region.clone());
+        self.entry = entry;
+        self.roots = BTreeSet::from([entry]);
         Ok(())
+    }
+
+    /// Test seam: successful P1b.1 retranslations (each one a
+    /// closure retranslation installed through `/proc/<pid>/mem`).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn retranslations(&self) -> u64 {
+        self.retranslations
+    }
+
+    /// Test seam: `/proc/<pid>/mem` write calls made by P1b.1
+    /// installs. `tracer_writes_for_test` records only `write_mem`.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn proc_mem_writes(&self) -> u64 {
+        self.proc_mem_writes.get()
+    }
+
+    /// Test seam: whether a failed install poisoned this executable.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn is_poisoned(&self) -> bool {
+        self.poisoned.get()
+    }
+
+    /// Test seam, one-shot: the next P1b.1 install fails (`EIO`)
+    /// once `bytes` bytes of the new image are written.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn force_install_failure_after(&self, bytes: usize) {
+        self.install_failure_after.set(Some(bytes));
+    }
+
+    /// The P1b.1 install, remote: write `code` over the arena's code
+    /// region through `/proc/<pid>/mem`, a FOLL_FORCE write by the
+    /// tracer (no tracee instruction, no protection change: the vma
+    /// stays r-x), then `0xCC` up to `old_len` when the new image is
+    /// shorter, so a stray jump past it traps. The signal-entry stub
+    /// at the arena tail is never written (the caller's cap). A short
+    /// write is retried for the rest. A failure refuses `CodeInstall`
+    /// "/proc mem write" with the errno and, if any byte was already
+    /// written, POISONS the executable (the arena may be torn).
+    fn install_remote(&self, code: &[u8], old_len: usize, src: u64) -> Result<(), Refuse> {
+        use std::os::unix::fs::FileExt;
+        let fail = |errno: i32| Refuse::CodeInstall {
+            src_pc: src,
+            reason: "/proc mem write",
+            errno,
+        };
+        let mut image = code.to_vec();
+        if image.len() < old_len {
+            image.resize(old_len, 0xcc);
+        }
+        let file = std::fs::OpenOptions::new()
+            .write(true)
+            .open(format!("/proc/{}/mem", self.guard.pid))
+            .map_err(|e| fail(e.raw_os_error().unwrap_or(0)))?;
+        #[cfg(feature = "test-seams")]
+        let limit = self.install_failure_after.take();
+        let mut done = 0usize;
+        while done < image.len() {
+            #[cfg(feature = "test-seams")]
+            let end = match limit {
+                Some(n) if done >= n => {
+                    if done > 0 {
+                        self.poisoned.set(true);
+                    }
+                    return Err(fail(libc::EIO));
+                }
+                Some(n) => image.len().min(n),
+                None => image.len(),
+            };
+            #[cfg(not(feature = "test-seams"))]
+            let end = image.len();
+            let at = self.info.arena_base + done as u64;
+            self.proc_mem_writes.set(self.proc_mem_writes.get() + 1);
+            match file.write_at(&image[done..end], at) {
+                Ok(n) if n > 0 => done += n,
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                other => {
+                    if done > 0 {
+                        self.poisoned.set(true);
+                    }
+                    let errno = match other {
+                        Err(e) => e.raw_os_error().unwrap_or(0),
+                        Ok(_) => libc::EIO,
+                    };
+                    return Err(fail(errno));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// P1b.1 closure retranslation, remote, in E1's order: (i) refuse
+    /// while any signal frame is live (a frame's resume PC is a
+    /// generated PC of the old layout); (ii) emit the new image
+    /// tracer-side (translation refusals happen here, nothing
+    /// written); (iii) the cap, `CODE_CAP - STUB_TAIL`; (iv) only then
+    /// the `/proc/<pid>/mem` install, the only step that can poison.
+    /// Returns the new translation for the caller to swap.
+    fn retranslate_remote(
+        &self,
+        t: &Translation,
+        roots: &BTreeSet<u64>,
+        src: u64,
+        live_frames: usize,
+    ) -> Result<Translation, Refuse> {
+        if live_frames > 0 {
+            return Err(Refuse::CodeInstall {
+                src_pc: src,
+                reason: "live signal frame",
+                errno: 0,
+            });
+        }
+        let Some(region) = self.region.as_ref() else {
+            return Err(Refuse::Arch {
+                what: "remote executable not prepared",
+            });
+        };
+        let next = translate_roots_with_options(
+            region,
+            self.entry,
+            roots,
+            self.profile,
+            self.info.arena_base,
+            self.data_addr(),
+            TranslateOptions {
+                exit_style: ExitStyle::TrapToDispatcher,
+                rcb_budget: self.rcb_budget,
+            },
+        )?;
+        if next.code.len() > CODE_CAP - STUB_TAIL {
+            return Err(Refuse::BudgetExceeded { what: "code cache" });
+        }
+        self.install_remote(&next.code, t.code.len(), src)?;
+        Ok(next)
+    }
+
+    /// P1b.1 §1.2 steps 1-4, remote (as the in-process arm), from the
+    /// state before the instruction at `src`: decode it from the
+    /// admitted bytes, read the target, check the region BEFORE any
+    /// push, and translate and install new roots. `Ok` carries the
+    /// transfer and, after an install, the new translation and root
+    /// set, which the caller swaps before anything else can stop.
+    #[allow(clippy::type_complexity)]
+    fn indirect_steps(
+        &self,
+        t: &Translation,
+        state: &GuestState,
+        src: u64,
+        live_frames: usize,
+    ) -> Result<(Resolved, Option<(Translation, BTreeSet<u64>)>), IndirectStop> {
+        let unresolved = || IndirectStop::Refuse(Refuse::IndirectUnresolved { src_pc: src });
+        let insn = t
+            .blocks
+            .range(..=src)
+            .next_back()
+            .and_then(|(_, b)| b.term.as_ref())
+            .filter(|i| i.pc == src)
+            .ok_or_else(unresolved)?;
+        let pid = self.guard.pid;
+        let mut read = |a: u64| {
+            let mut buf = [0u8; 8];
+            read_mem(pid, a, &mut buf)
+                .ok()
+                .map(|()| u64::from_le_bytes(buf))
+        };
+        let resolved =
+            crate::indirect::resolve(&insn.instruction, insn.pc, insn.len, state, &mut read);
+        let r = match resolved {
+            Ok(r) => r,
+            Err(ResolveError::Unsupported) => return Err(unresolved()),
+            Err(ResolveError::ReadFault { addr }) => return Err(IndirectStop::Fault { addr }),
+        };
+        let Some(region) = self.region.as_ref() else {
+            return Err(unresolved());
+        };
+        if !region.contains(r.target) {
+            return Err(unresolved());
+        }
+        let add = crate::indirect::new_roots(&r, region, &t.block_gen);
+        if add.is_empty() {
+            return Ok((r, None));
+        }
+        let mut roots = self.roots.clone();
+        roots.extend(add);
+        let next = self
+            .retranslate_remote(t, &roots, src, live_frames)
+            .map_err(IndirectStop::Refuse)?;
+        Ok((r, Some((next, roots))))
+    }
+
+    /// P1b.1 §1.2 steps 5-6, remote: push a call's next IP (a tracer
+    /// write into the guest stack; a fault leaves rsp unchanged),
+    /// then the state at the target.
+    fn indirect_push(&self, state: &GuestState, r: &Resolved) -> Result<GuestState, IndirectStop> {
+        let mut next = *state;
+        if r.kind == IndirectKind::Call {
+            let slot = state.rsp.wrapping_sub(8);
+            if write_mem(self.guard.pid, slot, &r.next_ip.to_le_bytes()).is_err() {
+                return Err(IndirectStop::Fault { addr: slot });
+            }
+            next.rsp = slot;
+        }
+        next.rip = r.target;
+        Ok(next)
     }
 
     /// Test seam: `PTRACE_SINGLESTEP` requests since the last
@@ -2846,7 +3088,8 @@ impl RemoteExecutable {
 
     /// The remote mirror of `Executable::run_budgeted`: run until
     /// exactly `target` RCBs are credited (`Landed`), a named
-    /// handoff at a syscall, nondet or indirect exit (`Handoff`), or
+    /// handoff at a syscall or nondet exit or a refused indirect
+    /// transfer (`Handoff`; a resolved one continues, P1b.1), or
     /// a return to the sentinel (`Ended`). A signal delivery inside
     /// the stretch refuses as `Refuse::RcbBudget`; it never steps.
     #[cfg(feature = "test-seams")]
@@ -4012,12 +4255,22 @@ impl RemoteExecutable {
         mut state: GuestState,
         return_sentinel: u64,
     ) -> Result<Outcome, RunError> {
-        let Some(t) = self.translation.as_ref() else {
+        if self.translation.is_none() {
             return Err(Refuse::Arch {
                 what: "remote executable not prepared",
             }
             .into());
-        };
+        }
+        // P1b.1: a failed install may have left the arena torn; such
+        // an executable never resumes the guest.
+        if self.poisoned.get() {
+            return Err(Refuse::CodeInstall {
+                src_pc: state.rip,
+                reason: "poisoned after a failed install",
+                errno: 0,
+            }
+            .into());
+        }
         // A budgeted translation always decrements the budget; run
         // without one, it would wrap below zero and never stop.
         if self.rcb_budget && self.budget_run.is_none() {
@@ -4043,6 +4296,14 @@ impl RemoteExecutable {
         #[cfg(feature = "test-seams")]
         self.enter_stops.borrow_mut().clear();
         loop {
+            // The live translation, borrowed afresh each entry: a
+            // P1b.1 retranslation replaces it at an INDIRECT exit.
+            let Some(t) = self.translation.as_ref() else {
+                return Err(Refuse::Arch {
+                    what: "remote executable not prepared",
+                }
+                .into());
+            };
             // A mid-block sigreturn resume supplies its exact
             // generated entry once; every other entry resolves
             // through the block index.
@@ -4272,13 +4533,12 @@ impl RemoteExecutable {
             if self.budget_run.is_some() {
                 let src = data.exit_src;
                 let handoff = |refusal: Refuse| BudgetEnd::Handoff { refusal, at: src };
+                // INDIRECT is resolved by the arm below (P1b.1); only
+                // its refusals hand off.
                 let end = match data.exit_kind {
                     exit_kind::BUDGET => Some(BudgetEnd::Landed),
                     exit_kind::SYSCALL | exit_kind::NONDET => {
                         Some(handoff(Refuse::NoHandler { src_pc: src }))
-                    }
-                    exit_kind::INDIRECT => {
-                        Some(handoff(Refuse::IndirectUnresolved { src_pc: src }))
                     }
                     _ => None,
                 };
@@ -4463,10 +4723,63 @@ impl RemoteExecutable {
                     poll_remaining = self.poll_budget();
                 }
                 exit_kind::INDIRECT => {
-                    return Err(Refuse::IndirectUnresolved {
-                        src_pc: data.exit_src,
+                    // P1b.1 §1.2, as the in-process arm. Every stop
+                    // on this arm reports the state before the
+                    // instruction, its block-head pre-credit excluded
+                    // (F3); a resolved transfer retires it and leaves
+                    // the budget unchanged. Nothing is stepped.
+                    let src = data.exit_src;
+                    state.rip = src;
+                    let (kind, retired_before) = crate::recovery::kind_and_retired(
+                        t,
+                        self.profile,
+                        crate::recovery::FaultKind::GuestFault,
+                        data.instruction_count,
+                        src,
+                    );
+                    let stop = match self.indirect_steps(t, &state, src, active.len()) {
+                        Ok((r, swap)) => {
+                            if let Some((next, roots)) = swap {
+                                // The arena already holds the new
+                                // image: swap before anything else
+                                // can stop the run.
+                                self.translation = Some(next);
+                                self.roots = roots;
+                                self.retranslations += 1;
+                            }
+                            match self.indirect_push(&state, &r) {
+                                Ok(next) => {
+                                    state = next;
+                                    continue;
+                                }
+                                Err(stop) => stop,
+                            }
+                        }
+                        Err(stop) => stop,
+                    };
+                    match stop {
+                        IndirectStop::Refuse(refusal) => {
+                            if self.budget_run.is_some() {
+                                let out =
+                                    outcome_at(state, data.branch_count, retired_before, exits);
+                                let end = BudgetEnd::Handoff { refusal, at: src };
+                                return budget_finish_into(&mut self.budget_run, end, out);
+                            }
+                            return Err(refusal.into());
+                        }
+                        IndirectStop::Fault { addr } => {
+                            return Err(RunError::Fault(Box::new(Fault {
+                                also_pending: Vec::new(),
+                                kind,
+                                src_pc: src,
+                                addr,
+                                signum: libc::SIGSEGV,
+                                state,
+                                branches: data.branch_count,
+                                instructions: retired_before,
+                            })));
+                        }
                     }
-                    .into());
                 }
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;

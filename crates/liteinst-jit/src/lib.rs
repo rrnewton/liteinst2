@@ -2,8 +2,10 @@
 //!
 //! Phase P1a envelope: straight-line code plus direct branches over
 //! private, non-writable source mappings, single-threaded guests.
-//! Indirect control flow, self-modifying code, and `execve`
-//! successors refuse by name (see [`Refuse`]). Syscall-class and
+//! P1b.1 adds in-region indirect jumps and calls, resolved through
+//! the dispatcher (`indirect`); out-of-region and unsupported
+//! indirect forms, self-modifying code, and `execve` successors
+//! refuse by name (see [`Refuse`]). Syscall-class and
 //! nondeterministic instructions end their block and exit to a
 //! caller-supplied handler; they never execute natively from the
 //! cache. The remote substrate (`remote`) adds the tested
@@ -21,6 +23,7 @@ pub mod exec;
 pub mod fixtures;
 pub mod handler;
 pub mod harness;
+pub mod indirect;
 pub mod o1;
 pub mod pcmap;
 pub mod recovery;

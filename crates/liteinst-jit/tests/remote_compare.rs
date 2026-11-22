@@ -2,8 +2,9 @@
 //! I1-B): the same direct fixtures must produce exact state
 //! and counts through both backends, and synchronous faults
 //! must recover identically through the shared recovery core.
-//! One sequential test: both backends use process-global
-//! ptrace/signal state, so cases must not run concurrently.
+//! Both backends use process-global ptrace/signal state, so cases
+//! must not run concurrently: every test that runs them holds the
+//! one serial lock (`lock()`).
 
 use liteinst_jit::exec::{Executable, Fault, Outcome, ProcessMemory, RunError};
 use liteinst_jit::fixtures;
@@ -18,6 +19,23 @@ mod deadline;
 
 const CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
 const STATUS_MASK: u64 = 0xcd5;
+
+static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// One test's hold: the serial lock, then the test's bound (see
+/// `common/deadline.rs`). The bound starts only after the lock is
+/// held, and is dropped after it.
+struct Serial {
+    _lock: std::sync::MutexGuard<'static, ()>,
+    _bound: deadline::TestBound,
+}
+
+fn lock() -> Serial {
+    Serial {
+        _lock: deadline::serial_lock(&SERIAL),
+        _bound: deadline::TestBound::arm(),
+    }
+}
 
 fn ranges_of(base: u64, data: u64, dst: u64, src: u64) -> [(u64, u64); 4] {
     [(base, 4096), (data, 128), (dst, 8192), (src, 8192)]
@@ -401,7 +419,10 @@ fn check_faults_and_refusals() {
         "remote rdtsc: {:?}",
         b.remote
     );
-    for name in ["indirect_jmp", "indirect_call", "jump_table"] {
+    // Out-of-region indirect targets refuse by name (P1b.1 resolves
+    // in-region ones; indirect_call is pinned by
+    // `p1b1_indirect_remote_matches`).
+    for name in ["indirect_jmp", "jump_table", "ind_call_out"] {
         let b = run_both(name);
         assert!(
             matches!(
@@ -700,18 +721,50 @@ fn check_blocked_write_restart_fails_closed() {
     assert!(!alive, "child {pid} leaked after restart refusal drop");
 }
 
-/// One sequential test: the in-process executor and the O1/
-/// remote children all use process-global signal/ptrace state,
-/// so cases must not run concurrently (same constraint as
-/// o1_compare).
+/// The sequential differential test: the in-process executor and
+/// the O1/remote children all use process-global signal/ptrace
+/// state, so cases must not run concurrently (same constraint as
+/// o1_compare); it holds the serial lock.
 #[test]
 fn remote_compare_all() {
-    let _bound = deadline::TestBound::arm();
+    let _g = lock();
     check_direct_corpus();
     check_faults_and_refusals();
     check_no_leaked_child();
     check_immediate_and_poll_async_stops();
     check_blocked_write_restart_fails_closed();
+}
+
+/// P1b.1 T1 and T2, remote: in-region indirect transfers resolve in
+/// the traced child exactly as in-process (counts, every register,
+/// RIP, the buffers and the stack window with each pushed return
+/// address). Both arms share the resolver, so the results are also
+/// pinned absolutely: the loop results, and indirect_call's 3
+/// retired instructions (the call, then its target `ret` twice).
+#[test]
+fn p1b1_indirect_remote_matches() {
+    let _g = lock();
+    for name in [
+        "ind_jmp_reg",
+        "ind_jmp_table",
+        "indirect_call",
+        "ind_call_reg",
+        "ind_call_mem",
+    ] {
+        let b = run_both(name);
+        assert_same_outcome(name, &b);
+        let rem = b
+            .remote
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{name} remote: {e:?}"));
+        match name {
+            "ind_jmp_reg" => assert_eq!(rem.state.rax, 16, "{name}: remote rax"),
+            "ind_jmp_table" => assert_eq!(rem.state.rax, 40, "{name}: remote rax"),
+            "ind_call_reg" | "ind_call_mem" => assert_eq!(rem.state.rax, 8, "{name}: remote rax"),
+            _ => assert_eq!(rem.instructions, 3, "{name}: remote instructions"),
+        }
+        println!("{name}: remote == in-process");
+    }
 }
 
 /// Spawn census (I1-H H2c): every child this binary starts carries
