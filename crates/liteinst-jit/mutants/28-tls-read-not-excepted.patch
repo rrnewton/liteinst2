@@ -1,6 +1,6 @@
 --- a/crates/liteinst-jit/src/decode.rs
 +++ b/crates/liteinst-jit/src/decode.rs
-@@ -606,11 +606,7 @@
+@@ -610,11 +610,7 @@
              }
              for used in info.used_registers() {
                  let r: Register = used.register();

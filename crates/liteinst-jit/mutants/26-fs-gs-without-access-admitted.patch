@@ -1,9 +1,9 @@
 --- a/crates/liteinst-jit/src/decode.rs
 +++ b/crates/liteinst-jit/src/decode.rs
-@@ -594,16 +594,8 @@
-                 });
-             }
-             let info = factory.info(ins);
+@@ -598,16 +598,8 @@
+             // because explicit segment-register operands (`push fs`,
+             // `mov eax, fs`, which also report an FS read) are refused
+             // above, by `refused_segment_register_operand`.
 -            if let Some(seg) = tls_segment
 -                && !info
 -                    .used_registers()
