@@ -1,6 +1,6 @@
 # liteinst-jit P1b design note (draft; the external review returned its verdict)
 
-Status: **DESIGN NOTE; P1b.1 is implemented at fixture scale only.** P1b implementation is gated on an adversarial review of the P1a code and the §6 invalidation design, plus a project go-ahead. Under the project owner's 2026-11-15 rule for LiteInst, that review is one seat, whose brief carries the project's full goalpost-moving check (no weakened assertion, widened tolerance, added exemption, skipped case, relaxed comparator, relabelled failure or deleted check). That review returned on 2026-11-22: approve with nits, and §7 Q1 answered yes with conditions (§7). Its main finding is that the invalidation basis §2 and §3 assume is not implemented yet: dispatch looks translations up by address, and no guest event advances the generation ([#104]). That work is owed before §3's code-discovery stage. P1b.1 was built at fixture scale ahead of the verdict, on §7 Q1's assumption. Nothing else here is built, selectable, or claimed, and §1 still gates every whole-program claim. Layering
+Status: **DESIGN NOTE; P1b.1 is implemented at fixture scale only.** P1b implementation is gated on an adversarial review of the P1a code and the §6 invalidation design, plus a project go-ahead. Under the project owner's 2026-11-15 rule for LiteInst, that review is one seat, whose brief carries the project's full goalpost-moving check (no weakened assertion, widened tolerance, added exemption, skipped case, relaxed comparator, relabelled failure or deleted check). That review returned on 2026-11-22 (UTC): approve with nits, and §7 Q1 answered yes with conditions (§7). Its main finding is that the invalidation basis §2 and §3 assume is not implemented yet: dispatch looks translations up by address, and no guest event advances the generation ([#104]). That work and the admission proof ([#107]) are owed before §3's code-discovery stage. P1b.1 was built at fixture scale ahead of the verdict, on §7 Q1's assumption. Nothing else here is built, selectable, or claimed, and §1 still gates every whole-program claim. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
 remains **unbuilt until M4 is met**. Merging liteinst-jit work to
@@ -254,7 +254,7 @@ exactly-10 median + IQR + machine or is labelled UNMEASURED.
 
 ## 7. Questions put to the external review, and its answers
 
-The review returned on 2026-11-22 (approve with nits). Its answers
+The review returned on 2026-11-22 UTC (approve with nits). Its answers
 follow each question.
 
 1. Is dispatcher-side indirect resolution (P1b.1) an acceptable M4

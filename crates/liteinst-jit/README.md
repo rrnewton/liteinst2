@@ -60,8 +60,9 @@ P1a envelope, honestly bounded:
 
 This crate makes no whole-program claim. Counting every branch on a
 real program such as `/bin/ls` is the later P1b/M4 slice and stays
-gated on the oracle suite and on the invalidation work that the
-adversarial review found missing ([#104]).
+gated on the oracle suite, on the invalidation and admission-proof
+work that the adversarial review found missing ([#104], [#107]), and
+on adversarial review of that work.
 
 [#104]: https://github.com/rrnewton/liteinst2/issues/104
 [#105]: https://github.com/rrnewton/liteinst2/issues/105
