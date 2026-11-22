@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1201,7 +1201,8 @@
+         // A call whose push slot crosses a page could store part of
+         // the slot before faulting; refuse it before any retranslation
+         // or write (`Refuse::IndirectPushCrossesPage`).
+-        if r.kind == IndirectKind::Call && crate::indirect::push_crosses_page(state.rsp) {
++        // MUTANT 23a: no push page-crossing check (in-process).
++        if false {
+             return Err(IndirectStop::Refuse(Refuse::IndirectPushCrossesPage {
+                 src_pc: src,
+                 slot: state.rsp.wrapping_sub(8),

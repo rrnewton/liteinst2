@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1216,7 +1216,8 @@
+         let mut next = *state;
+         if r.kind == IndirectKind::Call {
+             let slot = state.rsp.wrapping_sub(8);
+-            if !mem.write_u64(slot, r.next_ip) {
++            // MUTANT 24a: a failed push write is ignored (in-process).
++            if !mem.write_u64(slot, r.next_ip) && false {
+                 return Err(IndirectStop::Fault { addr: slot });
+             }
+             next.rsp = slot;
