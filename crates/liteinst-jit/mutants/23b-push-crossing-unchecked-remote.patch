@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -3052,7 +3052,8 @@
+         // As the in-process arm: a call whose push slot crosses a page
+         // could store part of the slot before `write_mem` fails; refuse
+         // it before any retranslation, install or write.
+-        if r.kind == IndirectKind::Call && crate::indirect::push_crosses_page(state.rsp) {
++        // MUTANT 23b: no push page-crossing check (remote).
++        if false {
+             return Err(IndirectStop::Refuse(Refuse::IndirectPushCrossesPage {
+                 src_pc: src,
+                 slot: state.rsp.wrapping_sub(8),

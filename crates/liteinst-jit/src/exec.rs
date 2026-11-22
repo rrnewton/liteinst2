@@ -1198,6 +1198,15 @@ impl Executable {
         if !self.region.contains(r.target) {
             return Err(unresolved());
         }
+        // A call whose push slot crosses a page could store part of
+        // the slot before faulting; refuse it before any retranslation
+        // or write (`Refuse::IndirectPushCrossesPage`).
+        if r.kind == IndirectKind::Call && crate::indirect::push_crosses_page(state.rsp) {
+            return Err(IndirectStop::Refuse(Refuse::IndirectPushCrossesPage {
+                src_pc: src,
+                slot: state.rsp.wrapping_sub(8),
+            }));
+        }
         let add = crate::indirect::new_roots(&r, &self.region, &self.translation.block_gen);
         if !add.is_empty() {
             let mut roots = self.roots.clone();

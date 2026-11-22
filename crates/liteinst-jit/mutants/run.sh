@@ -19,13 +19,18 @@ run_suite() {
     return $?
 }
 
-# The P1b.1 mutants (08-19) run only their named tests, each as
-# "binary:fn"; every listed test must show its own FAILED line (see
-# named_failures_ok). Empty for every other mutant. The O1 mutants
-# (20-22) run the full default suite: their kill tests are
-# src/o1.rs unit tests, which run before the integration binaries.
+# The P1b.1 mutants (08-19) and the push mutants (23a/23b: no page
+# crossing check; 24a/24b: a failed push write ignored) run only their
+# named tests, each as "binary:fn"; every listed test must show its own
+# FAILED line (see named_failures_ok). Empty for every other mutant.
+# The O1 mutants (20-22) run the full default suite: their kill tests
+# are src/o1.rs unit tests, which run before the integration binaries.
 targets_for() {
     case "$1" in
+        23a*) echo "indirect_resolve:push_crossing_inprocess" ;;
+        23b*) echo "indirect_resolve:push_crossing_remote" ;;
+        24a*) echo "indirect_resolve:push_fault_inprocess" ;;
+        24b*) echo "indirect_resolve:push_fault_remote" ;;
         08*|09*) echo "o1_compare:p1b1_indirect_matches_o1 remote_compare:p1b1_indirect_remote_matches" ;;
         10*|11*) echo "indirect_resolve:resolver_forms" ;;
         12*) echo "indirect_resolve:refusal_inprocess indirect_resolve:refusal_remote" ;;
@@ -131,6 +136,8 @@ expected_for() {
         19*) echo "instructions" ;;
         20*) echo "O1 indirect prediction" ;;
         21*|22*) echo "passed the RIP-delta check" ;;
+        23a*|23b*) echo "push crossing: want a named refusal" ;;
+        24a*|24b*) echo "push fault: expected a fault" ;;
         *) echo "FAILED" ;;
     esac
 }
