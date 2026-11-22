@@ -260,6 +260,33 @@ fn resolver_forms() {
         let r = res(&at(bytes), &s, &no_mem);
         assert_eq!(r, Err(ResolveError::Unsupported), "{form}: refused");
     }
+
+    // A 32-bit absolute address (67h, [disp32]) is a policy refusal
+    // with its own name, never read: the memory below would resolve
+    // it. The 64-bit [disp32] form still resolves.
+    let mem = BTreeMap::from([(0x10u64, 0x40_6000u64), (0xffff_ffff_8000_0000, 0x40_7000)]);
+    for (form, bytes) in [
+        (
+            "67 jmp [disp32]",
+            &[0x67, 0xff, 0x24, 0x25, 0x10, 0, 0, 0][..],
+        ),
+        (
+            "67 call [disp32]",
+            &[0x67, 0xff, 0x14, 0x25, 0x10, 0, 0, 0][..],
+        ),
+    ] {
+        let r = res(&at(bytes), &s, &mem);
+        assert_eq!(
+            r,
+            Err(ResolveError::AddressSize32),
+            "{form}: address-size refusal"
+        );
+    }
+    let r = res(&at(&[0xff, 0x24, 0x25, 0, 0, 0, 0x80]), &s, &mem).expect("jmp [disp32]");
+    assert_eq!(
+        r.target, 0x40_7000,
+        "jmp [disp32] (64-bit): sign-extended address"
+    );
 }
 
 /// T4, in-process.
@@ -748,6 +775,87 @@ fn install_failure_remote() {
         ),
         "{name}: the run after a torn install must refuse poisoned: {again:?}"
     );
+}
+
+/// 67h `[disp32]` jmp and call (8 bytes each), then `ret`.
+const ADDR32: [(&str, &[u8]); 2] = [
+    (
+        "67 jmp [disp32]",
+        &[0x67, 0xff, 0x24, 0x25, 0x10, 0, 0, 0, 0xc3],
+    ),
+    (
+        "67 call [disp32]",
+        &[0x67, 0xff, 0x14, 0x25, 0x10, 0, 0, 0, 0xc3],
+    ),
+];
+
+/// A run stopped by the 32-bit address: the named refusal at the
+/// instruction, carrying its pc and its 8 encoded bytes.
+fn check_addr32(what: &str, out: Result<Outcome, RunError>, base: u64, bytes: &[u8]) {
+    match out {
+        Err(RunError::Refuse(Refuse::IndirectAddressSize32 { src_pc, bytes: b })) => {
+            assert_eq!(src_pc, base, "{what}: src_pc");
+            assert_eq!(b, bytes[..8].to_vec(), "{what}: bytes");
+        }
+        other => panic!("{what}: want IndirectAddressSize32, got {other:?}"),
+    }
+}
+
+/// A budgeted run stopped by the 32-bit address: a handoff at the
+/// instruction with the state before it.
+fn check_addr32_handoff(what: &str, stop: &BudgetStop, base: u64, rsp: u64) {
+    match &stop.end {
+        BudgetEnd::Handoff {
+            refusal: Refuse::IndirectAddressSize32 { src_pc, .. },
+            at,
+        } => {
+            assert_eq!(*at, base, "{what}: handoff point");
+            assert_eq!(*src_pc, base, "{what}: refusal src_pc");
+        }
+        other => panic!("{what}: want an IndirectAddressSize32 handoff, got {other:?}"),
+    }
+    assert_eq!(stop.outcome.state.rip, base, "{what}: rip");
+    assert_eq!(stop.outcome.state.rsp, rsp, "{what}: rsp");
+}
+
+/// 67h `[disp32]`, in-process: refused by name before any read, push
+/// or write, plain and budgeted.
+#[test]
+fn address_size32_inprocess() {
+    let _g = lock();
+    for (name, bytes) in ADDR32 {
+        let (guest, mut exec, state) = inproc(name, bytes, false);
+        check_addr32(name, run_inproc(&mut exec, state), guest.base, bytes);
+        assert_eq!(below_rsp(&guest), REDZONE_MARKER, "{name}: rsp-8 written");
+        let (guest, mut exec, state) = inproc(name, bytes, true);
+        let r = exec.run_budgeted(state, &ProcessMemory, RETURN_SENTINEL, BIG);
+        check_addr32_handoff(name, &budget_stop(name, r), guest.base, state.rsp);
+        assert_eq!(
+            below_rsp(&guest),
+            REDZONE_MARKER,
+            "{name}: rsp-8 written (budgeted)"
+        );
+    }
+}
+
+/// 67h `[disp32]`, remote: the same named refusal; the tracer writes
+/// nothing below rsp and installs no code.
+#[test]
+fn address_size32_remote() {
+    let _g = lock();
+    for (name, bytes) in ADDR32 {
+        let (mut rx, _dl, state, info) = remote(name, bytes, false);
+        check_addr32(name, rx.run(state, RETURN_SENTINEL), info.base, bytes);
+        let writes = rx.tracer_writes_for_test();
+        assert!(
+            !wrote_below(&writes, state.rsp),
+            "{name} remote: tracer wrote the slot below rsp: {writes:?}"
+        );
+        assert_eq!(rx.proc_mem_writes(), 0, "{name} remote: proc_mem_writes");
+        let (mut rx, _dl, state, info) = remote(name, bytes, true);
+        let stop = budget_stop(name, rx.run_budgeted(state, RETURN_SENTINEL, BIG));
+        check_addr32_handoff(name, &stop, info.base, state.rsp);
+    }
 }
 
 /// Spawn census (I1-H H2c): every child this binary starts carries
