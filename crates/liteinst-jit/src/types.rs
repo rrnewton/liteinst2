@@ -32,8 +32,11 @@ pub struct RegionFacts {
     pub bytes: Vec<u8>,
     /// Generation of the source mapping when the snapshot was taken.
     pub generation: Generation,
-    /// True only when the caller proves the mapping is private and
-    /// non-writable for the cache lifetime. Anything else refuses.
+    /// The caller's assertion that the mapping is private and
+    /// non-writable for the cache lifetime; `false` refuses. Admission
+    /// checks only this flag: this crate does not verify it against
+    /// the mapping's protections
+    /// (<https://github.com/rrnewton/liteinst2/issues/107>).
     pub immutable_private: bool,
 }
 
@@ -86,9 +89,11 @@ pub fn byte_hash(bytes: &[u8]) -> u64 {
     h
 }
 
-/// Identity of one cached translation. Address equality alone never
-/// validates an entry: bytes, generation, and count profile must all
-/// match the translation inputs.
+/// Identity of one cached translation: source PC, byte hash,
+/// generation and count profile. `CacheIndex::lookup` compares the
+/// whole key, but neither dispatcher calls it: both enter blocks by
+/// address, so at dispatch today address equality alone selects an
+/// entry (<https://github.com/rrnewton/liteinst2/issues/104>).
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct CacheKey {
     pub src_pc: u64,

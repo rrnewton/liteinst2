@@ -39,7 +39,11 @@
 //! claim is made beyond the tested shapes. In-region indirect transfers resolve
 //! as in-process (P1b.1), with new code installed through `/proc/<pid>/mem` and
 //! refused by name while a signal frame is live; threads and exec
-//! successors stay refused exactly as in-process. This module
+//! successors stay refused exactly as in-process. Every ptrace,
+//! cross-process memory and wait request to the child goes
+//! through the tracee seam (`crate::tracee`); `/proc` reads, the
+//! `/proc/<pid>/mem` install and the tracer's own signals use the
+//! child's pid directly. This module
 //! is a substrate for later P1b stages, not a public API
 //! contract, and makes no whole-program claim.
 
@@ -57,6 +61,7 @@ use crate::pcmap::{CallStage, CommonStage, ExitStage, Phase as MapPhase, Recover
 use crate::recovery::{FaultInput, RecoveryInput};
 use crate::refuse::Refuse;
 use crate::state::{GuestState, JitData, exit_kind};
+use crate::tracee::{Errno, PtraceTracee, Tracee};
 use crate::translate::{
     ExitStyle, TranslateOptions, Translation, translate_roots_with_options, translate_with_options,
 };
@@ -577,79 +582,27 @@ fn remote_err(operation: &'static str) -> Refuse {
     }
 }
 
-fn ptrace(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
-    // SAFETY: raw ptrace passthrough; callers pass valid operands
-    // for the specific request.
-    unsafe { libc::ptrace(req as libc::c_uint, pid, addr, data) }
+/// The refusal for a failed tracee request: the `RemoteSubstrate`
+/// shape `remote_err` builds, named by `operation`, with the errno
+/// the request returned.
+fn seam_err(operation: &'static str) -> impl FnOnce(Errno) -> Refuse {
+    move |Errno(errno)| Refuse::RemoteSubstrate { operation, errno }
 }
 
-fn ptrace_ok(
-    req: u32,
-    pid: i32,
-    addr: *mut u8,
-    data: *mut u8,
-    op: &'static str,
-) -> Result<(), Refuse> {
-    if ptrace(req, pid, addr, data) == 0 {
-        Ok(())
-    } else {
-        Err(remote_err(op))
-    }
+fn get_regs(t: &(impl Tracee + ?Sized)) -> Result<libc::user_regs_struct, Refuse> {
+    t.get_regs().map_err(seam_err("PTRACE_GETREGS"))
 }
 
-fn get_regs(pid: i32) -> Result<libc::user_regs_struct, Refuse> {
-    let mut regs: libc::user_regs_struct = unsafe { core::mem::zeroed() };
-    ptrace_ok(
-        libc::PTRACE_GETREGS,
-        pid,
-        core::ptr::null_mut(),
-        core::ptr::addr_of_mut!(regs).cast(),
-        "PTRACE_GETREGS",
-    )?;
-    Ok(regs)
+fn set_regs(t: &(impl Tracee + ?Sized), regs: &libc::user_regs_struct) -> Result<(), Refuse> {
+    t.set_regs(regs).map_err(seam_err("PTRACE_SETREGS"))
 }
 
-fn set_regs(pid: i32, regs: &libc::user_regs_struct) -> Result<(), Refuse> {
-    ptrace_ok(
-        libc::PTRACE_SETREGS,
-        pid,
-        core::ptr::null_mut(),
-        (regs as *const libc::user_regs_struct).cast_mut().cast(),
-        "PTRACE_SETREGS",
-    )
+fn get_siginfo(t: &(impl Tracee + ?Sized)) -> Result<libc::siginfo_t, Refuse> {
+    t.get_siginfo().map_err(seam_err("PTRACE_GETSIGINFO"))
 }
 
-fn get_siginfo(pid: i32) -> Result<libc::siginfo_t, Refuse> {
-    let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
-    ptrace_ok(
-        libc::PTRACE_GETSIGINFO,
-        pid,
-        core::ptr::null_mut(),
-        core::ptr::addr_of_mut!(info).cast(),
-        "PTRACE_GETSIGINFO",
-    )?;
-    Ok(info)
-}
-
-fn read_mem(pid: i32, addr: u64, buf: &mut [u8]) -> Result<(), Refuse> {
-    let mut done = 0usize;
-    while done < buf.len() {
-        let local = libc::iovec {
-            iov_base: buf[done..].as_mut_ptr().cast(),
-            iov_len: buf.len() - done,
-        };
-        let remote = libc::iovec {
-            iov_base: (addr + done as u64) as usize as *mut libc::c_void,
-            iov_len: buf.len() - done,
-        };
-        // SAFETY: both iovecs describe the live remaining ranges.
-        let n = unsafe { libc::process_vm_readv(pid, &local, 1, &remote, 1, 0) };
-        if n <= 0 {
-            return Err(remote_err("process_vm_readv"));
-        }
-        done += n as usize;
-    }
-    Ok(())
+fn read_mem(t: &(impl Tracee + ?Sized), addr: u64, buf: &mut [u8]) -> Result<(), Refuse> {
+    t.read_mem(addr, buf).map_err(seam_err("process_vm_readv"))
 }
 
 /// Test seam (record only): every attempted tracer write into
@@ -689,32 +642,14 @@ fn setup_step(status: i32) -> Option<&'static str> {
     })
 }
 
-fn write_mem(pid: i32, addr: u64, buf: &[u8]) -> Result<(), Refuse> {
+fn write_mem(t: &(impl Tracee + ?Sized), addr: u64, buf: &[u8]) -> Result<(), Refuse> {
     #[cfg(feature = "test-seams")]
     TRACER_WRITES
         .lock()
         .unwrap_or_else(|e| e.into_inner())
-        .push((pid, addr, buf.len()));
-    let mut done = 0usize;
-    while done < buf.len() {
-        let local = libc::iovec {
-            iov_base: buf[done..].as_ptr().cast_mut().cast(),
-            iov_len: buf.len() - done,
-        };
-        let remote = libc::iovec {
-            iov_base: (addr + done as u64) as usize as *mut libc::c_void,
-            iov_len: buf.len() - done,
-        };
-        // SAFETY: both iovecs describe the live remaining ranges;
-        // the remote range is a writable child mapping by the
-        // substrate setup contract.
-        let n = unsafe { libc::process_vm_writev(pid, &local, 1, &remote, 1, 0) };
-        if n <= 0 {
-            return Err(remote_err("process_vm_writev"));
-        }
-        done += n as usize;
-    }
-    Ok(())
+        .push((t.pid(), addr, buf.len()));
+    t.write_mem(addr, buf)
+        .map_err(seam_err("process_vm_writev"))
 }
 
 /// The child's signal masks from one `/proc/<pid>/status` text
@@ -799,22 +734,8 @@ fn read_sigblk(pid: i32) -> Result<u64, Refuse> {
     Ok(read_status_masks(pid)?.blocked)
 }
 
-fn wait_stop(pid: i32) -> Result<i32, Refuse> {
-    loop {
-        let mut status: i32 = 0;
-        // SAFETY: waiting for our own traced child.
-        let w = unsafe { libc::waitpid(pid, &mut status, 0) };
-        if w == pid {
-            return Ok(status);
-        }
-        let e = std::io::Error::last_os_error();
-        if e.raw_os_error() != Some(libc::EINTR) {
-            return Err(Refuse::RemoteSubstrate {
-                operation: "waitpid",
-                errno: e.raw_os_error().unwrap_or(0),
-            });
-        }
-    }
+fn wait_stop(t: &(impl Tracee + ?Sized)) -> Result<i32, Refuse> {
+    t.wait_stop().map_err(seam_err("waitpid"))
 }
 
 fn regs_to_state(r: &libc::user_regs_struct) -> GuestState {
@@ -1100,8 +1021,8 @@ fn gen_for_midblock(t: &Translation, src: u64) -> Option<u64> {
 /// instruction-address faults whose generated address must
 /// be presented in source form. All other siginfo words are
 /// preserved byte-for-byte from the kernel's own record.
-fn set_siginfo_addr(pid: i32, addr: u64) -> Result<(), Refuse> {
-    let mut info = get_siginfo(pid)?;
+fn set_siginfo_addr(t: &(impl Tracee + ?Sized), addr: u64) -> Result<(), Refuse> {
+    let mut info = get_siginfo(t)?;
     // SAFETY: byte view over the plain-data siginfo record;
     // its size covers the si_addr word by the ABI layout.
     let bytes = unsafe {
@@ -1111,24 +1032,18 @@ fn set_siginfo_addr(pid: i32, addr: u64) -> Result<(), Refuse> {
         )
     };
     bytes[16..24].copy_from_slice(&addr.to_le_bytes());
-    ptrace_ok(
-        libc::PTRACE_SETSIGINFO,
-        pid,
-        core::ptr::null_mut(),
-        core::ptr::addr_of_mut!(info).cast(),
-        "PTRACE_SETSIGINFO",
-    )
+    t.set_siginfo(&info).map_err(seam_err("PTRACE_SETSIGINFO"))
 }
 
 /// Siginfo cause for a stop, as `(si_signo, si_code, si_addr)`.
 /// Syscall stops carry no siginfo and return `None` by design;
 /// any other stop without retrievable siginfo also returns
 /// `None` and classifies `Unexpected` (fail closed).
-fn stop_siginfo(pid: i32, sig: i32) -> Option<(i32, i32, u64)> {
+fn stop_siginfo(t: &(impl Tracee + ?Sized), sig: i32) -> Option<(i32, i32, u64)> {
     if sig == (libc::SIGTRAP | 0x80) {
         return None;
     }
-    let info = get_siginfo(pid).ok()?;
+    let info = get_siginfo(t).ok()?;
     // SAFETY: filled by PTRACE_GETSIGINFO above.
     let addr = unsafe { info.si_addr() } as usize as u64;
     Some((info.si_signo, info.si_code, addr))
@@ -1140,6 +1055,8 @@ fn stop_siginfo(pid: i32, sig: i32) -> Option<(i32, i32, u64)> {
 struct ChildGuard {
     child: Child,
     pid: i32,
+    /// The child as the tracee seam reaches it (the same pid).
+    tracee: PtraceTracee,
     reaped: bool,
 }
 
@@ -1149,17 +1066,8 @@ impl ChildGuard {
             return;
         }
         self.reaped = true;
-        ptrace(
-            libc::PTRACE_KILL,
-            self.pid,
-            core::ptr::null_mut(),
-            core::ptr::null_mut(),
-        );
-        let mut status: i32 = 0;
-        // SAFETY: reaping our own traced child.
-        unsafe {
-            libc::waitpid(self.pid, &mut status, 0);
-        }
+        #[cfg_attr(not(feature = "test-seams"), allow(unused_variables))]
+        let status = self.tracee.kill_reap();
         #[cfg(feature = "test-seams")]
         LAST_REAP.with(|c| c.set(Some((self.pid, status))));
         let _ = self.child.wait();
@@ -1372,37 +1280,15 @@ pub struct SyscallMark {
     pub poll_exits: u64,
 }
 
-/// `PTRACE_POKEUSER` offset of debug register `n`.
 #[cfg(feature = "test-seams")]
-fn debugreg_offset(n: usize) -> usize {
-    core::mem::offset_of!(libc::user, u_debugreg) + 8 * n
+fn poke_debugreg(t: &(impl Tracee + ?Sized), n: usize, value: u64) -> Result<(), Refuse> {
+    t.set_debugreg(n, value)
+        .map_err(seam_err("PTRACE_POKEUSER debug register"))
 }
 
 #[cfg(feature = "test-seams")]
-fn poke_debugreg(pid: i32, n: usize, value: u64) -> Result<(), Refuse> {
-    ptrace_ok(
-        libc::PTRACE_POKEUSER,
-        pid,
-        debugreg_offset(n) as *mut u8,
-        value as usize as *mut u8,
-        "PTRACE_POKEUSER debug register",
-    )
-}
-
-#[cfg(feature = "test-seams")]
-fn peek_debugreg(pid: i32, n: usize) -> Option<u64> {
-    // SAFETY: errno is thread-local; cleared so a legitimate
-    // all-ones value is told apart from a failed peek.
-    unsafe { *libc::__errno_location() = 0 };
-    let v = ptrace(
-        libc::PTRACE_PEEKUSER,
-        pid,
-        debugreg_offset(n) as *mut u8,
-        core::ptr::null_mut(),
-    );
-    // SAFETY: as above.
-    let errno = unsafe { *libc::__errno_location() };
-    (v != -1 || errno == 0).then_some(v as u64)
+fn peek_debugreg(t: &(impl Tracee + ?Sized), n: usize) -> Option<u64> {
+    t.get_debugreg(n).ok()
 }
 
 /// DR7 local-enable bit for DR0 (execute, length 1: RW0 and
@@ -1423,14 +1309,14 @@ const TRAP_HWBKPT: i32 = 4;
 /// already ended has no debug registers left to clear).
 #[cfg(feature = "test-seams")]
 struct DebugRegGuard {
-    pid: i32,
+    tracee: PtraceTracee,
 }
 
 #[cfg(feature = "test-seams")]
 impl Drop for DebugRegGuard {
     fn drop(&mut self) {
-        let _ = poke_debugreg(self.pid, 7, 0);
-        let _ = poke_debugreg(self.pid, 0, 0);
+        let _ = poke_debugreg(&self.tracee, 7, 0);
+        let _ = poke_debugreg(&self.tracee, 0, 0);
     }
 }
 
@@ -1662,6 +1548,7 @@ impl RemoteExecutable {
         let mut guard = ChildGuard {
             child,
             pid,
+            tracee: PtraceTracee::new(pid),
             reaped: false,
         };
         let mut raw = [0u8; 56];
@@ -1699,7 +1586,7 @@ impl RemoteExecutable {
                 sa_mask: w(3),
             };
         }
-        let status = wait_stop(pid)?;
+        let status = wait_stop(&guard.tracee)?;
         if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP {
             return Err(Refuse::RemoteSubstrate {
                 operation: "remote child initial stop",
@@ -1710,13 +1597,10 @@ impl RemoteExecutable {
         // EXITKILL the kernel sends the child SIGKILL when this tracer
         // exits (kernel/ptrace.c, `exit_ptrace`), so a tracer that dies
         // never leaves its child to run on untraced.
-        ptrace_ok(
-            libc::PTRACE_SETOPTIONS,
-            pid,
-            core::ptr::null_mut(),
-            (libc::PTRACE_O_TRACESYSGOOD | libc::PTRACE_O_EXITKILL) as usize as *mut u8,
-            "PTRACE_SETOPTIONS",
-        )?;
+        guard
+            .tracee
+            .set_options(libc::PTRACE_O_TRACESYSGOOD | libc::PTRACE_O_EXITKILL)
+            .map_err(seam_err("PTRACE_SETOPTIONS"))?;
         // Seed the mirror mask from the stopped child's actual
         // kernel state, never from the request that produced it.
         let mut registry = SignalRegistry {
@@ -1822,7 +1706,7 @@ impl RemoteExecutable {
             return Ok(step);
         }
         let mut raw = [0u8; 32];
-        if read_mem(self.guard.pid, state.rsi, &mut raw).is_err() {
+        if read_mem(&self.guard.tracee, state.rsi, &mut raw).is_err() {
             return Ok(step);
         }
         let handler = u64::from_le_bytes(raw[0..8].try_into().unwrap());
@@ -1838,12 +1722,12 @@ impl RemoteExecutable {
         let scratch = self.scratch_addr();
         #[cfg(feature = "test-seams")]
         if let Some(c) = self.scratch_canary {
-            write_mem(self.guard.pid, scratch, &[c; 32])?;
+            write_mem(&self.guard.tracee, scratch, &[c; 32])?;
         }
         let mut saved = [0u8; 32];
-        read_mem(self.guard.pid, scratch, &mut saved)?;
+        read_mem(&self.guard.tracee, scratch, &mut saved)?;
         raw[0..8].copy_from_slice(&self.signal_stub_addr().to_le_bytes());
-        write_mem(self.guard.pid, scratch, &raw)?;
+        write_mem(&self.guard.tracee, scratch, &raw)?;
         step.requested = Some(handler);
         step.step_rsi = Some(scratch);
         step.saved_scratch = Some(saved);
@@ -1922,7 +1806,7 @@ impl RemoteExecutable {
             (state.rsi, state.rdx)
         };
         let mut info = [0u8; SIGINFO_LEN];
-        if read_mem(self.guard.pid, info_addr, &mut info).is_err() {
+        if read_mem(&self.guard.tracee, info_addr, &mut info).is_err() {
             return Err(refuse);
         }
         let si_code = i32::from_le_bytes(info[8..12].try_into().unwrap());
@@ -1948,11 +1832,11 @@ impl RemoteExecutable {
         let staged = self.scratch_addr();
         #[cfg(feature = "test-seams")]
         if let Some(c) = self.scratch_canary {
-            write_mem(self.guard.pid, staged, &[c; SIGINFO_LEN])?;
+            write_mem(&self.guard.tracee, staged, &[c; SIGINFO_LEN])?;
         }
         let mut saved = [0u8; SIGINFO_LEN];
-        read_mem(self.guard.pid, staged, &mut saved)?;
-        write_mem(self.guard.pid, staged, &info)?;
+        read_mem(&self.guard.tracee, staged, &mut saved)?;
+        write_mem(&self.guard.tracee, staged, &info)?;
         Ok(SigqueueStep {
             tg,
             staged,
@@ -1985,7 +1869,7 @@ impl RemoteExecutable {
         // guest oldact memory untouched and so must we.
         if step_rax == 0 && step.oldact_addr != 0 && step.prev_visible.is_custom() {
             let _ = write_mem(
-                self.guard.pid,
+                &self.guard.tracee,
                 step.oldact_addr,
                 &step.prev_visible.handler.to_le_bytes(),
             );
@@ -1993,7 +1877,8 @@ impl RemoteExecutable {
         if !(1..=64).contains(&step.sig) {
             return Ok(());
         }
-        let mut act = Self::query_action(self.guard.pid, self.data_addr(), step.sig, gadget_pc)?;
+        let mut act =
+            Self::query_action(&self.guard.tracee, self.data_addr(), step.sig, gadget_pc)?;
         act.handler = visible_handler(
             act.handler,
             self.signal_stub_addr(),
@@ -2018,17 +1903,17 @@ impl RemoteExecutable {
     /// state and is never disturbed: child registers are
     /// restored byte-exact before returning.
     fn injected_query(
-        pid: i32,
+        t: &(impl Tracee + ?Sized),
         data_addr: u64,
         nr: u64,
         args: [u64; 4],
         gadget_pc: u64,
     ) -> Result<(i64, [u8; 32]), Refuse> {
         let [rdi, rsi, rdx, r10] = args;
-        let saved = get_regs(pid)?;
+        let saved = get_regs(t)?;
         let scratch = data_addr + core::mem::offset_of!(JitData, scratch) as u64;
         let mut saved_scratch = [0u8; 32];
-        read_mem(pid, scratch, &mut saved_scratch)?;
+        read_mem(t, scratch, &mut saved_scratch)?;
         let run = (|| -> Result<(i64, [u8; 32]), Refuse> {
             let mut regs = saved;
             regs.rax = nr;
@@ -2037,16 +1922,11 @@ impl RemoteExecutable {
             regs.rdx = rdx;
             regs.r10 = r10;
             regs.rip = gadget_pc;
-            set_regs(pid, &regs)?;
+            set_regs(t, &regs)?;
             for phase in [Phase::SyscallEntry, Phase::SyscallExit] {
-                ptrace_ok(
-                    libc::PTRACE_SYSCALL,
-                    pid,
-                    core::ptr::null_mut(),
-                    core::ptr::null_mut(),
-                    "PTRACE_SYSCALL readback",
-                )?;
-                let status = wait_stop(pid)?;
+                t.cont_syscall(0)
+                    .map_err(seam_err("PTRACE_SYSCALL readback"))?;
+                let status = wait_stop(t)?;
                 if !libc::WIFSTOPPED(status) {
                     return Err(Refuse::RemoteSubstrate {
                         operation: "remote guest ended during registry readback",
@@ -2054,7 +1934,7 @@ impl RemoteExecutable {
                     });
                 }
                 let sig = libc::WSTOPSIG(status);
-                let si = stop_siginfo(pid, sig);
+                let si = stop_siginfo(t, sig);
                 if classify_stop(
                     phase,
                     sig,
@@ -2069,7 +1949,7 @@ impl RemoteExecutable {
                     });
                 }
             }
-            let out_regs = get_regs(pid)?;
+            let out_regs = get_regs(t)?;
             if is_syscall_restart(out_regs.rax) {
                 return Err(Refuse::RemoteSubstrate {
                     operation: "registry readback restart pending",
@@ -2077,12 +1957,12 @@ impl RemoteExecutable {
                 });
             }
             let mut out = [0u8; 32];
-            read_mem(pid, scratch, &mut out)?;
+            read_mem(t, scratch, &mut out)?;
             Ok((out_regs.rax as i64, out))
         })();
         // Restore guest registers and scratch exactly, whatever
         // the query did; a restore failure is itself fatal.
-        let restore = set_regs(pid, &saved).and_then(|()| write_mem(pid, scratch, &saved_scratch));
+        let restore = set_regs(t, &saved).and_then(|()| write_mem(t, scratch, &saved_scratch));
         match (run, restore) {
             (Ok(v), Ok(())) => Ok(v),
             (Err(e), _) => Err(e),
@@ -2091,14 +1971,14 @@ impl RemoteExecutable {
     }
 
     fn query_action(
-        pid: i32,
+        t: &(impl Tracee + ?Sized),
         data_addr: u64,
         sig: i32,
         gadget_pc: u64,
     ) -> Result<GuestAction, Refuse> {
         let scratch = data_addr + core::mem::offset_of!(JitData, scratch) as u64;
         let (ret, raw) = Self::injected_query(
-            pid,
+            t,
             data_addr,
             libc::SYS_rt_sigaction as u64,
             [sig as u64, 0, scratch, 8],
@@ -2119,10 +1999,14 @@ impl RemoteExecutable {
         })
     }
 
-    fn query_altstack(pid: i32, data_addr: u64, gadget_pc: u64) -> Result<GuestAltstack, Refuse> {
+    fn query_altstack(
+        t: &(impl Tracee + ?Sized),
+        data_addr: u64,
+        gadget_pc: u64,
+    ) -> Result<GuestAltstack, Refuse> {
         let scratch = data_addr + core::mem::offset_of!(JitData, scratch) as u64;
         let (ret, raw) = Self::injected_query(
-            pid,
+            t,
             data_addr,
             libc::SYS_sigaltstack as u64,
             [0, scratch, 0, 0],
@@ -2149,19 +2033,19 @@ impl RemoteExecutable {
     /// from raw guest input.
     fn reconcile_registry(
         registry: &mut SignalRegistry,
-        pid: i32,
+        t: &(impl Tracee + ?Sized),
         data_addr: u64,
         obs: &SyscallObs,
         gadget_pc: u64,
     ) -> Result<(), Refuse> {
         match *obs {
             SyscallObs::Sigprocmask => {
-                let mask = read_sigblk(pid)?;
+                let mask = read_sigblk(t.pid())?;
                 registry.set_mask(mask);
                 Ok(())
             }
             SyscallObs::Sigaltstack => {
-                let alt = Self::query_altstack(pid, data_addr, gadget_pc)?;
+                let alt = Self::query_altstack(t, data_addr, gadget_pc)?;
                 registry.set_altstack(alt);
                 Ok(())
             }
@@ -2373,7 +2257,7 @@ impl RemoteExecutable {
         {
             return None;
         }
-        get_siginfo(self.guard.pid)
+        get_siginfo(&self.guard.tracee)
             .ok()
             .filter(|info| info.si_signo == sig)
     }
@@ -2394,14 +2278,11 @@ impl RemoteExecutable {
             return Ok(());
         }
         info.si_code = code;
-        ptrace_ok(
-            libc::PTRACE_SETSIGINFO,
-            self.guard.pid,
-            core::ptr::null_mut(),
-            core::ptr::addr_of_mut!(info).cast(),
-            "PTRACE_SETSIGINFO (test kgen seam)",
-        )?;
-        if get_siginfo(self.guard.pid)?.si_code == code {
+        self.guard
+            .tracee
+            .set_siginfo(&info)
+            .map_err(seam_err("PTRACE_SETSIGINFO (test kgen seam)"))?;
+        if get_siginfo(&self.guard.tracee)?.si_code == code {
             self.kgen_seam.set(None);
             self.arrival_report.borrow_mut().kgen_rewrites += 1;
         }
@@ -2441,7 +2322,7 @@ impl RemoteExecutable {
     /// stop in [`ArrivalReport::syscall_marks`].
     #[cfg(feature = "test-seams")]
     fn mark_syscall_entry(&self) {
-        if let Ok(regs) = get_regs(self.guard.pid) {
+        if let Ok(regs) = get_regs(&self.guard.tracee) {
             let mut report = self.arrival_report.borrow_mut();
             let poll_exits = report.poll_exits;
             report.syscall_marks.push(SyscallMark {
@@ -2499,8 +2380,8 @@ impl RemoteExecutable {
     #[doc(hidden)]
     pub fn debug_regs_for_test(&self) -> Option<(u64, u64)> {
         Some((
-            peek_debugreg(self.guard.pid, 0)?,
-            peek_debugreg(self.guard.pid, 7)?,
+            peek_debugreg(&self.guard.tracee, 0)?,
+            peek_debugreg(&self.guard.tracee, 7)?,
         ))
     }
 
@@ -2520,10 +2401,10 @@ impl RemoteExecutable {
             return Ok(None);
         };
         let guard = DebugRegGuard {
-            pid: self.guard.pid,
+            tracee: self.guard.tracee,
         };
-        poke_debugreg(self.guard.pid, 0, seam.gen_pc)?;
-        poke_debugreg(self.guard.pid, 7, DR7_L0)?;
+        poke_debugreg(&self.guard.tracee, 0, seam.gen_pc)?;
+        poke_debugreg(&self.guard.tracee, 7, DR7_L0)?;
         Ok(Some(guard))
     }
 
@@ -2535,16 +2416,16 @@ impl RemoteExecutable {
         let Some(seam) = self.arrival else {
             return Ok(status);
         };
-        let pid = self.guard.pid;
+        let t = &self.guard.tracee;
         loop {
             if !libc::WIFSTOPPED(status)
                 || libc::WSTOPSIG(status) != libc::SIGTRAP
                 || status >> 16 != 0
-                || stop_siginfo(pid, libc::SIGTRAP).map(|s| s.1) != Some(TRAP_HWBKPT)
+                || stop_siginfo(t, libc::SIGTRAP).map(|s| s.1) != Some(TRAP_HWBKPT)
             {
                 return Ok(status);
             }
-            let mut regs = get_regs(pid)?;
+            let mut regs = get_regs(t)?;
             if regs.rip != seam.gen_pc || self.arrival_report.borrow().sent {
                 return Err(remote_err("arrival breakpoint stop at an unexpected pc"));
             }
@@ -2568,25 +2449,25 @@ impl RemoteExecutable {
                 // re-trapping, and suppress the SIGTRAP.
                 if regs.eflags & RFLAGS_RF == 0 {
                     regs.eflags |= RFLAGS_RF;
-                    set_regs(pid, &regs)?;
+                    set_regs(t, &regs)?;
                 }
             } else {
-                poke_debugreg(pid, 7, 0)?;
-                poke_debugreg(pid, 0, 0)?;
+                poke_debugreg(t, 7, 0)?;
+                poke_debugreg(t, 0, 0)?;
                 if regs.eflags & RFLAGS_RF != 0 {
                     regs.eflags &= !RFLAGS_RF;
-                    set_regs(pid, &regs)?;
+                    set_regs(t, &regs)?;
                 }
                 // SAFETY: signalling this tracer's own traced,
                 // stopped, unreaped child.
-                if unsafe { libc::kill(pid, seam.sig) } != 0 {
+                if unsafe { libc::kill(self.guard.pid, seam.sig) } != 0 {
                     return Err(remote_err("arrival seam signal"));
                 }
                 report.sent = true;
             }
             drop(report);
             self.cont(0)?;
-            status = wait_stop(pid)?;
+            status = wait_stop(t)?;
         }
     }
 
@@ -2662,12 +2543,12 @@ impl RemoteExecutable {
             // SAFETY: signalling this tracer's own traced child.
             if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
                 // Cleanup first: the staged bytes never stay.
-                write_mem(self.guard.pid, self.scratch_addr(), saved)?;
+                write_mem(&self.guard.tracee, self.scratch_addr(), saved)?;
                 return Err(remote_err("test pre-step signal").into());
             }
         }
         let stepped = self.step_syscall(step_state, pc, data);
-        let restored = write_mem(self.guard.pid, self.scratch_addr(), saved);
+        let restored = write_mem(&self.guard.tracee, self.scratch_addr(), saved);
         #[cfg(feature = "test-seams")]
         let restored = if self.fail_scratch_restore
             && matches!(stepped, Ok(Stepped::EntryInterrupted { .. }))
@@ -2679,7 +2560,7 @@ impl RemoteExecutable {
         #[cfg(feature = "test-seams")]
         if self.scratch_canary.is_some() {
             let mut back = vec![0u8; saved.len()];
-            if read_mem(self.guard.pid, self.scratch_addr(), &mut back).is_ok() {
+            if read_mem(&self.guard.tracee, self.scratch_addr(), &mut back).is_ok() {
                 self.arrival_report
                     .borrow_mut()
                     .scratch_after_cleanup
@@ -2734,23 +2615,17 @@ impl RemoteExecutable {
 
     fn read_word(&self, addr: u64) -> Result<u64, Refuse> {
         let mut buf = [0u8; 8];
-        read_mem(self.guard.pid, addr, &mut buf)?;
+        read_mem(&self.guard.tracee, addr, &mut buf)?;
         Ok(u64::from_le_bytes(buf))
     }
 
     fn cont(&self, sig: i32) -> Result<(), Refuse> {
-        ptrace_ok(
-            libc::PTRACE_CONT,
-            self.guard.pid,
-            core::ptr::null_mut(),
-            sig as usize as *mut u8,
-            "PTRACE_CONT",
-        )
+        self.guard.tracee.cont(sig).map_err(seam_err("PTRACE_CONT"))
     }
 
     fn read_jit_data(&self) -> Result<JitData, Refuse> {
         let mut buf = vec![0u8; core::mem::size_of::<JitData>()];
-        read_mem(self.guard.pid, self.data_addr(), &mut buf)?;
+        read_mem(&self.guard.tracee, self.data_addr(), &mut buf)?;
         // SAFETY: JitData is repr(C) plain data; the buffer holds
         // exactly one child-written image of it.
         Ok(unsafe { core::ptr::read_unaligned(buf.as_ptr().cast::<JitData>()) })
@@ -2764,12 +2639,12 @@ impl RemoteExecutable {
                 core::mem::size_of::<JitData>(),
             )
         };
-        write_mem(self.guard.pid, self.data_addr(), bytes)
+        write_mem(&self.guard.tracee, self.data_addr(), bytes)
     }
 
     /// Read child memory (test/differential support).
     pub fn read_mem(&self, addr: u64, buf: &mut [u8]) -> bool {
-        read_mem(self.guard.pid, addr, buf).is_ok()
+        read_mem(&self.guard.tracee, addr, buf).is_ok()
     }
 
     /// Translate for the child arena, copy the code in, and have
@@ -2831,22 +2706,22 @@ impl RemoteExecutable {
         if translation.code.len() > CODE_CAP - STUB_TAIL {
             return Err(Refuse::BudgetExceeded { what: "code cache" });
         }
-        write_mem(self.guard.pid, self.info.arena_base, &translation.code)?;
+        write_mem(&self.guard.tracee, self.info.arena_base, &translation.code)?;
         // Common signal-entry stub at the reserved tail; the
         // publish handshake below makes it RX with the rest of
         // the code region. Only the first byte is ever entered.
         let mut stub = [0x90u8; STUB_TAIL];
         stub[0] = 0xcc;
-        write_mem(self.guard.pid, self.signal_stub_addr(), &stub)?;
+        write_mem(&self.guard.tracee, self.signal_stub_addr(), &stub)?;
         // Publish: command the parked child to mprotect the code
         // region RX and park again; resume only on its ack.
         write_mem(
-            self.guard.pid,
+            &self.guard.tracee,
             self.info.mailbox,
             &MAILBOX_PUBLISH.to_le_bytes(),
         )?;
         self.cont(0)?;
-        let status = wait_stop(self.guard.pid)?;
+        let status = wait_stop(&self.guard.tracee)?;
         if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP {
             return Err(Refuse::RemoteSubstrate {
                 operation: "remote publish stop",
@@ -2854,7 +2729,7 @@ impl RemoteExecutable {
             });
         }
         let mut ack = [0u8; 8];
-        read_mem(self.guard.pid, self.info.mailbox, &mut ack)?;
+        read_mem(&self.guard.tracee, self.info.mailbox, &mut ack)?;
         if u64::from_le_bytes(ack) != MAILBOX_PUBLISHED {
             return Err(Refuse::RemoteSubstrate {
                 operation: "remote publish ack",
@@ -3029,10 +2904,10 @@ impl RemoteExecutable {
             .and_then(|(_, b)| b.term.as_ref())
             .filter(|i| i.pc == src)
             .ok_or_else(unresolved)?;
-        let pid = self.guard.pid;
+        let tracee = self.guard.tracee;
         let mut read = |a: u64| {
             let mut buf = [0u8; 8];
-            read_mem(pid, a, &mut buf)
+            read_mem(&tracee, a, &mut buf)
                 .ok()
                 .map(|()| u64::from_le_bytes(buf))
         };
@@ -3077,7 +2952,7 @@ impl RemoteExecutable {
         let mut next = *state;
         if r.kind == IndirectKind::Call {
             let slot = state.rsp.wrapping_sub(8);
-            if write_mem(self.guard.pid, slot, &r.next_ip.to_le_bytes()).is_err() {
+            if write_mem(&self.guard.tracee, slot, &r.next_ip.to_le_bytes()).is_err() {
                 return Err(IndirectStop::Fault { addr: slot });
             }
             next.rsp = slot;
@@ -3139,9 +3014,9 @@ impl RemoteExecutable {
     /// `w3s_provenance`'s doc): keep `orig_rax` out of what this
     /// writes.
     fn set_guest_regs(&self, state: &GuestState) -> Result<(), Refuse> {
-        let mut regs = get_regs(self.guard.pid)?;
+        let mut regs = get_regs(&self.guard.tracee)?;
         apply_state(&mut regs, state);
-        set_regs(self.guard.pid, &regs)
+        set_regs(&self.guard.tracee, &regs)
     }
 
     /// The pending async signals (ascending) and the kernel's
@@ -3290,7 +3165,7 @@ impl RemoteExecutable {
         // trampoline here, before injection. Any other shape
         // (extra insns, unreadable) keeps the recovered stop.
         let mut restorer_bytes = [0u8; 7];
-        if read_mem(self.guard.pid, action.restorer, &mut restorer_bytes).is_err()
+        if read_mem(&self.guard.tracee, action.restorer, &mut restorer_bytes).is_err()
             || restorer_bytes != SIGRETURN_RESTORER
         {
             return None;
@@ -3329,9 +3204,9 @@ impl RemoteExecutable {
         gen_mid: Option<u64>,
         active: &[ActiveFrame],
     ) -> Result<(GuestState, Vec<ActiveFrame>), RunError> {
-        let mut regs = get_regs(self.guard.pid)?;
+        let mut regs = get_regs(&self.guard.tracee)?;
         apply_state(&mut regs, &recovered.state);
-        set_regs(self.guard.pid, &regs)?;
+        set_regs(&self.guard.tracee, &regs)?;
         let stub = self.signal_stub_addr();
         let mut frames: Vec<ActiveFrame> = Vec::new();
         // What the frame about to be built must record: the
@@ -3342,15 +3217,15 @@ impl RemoteExecutable {
         let mut resume_gen_mid = gen_mid;
         self.cont(sig)?;
         loop {
-            let status = wait_stop(self.guard.pid)?;
+            let status = wait_stop(&self.guard.tracee)?;
             if !libc::WIFSTOPPED(status) {
                 return Err(self.unexpected_stop("signal stub stop provenance"));
             }
             let stop_sig = libc::WSTOPSIG(status);
-            let stub_regs = get_regs(self.guard.pid)?;
+            let stub_regs = get_regs(&self.guard.tracee)?;
             #[cfg(feature = "test-seams")]
             self.apply_kgen_seam(status)?;
-            let si = stop_siginfo(self.guard.pid, stop_sig);
+            let si = stop_siginfo(&self.guard.tracee, stop_sig);
             #[cfg(feature = "test-seams")]
             self.note_siginfo(SeenSite::Stub, status);
             let stub_trap = stop_sig == libc::SIGTRAP
@@ -3431,7 +3306,7 @@ impl RemoteExecutable {
             };
             let mut next_regs = stub_regs;
             next_regs.rip = action.handler;
-            set_regs(self.guard.pid, &next_regs)?;
+            set_regs(&self.guard.tracee, &next_regs)?;
             resume_src = action.handler;
             resume_rsp = frame_rsp;
             resume_gen_mid = None;
@@ -3498,7 +3373,7 @@ impl RemoteExecutable {
         // admission-time proof alone would credit +2 to
         // whatever the handler left at the restorer address.
         let mut restorer_now = [0u8; 7];
-        if read_mem(self.guard.pid, frame.restorer, &mut restorer_now).is_err()
+        if read_mem(&self.guard.tracee, frame.restorer, &mut restorer_now).is_err()
             || restorer_now != SIGRETURN_RESTORER
         {
             return Err(self.unexpected_stop("restorer shape changed under live frame"));
@@ -3523,27 +3398,24 @@ impl RemoteExecutable {
             return Err(self.unexpected_stop("sigreturn resume PC mutated off block start"));
         };
         write_mem(
-            self.guard.pid,
+            &self.guard.tracee,
             uc_greg_addr(frame.uc_addr, GREG_RIP),
             &gen_entry.to_le_bytes(),
         )?;
         if self.read_word(uc_greg_addr(frame.uc_addr, GREG_RIP))? != gen_entry {
             return Err(self.unexpected_stop("sigreturn frame rewrite"));
         }
-        let mut regs = get_regs(self.guard.pid)?;
+        let mut regs = get_regs(&self.guard.tracee)?;
         apply_state(&mut regs, handler_state);
         regs.rip = frame.restorer;
         regs.rsp = frame.frame_rsp + 8;
-        set_regs(self.guard.pid, &regs)?;
+        set_regs(&self.guard.tracee, &regs)?;
         for phase in [Phase::SyscallEntry, Phase::SyscallExit] {
-            ptrace_ok(
-                libc::PTRACE_SYSCALL,
-                self.guard.pid,
-                core::ptr::null_mut(),
-                core::ptr::null_mut(),
-                "PTRACE_SYSCALL sigreturn",
-            )?;
-            let status = wait_stop(self.guard.pid)?;
+            self.guard
+                .tracee
+                .cont_syscall(0)
+                .map_err(seam_err("PTRACE_SYSCALL sigreturn"))?;
+            let status = wait_stop(&self.guard.tracee)?;
             if !libc::WIFSTOPPED(status) {
                 return Err(Refuse::RemoteSubstrate {
                     operation: "remote guest ended during sigreturn",
@@ -3552,7 +3424,7 @@ impl RemoteExecutable {
                 .into());
             }
             let sig = libc::WSTOPSIG(status);
-            let si = stop_siginfo(self.guard.pid, sig);
+            let si = stop_siginfo(&self.guard.tracee, sig);
             if classify_stop(
                 phase,
                 sig,
@@ -3564,13 +3436,13 @@ impl RemoteExecutable {
                 return Err(self.unexpected_stop("sigreturn stop provenance"));
             }
             if phase == Phase::SyscallEntry {
-                let entry = get_regs(self.guard.pid)?;
+                let entry = get_regs(&self.guard.tracee)?;
                 if entry.orig_rax != libc::SYS_rt_sigreturn as u64 {
                     return Err(self.unexpected_stop("restorer did not enter rt_sigreturn"));
                 }
             }
         }
-        let restored = get_regs(self.guard.pid)?;
+        let restored = get_regs(&self.guard.tracee)?;
         let mut expected = resume;
         expected.rip = gen_entry;
         let got = regs_to_state(&restored);
@@ -3690,14 +3562,11 @@ impl RemoteExecutable {
         }
         #[cfg(feature = "test-seams")]
         self.single_steps.set(self.single_steps.get() + 1);
-        ptrace_ok(
-            libc::PTRACE_SINGLESTEP,
-            self.guard.pid,
-            core::ptr::null_mut(),
-            core::ptr::null_mut(),
-            "PTRACE_SINGLESTEP",
-        )?;
-        let status = wait_stop(self.guard.pid)?;
+        self.guard
+            .tracee
+            .single_step(0)
+            .map_err(seam_err("PTRACE_SINGLESTEP"))?;
+        let status = wait_stop(&self.guard.tracee)?;
         if !libc::WIFSTOPPED(status) {
             return Err(Refuse::RemoteSubstrate {
                 operation: "remote guest ended during step",
@@ -3705,11 +3574,11 @@ impl RemoteExecutable {
             }
             .into());
         }
-        let regs = get_regs(self.guard.pid)?;
+        let regs = get_regs(&self.guard.tracee)?;
         let sig = libc::WSTOPSIG(status);
         #[cfg(feature = "test-seams")]
         self.apply_kgen_seam(status)?;
-        let si = stop_siginfo(self.guard.pid, sig);
+        let si = stop_siginfo(&self.guard.tracee, sig);
         #[cfg(feature = "test-seams")]
         self.note_siginfo(SeenSite::OriginalStep, status);
         match classify_stop(
@@ -3979,14 +3848,11 @@ impl RemoteExecutable {
             }
         }
         for phase in [Phase::SyscallEntry, Phase::SyscallExit] {
-            ptrace_ok(
-                libc::PTRACE_SYSCALL,
-                self.guard.pid,
-                core::ptr::null_mut(),
-                core::ptr::null_mut(),
-                "PTRACE_SYSCALL",
-            )?;
-            let status = wait_stop(self.guard.pid)?;
+            self.guard
+                .tracee
+                .cont_syscall(0)
+                .map_err(seam_err("PTRACE_SYSCALL"))?;
+            let status = wait_stop(&self.guard.tracee)?;
             if !libc::WIFSTOPPED(status) {
                 return Err(Refuse::RemoteSubstrate {
                     operation: "remote guest ended during syscall",
@@ -3997,7 +3863,7 @@ impl RemoteExecutable {
             let sig = libc::WSTOPSIG(status);
             #[cfg(feature = "test-seams")]
             self.apply_kgen_seam(status)?;
-            let si = stop_siginfo(self.guard.pid, sig);
+            let si = stop_siginfo(&self.guard.tracee, sig);
             #[cfg(feature = "test-seams")]
             self.note_siginfo(SeenSite::SyscallStep, status);
             match classify_stop(
@@ -4020,7 +3886,7 @@ impl RemoteExecutable {
                 // ran (on return to user at `pc`). Delivered by the
                 // caller only with the full provenance proof.
                 StopClass::Async if phase == Phase::SyscallEntry => {
-                    let regs = get_regs(self.guard.pid)?;
+                    let regs = get_regs(&self.guard.tracee)?;
                     if self.w3s_provenance(pc, &recorded, &regs) {
                         return Ok(Stepped::EntryInterrupted {
                             sig,
@@ -4034,7 +3900,7 @@ impl RemoteExecutable {
                 // The same proof; the signal is never delivered, so it
                 // stops as an asynchronous fault at the `syscall`.
                 StopClass::KernelAsync if phase == Phase::SyscallEntry => {
-                    let regs = get_regs(self.guard.pid)?;
+                    let regs = get_regs(&self.guard.tracee)?;
                     if self.w3s_provenance(pc, &recorded, &regs) {
                         return Err(RunError::Fault(Box::new(self.source_fault(
                             StopClass::KernelAsync,
@@ -4050,7 +3916,7 @@ impl RemoteExecutable {
                     );
                 }
                 class @ (StopClass::Async | StopClass::SourceFault) => {
-                    let regs = get_regs(self.guard.pid)?;
+                    let regs = get_regs(&self.guard.tracee)?;
                     return Err(RunError::Fault(Box::new(self.source_fault(
                         class,
                         sig,
@@ -4070,7 +3936,7 @@ impl RemoteExecutable {
         // fault, and never resume the child on presumed
         // completion: the caller either delivers the signal
         // (I1-G2) or fails closed.
-        let regs = get_regs(self.guard.pid)?;
+        let regs = get_regs(&self.guard.tracee)?;
         if is_syscall_restart(regs.rax) {
             return Ok(Stepped::Interrupted(regs));
         }
@@ -4177,24 +4043,21 @@ impl RemoteExecutable {
         // PTRACE_SYSCALL, not CONT: if no signal were pending,
         // the kernel's no-handler restart must stop at the next
         // syscall entry instead of running the guest.
-        ptrace_ok(
-            libc::PTRACE_SYSCALL,
-            self.guard.pid,
-            core::ptr::null_mut(),
-            core::ptr::null_mut(),
-            "PTRACE_SYSCALL restart",
-        )?;
-        let status = wait_stop(self.guard.pid)?;
+        self.guard
+            .tracee
+            .cont_syscall(0)
+            .map_err(seam_err("PTRACE_SYSCALL restart"))?;
+        let status = wait_stop(&self.guard.tracee)?;
         if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) == (libc::SIGTRAP | 0x80) {
             return Err(self.unexpected_stop("syscall restart without a delivery stop"));
         }
         let sig = libc::WSTOPSIG(status);
         #[cfg(feature = "test-seams")]
         self.apply_kgen_seam(status)?;
-        let si = stop_siginfo(self.guard.pid, sig);
+        let si = stop_siginfo(&self.guard.tracee, sig);
         #[cfg(feature = "test-seams")]
         self.note_siginfo(SeenSite::RestartExit, status);
-        let stop = get_regs(self.guard.pid)?;
+        let stop = get_regs(&self.guard.tracee)?;
         // Asynchronous provenance: the existing asynchronous-code
         // class, or a positive code outside the fault set.
         let async_stop = status >> 16 == 0
@@ -4352,7 +4215,7 @@ impl RemoteExecutable {
             entry_state.rip = gen_entry;
             self.set_guest_regs(&entry_state)?;
             self.cont(0)?;
-            let status = wait_stop(self.guard.pid)?;
+            let status = wait_stop(&self.guard.tracee)?;
             #[cfg(feature = "test-seams")]
             let status = self.filter_arrival_stops(status)?;
             if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
@@ -4371,11 +4234,11 @@ impl RemoteExecutable {
                 .into());
             }
             let sig = libc::WSTOPSIG(status);
-            let regs = get_regs(self.guard.pid)?;
+            let regs = get_regs(&self.guard.tracee)?;
             let data = self.read_jit_data()?;
             #[cfg(feature = "test-seams")]
             self.apply_kgen_seam(status)?;
-            let si = stop_siginfo(self.guard.pid, sig);
+            let si = stop_siginfo(&self.guard.tracee, sig);
             #[cfg(feature = "test-seams")]
             self.note_siginfo(SeenSite::Generated, status);
             // Exact exit-trap proof: the byte before the stopped
@@ -4496,7 +4359,7 @@ impl RemoteExecutable {
                     }
                     if let Some(action) = action {
                         if recovered.addr != addr {
-                            set_siginfo_addr(self.guard.pid, recovered.addr)?;
+                            set_siginfo_addr(&self.guard.tracee, recovered.addr)?;
                         }
                         #[cfg(feature = "test-seams")]
                         self.record_seam_delivery(sig, gen_pc, &recovered);
@@ -4560,7 +4423,7 @@ impl RemoteExecutable {
             match data.exit_kind {
                 exit_kind::RETURN => {
                     let mut buf = [0u8; 8];
-                    if read_mem(self.guard.pid, state.rsp, &mut buf).is_err() {
+                    if read_mem(&self.guard.tracee, state.rsp, &mut buf).is_err() {
                         state.rip = data.exit_src;
                         let (kind, instructions) = crate::recovery::kind_and_retired(
                             t,
@@ -4922,11 +4785,11 @@ impl RemoteExecutable {
                         match self.step_syscall_or_interrupt(state, data.exit_src, &data)? {
                             Stepped::Done(s) => {
                                 state = s;
-                                let pid = self.guard.pid;
+                                let tracee = self.guard.tracee;
                                 let da = self.data_addr();
                                 Self::reconcile_registry(
                                     &mut self.registry,
-                                    pid,
+                                    &tracee,
                                     da,
                                     &obs,
                                     data.exit_src,

@@ -948,6 +948,323 @@ fn p1b1_indirect_matches_o1() {
     }
 }
 
+/// Segment overrides vs the O1 oracle, exact (no tolerance).
+///
+/// What this covers in process: translated code runs on this test
+/// thread, so its FS reads and writes this thread's TLS, while the
+/// oracle steps the same bytes natively in its own child, on that
+/// child's TLS (another canary, another TCB address). The fixtures
+/// cancel every TLS-derived value before `ret`, so the full-state
+/// comparison (counts, every register, flags, data, stack window)
+/// is exact, and checks the TLS invariants on each engine: three
+/// canary reads (two encodings) agree, a same-value TLS store, the
+/// TCB self pointer read through FS and through memory, and a
+/// register-base FS operand. `seg_fs_self` pins the absolute read:
+/// in process, `fs:[0]` is this thread's FS base. `seg_gs_fault`
+/// faults on both engines at linear 0x40 (GS base 0), with the same
+/// instruction, counts and registers.
+#[test]
+fn seg_override_matches_o1() {
+    let _g = lock();
+    for (name, rax, branches, instructions) in [
+        ("seg_fs_canary", 0u64, 3u64, 14u64),
+        ("seg_fs_tcb", 0, 3, 11),
+        ("seg_flat_overrides", 31, 0, 11),
+    ] {
+        let (jit, o1) = compare(name);
+        assert_eq!(jit.state.rax, rax, "{name}: rax");
+        assert_eq!(jit.branches, branches, "{name}: jit branches");
+        assert_eq!(o1.branches, branches, "{name}: oracle branches");
+        assert_eq!(jit.instructions, instructions, "{name}: jit instructions");
+        assert_eq!(o1.instructions, instructions, "{name}: oracle instructions");
+        println!("{name}: jit == o1");
+    }
+    {
+        let jr = run_jit("seg_gs_fault", |_| {});
+        let f = match jr.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("seg_gs_fault jit: {other:?}"),
+        };
+        let o1 = deadline::o1(CHILD, "seg_gs_fault", |_, _| {});
+        let (o1_pc, o1_sig) = o1.fault.expect("seg_gs_fault: oracle fault");
+        assert_eq!(f.kind, liteinst_jit::exec::FaultKind::GuestFault);
+        assert_eq!(f.signum, libc::SIGSEGV, "seg_gs_fault: jit signum");
+        assert_eq!(o1_sig, f.signum, "seg_gs_fault: signum");
+        assert_eq!(f.branches, 3, "seg_gs_fault: jit branches");
+        assert_eq!(o1.branches, 3, "seg_gs_fault: oracle branches");
+        assert_eq!(f.instructions, 10, "seg_gs_fault: jit instructions");
+        assert_eq!(o1.instructions, 10, "seg_gs_fault: oracle instructions");
+        assert_eq!(off(f.src_pc, jr.base), 9, "seg_gs_fault: jit fault pc");
+        assert_eq!(off(o1_pc, o1.base), 9, "seg_gs_fault: oracle fault pc");
+        assert_eq!(f.state.rip, f.src_pc, "seg_gs_fault: recovered rip");
+        assert_eq!(f.addr, 0x40, "seg_gs_fault: jit fault address (GS base 0)");
+        assert_eq!(o1.fault_addr, 0x40, "seg_gs_fault: oracle fault address");
+        assert_eq!(f.state.rcx, 3, "seg_gs_fault: jit rcx");
+        assert_eq!(o1.state.rcx, 3, "seg_gs_fault: oracle rcx");
+        assert_eq!(f.state.rax, o1.state.rax, "seg_gs_fault: rax");
+        assert_eq!(
+            f.state.rflags & STATUS_MASK,
+            o1.state.rflags & STATUS_MASK,
+            "seg_gs_fault: status flags"
+        );
+    }
+    {
+        let jr = run_jit("seg_fs_self", |_| {});
+        let out = jr.outcome.as_ref().expect("seg_fs_self jit").clone();
+        const ARCH_GET_FS: i32 = 0x1003;
+        let mut fs_base: u64 = 0;
+        // SAFETY: arch_prctl status query writing one u64 through
+        // the provided pointer.
+        let rc = unsafe {
+            libc::syscall(
+                libc::SYS_arch_prctl,
+                ARCH_GET_FS,
+                core::ptr::addr_of_mut!(fs_base),
+            )
+        };
+        assert_eq!(rc, 0, "ARCH_GET_FS");
+        assert_ne!(fs_base, 0, "this thread has a TLS block");
+        assert_eq!(
+            out.state.rax, fs_base,
+            "seg_fs_self: in process, fs:[0] is this thread's FS base"
+        );
+        assert_eq!(
+            (out.branches, out.instructions),
+            (0, 2),
+            "seg_fs_self counts"
+        );
+    }
+}
+
+/// The call/return corpus (src/fixtures.rs) with values worked out
+/// by hand from each fixture's code: `(name, rax, branches,
+/// instructions, dispatcher exits)`. Today every retired `ret` exits
+/// to the dispatcher and nothing else exits, so the exit count is
+/// the number of `ret`s; a return fast path lowers it and must change
+/// this table to do so. Nothing else exits because no fixture here
+/// makes a syscall, a nondeterministic instruction or an indirect
+/// transfer, and none reaches a poll exit: `POLL_BUDGET` is 16384
+/// block entries (src/exec.rs), and the most any fixture makes is
+/// about 3000 (`ret_deep_chain`, about 3 per frame).
+/// remote_compare.rs keeps an identical copy.
+const RET_CORPUS: [(&str, u64, u64, u64, u64); 8] = [
+    ("ret_fib", 144, 465, 4183, 466),
+    ("ret_deep_chain", 500_500, 1001, 8007, 1002),
+    ("ret_mutual", 1, 21, 107, 22),
+    ("ret_tail_jmp", 1075, 11, 78, 2),
+    ("ret_push_jmp", 8, 9, 54, 9),
+    ("ret_overwrite_slot", 2, 1, 9, 2),
+    ("ret_longjmp", 107, 0, 10, 2),
+    ("ret_imm16_loop", 65, 5, 49, 6),
+];
+
+/// Call/return chains match the O1 oracle EXACTLY: every register,
+/// RIP, both counts, the buffers and the stack window. The window is
+/// the 136 bytes at the stack top, so it holds the OUTERMOST frames'
+/// slots; deeper frames (for `ret_deep_chain`, about 16 KB lower)
+/// are not compared. The oracle is checked
+/// against the hand-worked values first, so an oracle and a JIT that
+/// agree on a wrong answer still fail; the dispatcher exit count is
+/// pinned too.
+#[test]
+fn ret_corpus_matches_o1() {
+    let _g = lock();
+    for (name, rax, branches, instructions, exits) in RET_CORPUS {
+        let (jit, o1) = compare(name);
+        assert_eq!(
+            (o1.state.rax, o1.branches, o1.instructions),
+            (rax, branches, instructions),
+            "{name}: oracle against the hand-worked values"
+        );
+        assert_eq!(jit.state.rax, rax, "{name}: rax");
+        assert_eq!(jit.exits, exits, "{name}: dispatcher exits");
+        println!("{name}: jit == o1, {exits} exits");
+    }
+}
+
+/// Returns that stop by name today. The dispatcher enters a return
+/// target only if it is already a block start: a push+ret to an
+/// in-region address that no direct edge reaches is not translated
+/// on demand, and refuses `IndirectUnresolved`, as does a return out
+/// of the region. Both refusals carry the return target in `src_pc`,
+/// not the `ret`'s own address. These asserts pin today's behaviour;
+/// they do not endorse it. A legitimate change, such as translating
+/// an in-region return target on demand or reporting the `ret`'s own
+/// PC, must edit them.
+#[test]
+fn ret_named_stops() {
+    let _g = lock();
+    {
+        let name = "ret_push_unknown";
+        let jr = run_jit(name, |_| {});
+        match jr.outcome {
+            Err(RunError::Refuse(Refuse::IndirectUnresolved { src_pc })) => {
+                assert_eq!(off(src_pc, jr.base), 9, "{name}: refusal names the target")
+            }
+            other => panic!("{name} jit: {other:?}"),
+        }
+        // Natively the same bytes simply run on at the target.
+        let o1 = deadline::o1(CHILD, name, |_, _| {});
+        assert_eq!(o1.fault, None, "{name}: oracle faulted");
+        assert_eq!(
+            (o1.state.rax, o1.branches, o1.instructions),
+            (5, 0, 5),
+            "{name}: native run"
+        );
+    }
+    {
+        // No oracle run: it reads each instruction before stepping
+        // it, and the target page can never be mapped.
+        let name = "ret_out_of_region";
+        let jr = run_jit(name, |_| {});
+        assert!(
+            matches!(
+                jr.outcome,
+                Err(RunError::Refuse(Refuse::IndirectUnresolved {
+                    src_pc: 0x1000
+                }))
+            ),
+            "{name} jit: {:?}",
+            jr.outcome
+        );
+    }
+}
+
+/// Serves exactly `ret_remap`'s three mapping calls on the guest's
+/// own first page (the page below the one holding the `syscall`) and
+/// refuses anything else by name. Between the guest's `munmap` and
+/// its `mmap` the handler keeps the address reserved as a PROT_NONE
+/// page, so no other thread of this test process can take it; the
+/// guest sees what it would natively (the page gone, then a fresh
+/// page at the same address).
+#[derive(Default)]
+struct RemapHandler {
+    calls: Vec<u64>,
+}
+
+impl liteinst_jit::exec::Handler for RemapHandler {
+    fn syscall(
+        &mut self,
+        state: &mut GuestState,
+        insn_pc: u64,
+        next_pc: u64,
+    ) -> Result<liteinst_jit::exec::Resume, Refuse> {
+        let refuse = Refuse::NoHandler { src_pc: insn_pc };
+        let page = (insn_pc & !0xfff).wrapping_sub(0x1000);
+        if state.rdi != page || state.rsi != 0x1000 {
+            return Err(refuse);
+        }
+        let addr = page as *mut libc::c_void;
+        let anon = libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED;
+        let regs = (state.rax, state.rdx, state.r10, state.r8, state.r9);
+        // SAFETY: each call names only the guest's own first page,
+        // owned by the test's `MappedGuest`, which unmaps it on drop
+        // whatever it holds by then.
+        let rc: u64 = unsafe {
+            match regs {
+                (11, ..) if self.calls.is_empty() => {
+                    let p = libc::mmap(addr, 0x1000, libc::PROT_NONE, anon, -1, 0);
+                    if p != addr {
+                        return Err(refuse);
+                    }
+                    0
+                }
+                (9, 3, 0x10_0022, u64::MAX, 0) if self.calls == [11] => {
+                    let rw = libc::PROT_READ | libc::PROT_WRITE;
+                    if libc::mmap(addr, 0x1000, rw, anon, -1, 0) != addr {
+                        return Err(refuse);
+                    }
+                    page
+                }
+                (10, 5, ..) if self.calls == [11, 9] => {
+                    if libc::mprotect(addr, 0x1000, libc::PROT_READ | libc::PROT_EXEC) != 0 {
+                        return Err(refuse);
+                    }
+                    0
+                }
+                _ => return Err(refuse),
+            }
+        };
+        self.calls.push(state.rax);
+        state.rax = rc;
+        state.rcx = next_pc;
+        state.r11 = state.rflags;
+        Ok(liteinst_jit::exec::Resume::At(next_pc))
+    }
+
+    fn nondet(
+        &mut self,
+        _state: &mut GuestState,
+        _kind: liteinst_jit::decode::NondetKind,
+        insn_pc: u64,
+        _next_pc: u64,
+    ) -> Result<liteinst_jit::exec::Resume, Refuse> {
+        Err(Refuse::NoHandler { src_pc: insn_pc })
+    }
+}
+
+/// A return into a page that was unmapped and mapped again with
+/// changed bytes. The return target is a saved PC: after the remap
+/// it must be revalidated by mapping identity and generation, not by
+/// address, so the run either matches the oracle on the NEW bytes
+/// exactly (retranslated) or refuses by name after the remap. Today
+/// the dispatcher enters the old translation by address.
+#[test]
+#[ignore = "needs entry validity by mapping identity and generation: https://github.com/rrnewton/liteinst2/issues/104"]
+fn ret_remap_matches_o1_or_refuses() {
+    let _g = lock();
+    let name = "ret_remap";
+    let fixture = fixtures::by_name(name);
+    let guest = MappedGuest::map(&fixture.bytes).expect("map");
+    guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
+    let region = guest.region(&fixture.bytes, Generation(1));
+    let mut exec = Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions)
+        .expect("prepare");
+    let mut handler = RemapHandler::default();
+    let outcome = exec.run(
+        guest.initial_state(),
+        &mut handler,
+        &ProcessMemory,
+        RETURN_SENTINEL,
+    );
+    assert_eq!(handler.calls, [11, 9, 10], "{name}: the remap ran");
+    // The fixture reads no buffer; these only fill the comparator's
+    // pointer ranges and its data-buffer check.
+    let data: Vec<u64> = (0..16).collect();
+    let (dst, src) = (vec![0u8; 8192], vec![0u8; 8192]);
+    let jr = JitResult {
+        outcome,
+        written: Vec::new(),
+        dst: Vec::new(),
+        data_bytes: data.iter().flat_map(|v| v.to_le_bytes()).collect(),
+        stack_window: guest.stack_window(),
+        base: guest.base,
+        stack_top: guest.stack_top(),
+        dst_ptr: dst.as_ptr() as u64,
+        ranges: ranges_of(
+            guest.base,
+            data.as_ptr() as u64,
+            dst.as_ptr() as u64,
+            src.as_ptr() as u64,
+            8192,
+        ),
+        retranslations: exec.retranslations(),
+        generation: exec.generation(),
+    };
+    let o1 = deadline::o1(CHILD, name, |_, _| {});
+    assert_eq!(o1.fault, None, "{name}: oracle faulted");
+    assert_eq!(
+        (o1.state.rax, o1.branches, o1.instructions),
+        (2, 0, 27),
+        "{name}: the oracle ran the new bytes"
+    );
+    match &jr.outcome {
+        Ok(out) => assert_full_state(name, out, &jr, &o1),
+        Err(RunError::Refuse(Refuse::StaleGeneration { .. })) => {}
+        Err(other) => panic!("{name}: neither the new bytes nor a named refusal: {other:?}"),
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]
