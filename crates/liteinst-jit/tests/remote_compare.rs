@@ -767,6 +767,95 @@ fn p1b1_indirect_remote_matches() {
     }
 }
 
+/// The call/return corpus (src/fixtures.rs): `(name, rax, branches,
+/// instructions, dispatcher exits)`, worked out by hand. Identical to
+/// o1_compare.rs's copy, where the same values are also checked
+/// against the O1 oracle.
+const RET_CORPUS: [(&str, u64, u64, u64, u64); 8] = [
+    ("ret_fib", 144, 465, 4183, 466),
+    ("ret_deep_chain", 500_500, 1001, 8007, 1002),
+    ("ret_mutual", 1, 21, 107, 22),
+    ("ret_tail_jmp", 1075, 11, 78, 2),
+    ("ret_push_jmp", 8, 9, 54, 9),
+    ("ret_overwrite_slot", 2, 1, 9, 2),
+    ("ret_longjmp", 107, 0, 10, 2),
+    ("ret_imm16_loop", 65, 5, 49, 6),
+];
+
+/// Call/return chains, remote: exact state, counts and dispatcher
+/// exits against in-process (each `ret` is one exit in both, and in
+/// the remote mode one ptrace stop), and the hand-worked values
+/// absolutely. Then the returns that stop by name refuse identically
+/// in both engines, naming the same return target: today's behaviour,
+/// pinned but not endorsed (see o1_compare.rs, `ret_named_stops`).
+#[test]
+fn ret_corpus_remote_matches() {
+    let _g = lock();
+    for (name, rax, branches, instructions, exits) in RET_CORPUS {
+        let b = run_both(name);
+        assert_same_outcome(name, &b);
+        let rem = b
+            .remote
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{name} remote: {e:?}"));
+        assert_eq!(
+            (rem.state.rax, rem.branches, rem.instructions, rem.exits),
+            (rax, branches, instructions, exits),
+            "{name}: remote against the hand-worked values"
+        );
+        println!("{name}: remote == in-process, {exits} exits");
+    }
+    for (name, target_off) in [("ret_push_unknown", Some(9)), ("ret_out_of_region", None)] {
+        let b = run_both(name);
+        let sides = [
+            ("in-process", &b.jit, b.jit_ranges[0].0),
+            ("remote", &b.remote, b.remote_ranges[0].0),
+        ];
+        for (side, r, base) in sides {
+            let want = target_off.map_or(0x1000, |o| base + o);
+            assert!(
+                matches!(
+                    r,
+                    Err(RunError::Refuse(Refuse::IndirectUnresolved { src_pc })) if *src_pc == want
+                ),
+                "{name} {side}: want IndirectUnresolved at {want:#x}, got {r:?}"
+            );
+        }
+    }
+}
+
+/// `ret_remap`, remote: the guest's own `munmap`, `mmap` and
+/// `mprotect` run in the traced child, then it returns into its
+/// remapped page. The run must reach the new bytes (rax = 2, the
+/// counts the oracle gives in o1_compare.rs) or refuse by name. Today
+/// the remote mode does not pass mapping calls through and stops at
+/// the `munmap` with `NoHandler`. Limit: unlike the in-process test,
+/// this one has no witness that a `StaleGeneration` refusal came after
+/// the remap.
+#[test]
+#[ignore = "needs entry validity by mapping identity and generation (https://github.com/rrnewton/liteinst2/issues/104) and remote pass-through of munmap, mmap and mprotect: today it stops with NoHandler at the munmap"]
+fn ret_remap_remote_matches_or_refuses() {
+    let _g = lock();
+    let name = "ret_remap";
+    let b = run_both(name);
+    match &b.remote {
+        Ok(out) => {
+            assert_eq!(
+                (out.state.rax, out.branches, out.instructions, out.state.rip),
+                (2, 0, 27, RETURN_SENTINEL),
+                "{name}: remote reached the new bytes"
+            );
+            assert_eq!(
+                out.state.rsp as i64 - b.remote_stack_top as i64,
+                8,
+                "{name}: rsp delta"
+            );
+        }
+        Err(RunError::Refuse(Refuse::StaleGeneration { .. })) => {}
+        Err(other) => panic!("{name}: neither the new bytes nor a named refusal: {other:?}"),
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]
