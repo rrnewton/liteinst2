@@ -897,7 +897,12 @@ fn p1b1_indirect_matches_o1() {
 /// instructions, dispatcher exits)`. Today every retired `ret` exits
 /// to the dispatcher and nothing else exits, so the exit count is
 /// the number of `ret`s; a return fast path lowers it and must change
-/// this table to do so. remote_compare.rs keeps an identical copy.
+/// this table to do so. Nothing else exits because no fixture here
+/// makes a syscall, a nondeterministic instruction or an indirect
+/// transfer, and none reaches a poll exit: `POLL_BUDGET` is 16384
+/// block entries (src/exec.rs), and the most any fixture makes is
+/// about 3000 (`ret_deep_chain`, about 3 per frame).
+/// remote_compare.rs keeps an identical copy.
 const RET_CORPUS: [(&str, u64, u64, u64, u64); 8] = [
     ("ret_fib", 144, 465, 4183, 466),
     ("ret_deep_chain", 500_500, 1001, 8007, 1002),
@@ -910,8 +915,10 @@ const RET_CORPUS: [(&str, u64, u64, u64, u64); 8] = [
 ];
 
 /// Call/return chains match the O1 oracle EXACTLY: every register,
-/// RIP, both counts, the buffers and the stack window, which holds
-/// the deepest frames' return addresses. The oracle is checked
+/// RIP, both counts, the buffers and the stack window. The window is
+/// the 136 bytes at the stack top, so it holds the OUTERMOST frames'
+/// slots; deeper frames (for `ret_deep_chain`, about 16 KB lower)
+/// are not compared. The oracle is checked
 /// against the hand-worked values first, so an oracle and a JIT that
 /// agree on a wrong answer still fail; the dispatcher exit count is
 /// pinned too.
@@ -936,7 +943,10 @@ fn ret_corpus_matches_o1() {
 /// in-region address that no direct edge reaches is not translated
 /// on demand, and refuses `IndirectUnresolved`, as does a return out
 /// of the region. Both refusals carry the return target in `src_pc`,
-/// not the `ret`'s own address.
+/// not the `ret`'s own address. These asserts pin today's behaviour;
+/// they do not endorse it. A legitimate change, such as translating
+/// an in-region return target on demand or reporting the `ret`'s own
+/// PC, must edit them.
 #[test]
 fn ret_named_stops() {
     let _g = lock();

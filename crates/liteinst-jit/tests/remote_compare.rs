@@ -786,7 +786,8 @@ const RET_CORPUS: [(&str, u64, u64, u64, u64); 8] = [
 /// exits against in-process (each `ret` is one exit in both, and in
 /// the remote mode one ptrace stop), and the hand-worked values
 /// absolutely. Then the returns that stop by name refuse identically
-/// in both engines, naming the same return target.
+/// in both engines, naming the same return target: today's behaviour,
+/// pinned but not endorsed (see o1_compare.rs, `ret_named_stops`).
 #[test]
 fn ret_corpus_remote_matches() {
     let _g = lock();
@@ -828,9 +829,11 @@ fn ret_corpus_remote_matches() {
 /// remapped page. The run must reach the new bytes (rax = 2, the
 /// counts the oracle gives in o1_compare.rs) or refuse by name. Today
 /// the remote mode does not pass mapping calls through and stops at
-/// the `munmap` with `NoHandler`.
+/// the `munmap` with `NoHandler`. Limit: unlike the in-process test,
+/// this one has no witness that a `StaleGeneration` refusal came after
+/// the remap.
 #[test]
-#[ignore = "needs entry validity by mapping identity and generation: https://github.com/rrnewton/liteinst2/issues/104"]
+#[ignore = "needs entry validity by mapping identity and generation (https://github.com/rrnewton/liteinst2/issues/104) and remote pass-through of munmap, mmap and mprotect: today it stops with NoHandler at the munmap"]
 fn ret_remap_remote_matches_or_refuses() {
     let _g = lock();
     let name = "ret_remap";
