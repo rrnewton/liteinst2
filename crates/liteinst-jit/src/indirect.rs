@@ -8,13 +8,16 @@
 //! no state and writes nothing; the dispatcher does the region
 //! check, the translation of new roots, the push and the transfer,
 //! in that order. Forms P1b.1 does not resolve (far transfers,
-//! segment overrides, 32-bit addressing) return
+//! segment overrides, a 32-bit base or index) return
 //! [`ResolveError::Unsupported`], which the dispatcher refuses by
-//! name as `IndirectUnresolved`. (The decoder runs in Intel's decode
-//! mode, `DecoderOptions::NONE`, where an operand-size prefix on a
-//! near indirect branch is ignored in 64-bit mode, so it decodes as
-//! the 64-bit form. AMD honours that 66h prefix and takes a 16-bit
-//! target; P1a's direct branches and `ret` share this vendor gap.)
+//! name as `IndirectUnresolved`. A 32-bit absolute address
+//! (`67 ff /4|/2` with `[disp32]`) returns
+//! [`ResolveError::AddressSize32`], refused as
+//! `IndirectAddressSize32`. (The decoder runs in Intel's decode mode,
+//! `DecoderOptions::NONE`, where an operand-size prefix on a near
+//! branch is ignored in 64-bit mode; AMD honours it. Decode refuses
+//! every 66h-prefixed near branch and `ret` by name, so none reaches
+//! this resolver.)
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -52,6 +55,10 @@ pub enum ResolveError {
     /// The 8-byte read of the memory operand at `addr` failed: a
     /// guest fault at the instruction, which does not retire.
     ReadFault { addr: u64 },
+    /// The memory operand has a 32-bit address size in absolute form
+    /// (`67 ff /4|/2` with `[disp32]`); refused by name as
+    /// `Refuse::IndirectAddressSize32` at the instruction.
+    AddressSize32,
 }
 
 /// The 64-bit general register `reg` in `s`, or `None` for any
@@ -126,6 +133,17 @@ pub fn resolve(
             None => return Err(ResolveError::Unsupported),
         },
         OpKind::Memory => {
+            // 67h with an absolute [disp32]: a 32-bit address. Iced
+            // reports its displacement zero-extended with size 4 (a
+            // 64-bit [disp32] reports size 8), so effective_address
+            // would compute it; this resolver claims 64-bit addressing
+            // only. Every other 67h form already fails in gpr64.
+            if insn.memory_base() == Register::None
+                && insn.memory_index() == Register::None
+                && insn.memory_displ_size() == 4
+            {
+                return Err(ResolveError::AddressSize32);
+            }
             let Some(ea) = effective_address(insn, s, next_ip) else {
                 return Err(ResolveError::Unsupported);
             };

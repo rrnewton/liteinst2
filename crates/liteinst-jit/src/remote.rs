@@ -2917,6 +2917,19 @@ impl RemoteExecutable {
             Ok(r) => r,
             Err(ResolveError::Unsupported) => return Err(unresolved()),
             Err(ResolveError::ReadFault { addr }) => return Err(IndirectStop::Fault { addr }),
+            Err(ResolveError::AddressSize32) => {
+                let bytes = self
+                    .region
+                    .as_ref()
+                    .and_then(|r| r.slice_from(insn.pc))
+                    .and_then(|b| b.get(..insn.len))
+                    .map(<[u8]>::to_vec)
+                    .unwrap_or_default();
+                return Err(IndirectStop::Refuse(Refuse::IndirectAddressSize32 {
+                    src_pc: src,
+                    bytes,
+                }));
+            }
         };
         let Some(region) = self.region.as_ref() else {
             return Err(unresolved());

@@ -81,13 +81,23 @@ pub(crate) struct PtraceTracee {
     pid: i32,
 }
 
-fn ptrace(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
+/// The `ptrace` request type of the target libc: glibc declares
+/// `ptrace(c_uint, ...)` with `c_uint` `PTRACE_*` constants, musl
+/// declares `ptrace(c_int, ...)` with `c_int` constants. Naming the
+/// libc's own type lets call sites pass `PTRACE_*` constants with no
+/// cast on either libc.
+#[cfg(target_env = "musl")]
+type PtraceRequest = libc::c_int;
+#[cfg(not(target_env = "musl"))]
+type PtraceRequest = libc::c_uint;
+
+fn ptrace(req: PtraceRequest, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
     // SAFETY: raw ptrace passthrough; callers pass valid operands
     // for the specific request.
-    unsafe { libc::ptrace(req as libc::c_uint, pid, addr, data) }
+    unsafe { libc::ptrace(req, pid, addr, data) }
 }
 
-fn ptrace_ok(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> Result<(), Errno> {
+fn ptrace_ok(req: PtraceRequest, pid: i32, addr: *mut u8, data: *mut u8) -> Result<(), Errno> {
     if ptrace(req, pid, addr, data) == 0 {
         Ok(())
     } else {

@@ -140,8 +140,31 @@ pub fn discover_roots(
     region: &RegionFacts,
     roots: &BTreeSet<u64>,
 ) -> Result<BTreeMap<u64, Block>, Refuse> {
+    discover_roots_excluding(region, roots, &[])
+}
+
+/// As [`discover_roots`], with `holes`: half-open ranges the caller
+/// reported unmapped (a [`crate::types::MappingEvent`] without a
+/// region). Nothing in a hole is decoded. Reaching one from a root,
+/// by straight-line flow or by a direct edge refuses
+/// [`Refuse::UnmappedCode`]; return, indirect, syscall and nondet
+/// successors in a hole are left to the dispatcher, which refuses
+/// them the same way when control gets there.
+pub fn discover_roots_excluding(
+    region: &RegionFacts,
+    roots: &BTreeSet<u64>,
+    holes: &[(u64, u64)],
+) -> Result<BTreeMap<u64, Block>, Refuse> {
+    let in_hole = |pc: u64| holes.iter().any(|&(s, e)| s <= pc && pc < e);
+    let unmapped = |pc: u64| Refuse::UnmappedCode {
+        src_pc: pc,
+        generation: region.generation.0,
+    };
     if !region.immutable_private {
         return Err(Refuse::SelfModifyingOrWritableCode { src: region.base });
+    }
+    if let Some(&r) = roots.iter().find(|r| in_hole(**r)) {
+        return Err(unmapped(r));
     }
     if let Some(&outside) = roots.iter().find(|r| !region.contains(**r)) {
         return Err(Refuse::InteriorEntry { target: outside });
@@ -191,9 +214,17 @@ pub fn discover_roots(
             if pc != start && starts.contains(&pc) {
                 break (None, Terminator::Fallthrough { next: pc }, vec![pc]);
             }
+            if in_hole(pc) {
+                return Err(unmapped(pc));
+            }
             let d = decoder.next_supported()?;
             decoded.insert(pc, d.len);
             let next = pc.wrapping_add(d.len as u64);
+            // An instruction that runs into a hole is refused whole:
+            // its tail bytes are no longer admitted code.
+            if holes.iter().any(|&(s, _)| pc < s && s < next) {
+                return Err(unmapped(pc));
+            }
             // A queued or built block start strictly inside this
             // instruction means two reachable streams disagree on
             // instruction boundaries: refuse, never pick one.
@@ -260,7 +291,17 @@ pub fn discover_roots(
             },
         );
         for s in successors {
-            if region.contains(s) {
+            if in_hole(s) {
+                // A direct edge into a hole would chain into code that
+                // is no longer admitted: refuse at the branch. Other
+                // successors exit to the dispatcher, which refuses.
+                if matches!(
+                    terminator,
+                    Terminator::Jump { .. } | Terminator::Call { .. } | Terminator::Cond { .. }
+                ) {
+                    return Err(unmapped(term_pc.unwrap_or(start)));
+                }
+            } else if region.contains(s) {
                 check_interior(&decoded, s)?;
                 if starts.insert(s) {
                     work.push(s);
@@ -892,8 +933,23 @@ pub fn translate_roots_with_options(
     data_addr: u64,
     options: TranslateOptions,
 ) -> Result<Translation, Refuse> {
-    let exit_style = options.exit_style;
     let blocks = discover_roots(region, roots)?;
+    translate_blocks(region, entry, blocks, profile, gen_base, data_addr, options)
+}
+
+/// Emit `blocks`, as discovered by [`discover_roots`] or
+/// [`discover_roots_excluding`] over `region`, exactly as
+/// [`translate_roots_with_options`] emits its own discovery.
+pub fn translate_blocks(
+    region: &RegionFacts,
+    entry: u64,
+    blocks: BTreeMap<u64, Block>,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
+    let exit_style = options.exit_style;
     let mut e = Emitter {
         buf: Vec::new(),
         gen_base,
@@ -1159,6 +1215,7 @@ pub fn translate_roots_with_options(
 mod tests {
     use super::*;
     use crate::types::Generation;
+    use liteinst_x86::{OpKind, Register};
 
     fn region(bytes: Vec<u8>) -> RegionFacts {
         RegionFacts {
@@ -1221,7 +1278,13 @@ mod tests {
             ("movaps-xmm", &[0x0f, 0x28, 0xc1, 0xc3]),
             ("popfq", &[0x9d, 0xc3]),
             ("swapgs", &[0x0f, 0x01, 0xf8, 0xc3]),
-            ("fs-load", &[0x64, 0x48, 0x8b, 0x04, 0x25, 0, 0, 0, 0, 0xc3]),
+            // FS/GS memory operands are admitted; these segment forms
+            // stay refused (decode.rs pins each reason).
+            ("mov-to-fs", &[0x8e, 0xe0, 0xc3]),
+            ("pop-gs", &[0x0f, 0xa9, 0xc3]),
+            ("fs-rip-load", &[0x64, 0x48, 0x8b, 0x05, 0, 0, 0, 0, 0xc3]),
+            ("fs-movsb", &[0x64, 0xa4, 0xc3]),
+            ("fs-nop", &[0x64, 0x90, 0xc3]),
             // R1 hidden-state families (decode-only; never executed).
             ("wrpkru", &[0x0f, 0x01, 0xef, 0xc3]),
             ("rdpkru", &[0x0f, 0x01, 0xee, 0xc3]),
@@ -1298,6 +1361,135 @@ mod tests {
             (0..t.code.len() as u64).all(|i| t.pcmap.lookup(0x80_0000 + i).is_some()),
             "call_helper has unmapped emitted bytes"
         );
+    }
+
+    /// Segment overrides: a copied instruction keeps its segment prefix. Non-RIP
+    /// forms are copied byte for byte; a RIP-relative one is
+    /// re-encoded with its prefix and the same absolute target.
+    #[test]
+    fn segment_prefixed_copies_keep_their_prefix() {
+        let src: &[&[u8]] = &[
+            &[0x64, 0x48, 0x8b, 0x04, 0x25, 0x28, 0, 0, 0], // mov rax, fs:[0x28]
+            &[0x64, 0x48, 0x89, 0x0c, 0x25, 0x28, 0, 0, 0], // mov fs:[0x28], rcx
+            &[0x65, 0x48, 0x8b, 0x00],                      // mov rax, gs:[rax]
+            &[0x2e, 0x48, 0x8b, 0x03],                      // mov rax, cs:[rbx]
+            &[0x3e, 0x48, 0x8b, 0x05, 0x10, 0, 0, 0],       // mov rax, ds:[rip+0x10]
+            &[0xc3],
+        ];
+        let bytes: Vec<u8> = src.concat();
+        let r = region(bytes.clone());
+        for exit_style in [ExitStyle::ReturnToDispatcher, ExitStyle::TrapToDispatcher] {
+            let t = translate_with_exit_style(
+                &r,
+                0x10_0000,
+                CountProfile::BranchesAndInstructions,
+                0x80_0000,
+                0x81_0000,
+                exit_style,
+            )
+            .unwrap();
+            let mut pc = 0x10_0000u64;
+            for (i, s) in src[..src.len() - 1].iter().enumerate() {
+                let e = t
+                    .pcmap
+                    .entries()
+                    .iter()
+                    .find(|e| e.phase == Phase::Copied && e.src_pc == pc)
+                    .unwrap_or_else(|| panic!("insn {i}: no copied entry"));
+                let at = (e.gen_start - 0x80_0000) as usize;
+                let out = &t.code[at..(e.gen_end - 0x80_0000) as usize];
+                let orig = crate::decode::decode_one(s, pc).unwrap().instruction;
+                if orig.is_ip_rel_memory_operand() {
+                    assert_ne!(out, *s, "insn {i}: RIP-relative copy was re-encoded");
+                    let copy = crate::decode::decode_one(out, e.gen_start)
+                        .unwrap()
+                        .instruction;
+                    assert_eq!(copy.len(), s.len(), "insn {i}: re-encoded length");
+                    assert_eq!(
+                        copy.segment_prefix(),
+                        orig.segment_prefix(),
+                        "insn {i}: re-encode kept the segment prefix"
+                    );
+                    assert_eq!(
+                        copy.memory_displacement64(),
+                        orig.memory_displacement64(),
+                        "insn {i}: re-encode kept the absolute target"
+                    );
+                } else {
+                    assert_eq!(out, *s, "insn {i}: segment-prefixed copy is byte-exact");
+                }
+                pc += s.len() as u64;
+            }
+        }
+    }
+
+    /// Segment overrides: no emitted machinery (count, poll, budget, call, exit and
+    /// common-exit stubs, the copied-branch encodings) carries a
+    /// segment override or names a segment register, in either exit
+    /// style, with the budget option on or off: JitData and the
+    /// remote arena are addressed RIP-relatively and never through
+    /// FS or GS. Only guest copies (non-terminator block
+    /// instructions) are skipped.
+    #[test]
+    fn machinery_never_uses_a_segment_override() {
+        let mut checked = 0;
+        for f in crate::fixtures::all() {
+            let r = region(f.bytes.clone());
+            for exit_style in [ExitStyle::ReturnToDispatcher, ExitStyle::TrapToDispatcher] {
+                for rcb_budget in [false, true] {
+                    let Ok(t) = translate_with_options(
+                        &r,
+                        0x10_0000,
+                        CountProfile::BranchesAndInstructions,
+                        0x80_0000,
+                        0x81_0000,
+                        TranslateOptions {
+                            exit_style,
+                            rcb_budget,
+                        },
+                    ) else {
+                        continue;
+                    };
+                    let guest: BTreeMap<u64, usize> = t
+                        .blocks
+                        .values()
+                        .flat_map(|b| b.insns.iter().map(|d| (d.pc, d.len)))
+                        .collect();
+                    for e in t.pcmap.entries() {
+                        let len = (e.gen_end - e.gen_start) as usize;
+                        if e.phase == Phase::Copied && guest.get(&e.src_pc) == Some(&len) {
+                            continue;
+                        }
+                        let mut g = e.gen_start;
+                        while g < e.gen_end {
+                            let at = (g - 0x80_0000) as usize;
+                            let end = (e.gen_end - 0x80_0000) as usize;
+                            let d = crate::decode::decode_one(&t.code[at..end], g)
+                                .unwrap_or_else(|| panic!("{}: undecodable at {g:#x}", f.name));
+                            let ins = d.instruction;
+                            assert_eq!(
+                                ins.segment_prefix(),
+                                Register::None,
+                                "{}: machinery segment override at {g:#x} ({:?})",
+                                f.name,
+                                e.phase
+                            );
+                            for i in 0..ins.op_count() {
+                                assert!(
+                                    !(ins.op_kind(i) == OpKind::Register
+                                        && ins.op_register(i).is_segment_register()),
+                                    "{}: machinery segment register at {g:#x}",
+                                    f.name
+                                );
+                            }
+                            g += d.len as u64;
+                            checked += 1;
+                        }
+                    }
+                }
+            }
+        }
+        assert!(checked > 1000, "machinery instructions checked: {checked}");
     }
 
     #[test]

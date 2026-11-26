@@ -19,14 +19,37 @@ run_suite() {
     return $?
 }
 
-# The P1b.1 mutants (08-19) and the push mutants (23a/23b: no page
-# crossing check; 24a/24b: a failed push write ignored) run only their
-# named tests, each as "binary:fn"; every listed test must show its own
-# FAILED line (see named_failures_ok). Empty for every other mutant.
+# The P1b.1 mutants (08-19), the push mutants (23a/23b: no page
+# crossing check; 24a/24b: a failed push write ignored) and the
+# generation mutants (25a: a stale translation used; 25b: reported
+# mapping events dropped; 25c: the stamp never updated; 25d: no hole
+# check at entry; 25e: a direct edge into a hole queued; 25f/25h: a
+# handler Err skips its events, syscall/nondet; 25g: a refused batch
+# leaves no holes; 25i: a refused batch's error wins over the handler's)
+# and 03
+# (invalidation disabled) run only their named tests, each as
+# "binary:fn"; every listed test must show its own FAILED line (see
+# named_failures_ok). 03 names the O1 test, whose invalidation half
+# kills it; in the full suite, generation_events would stop the run
+# first. Empty for every other mutant.
 # The O1 mutants (20-22) run the full default suite: their kill tests
 # are src/o1.rs unit tests, which run before the integration binaries.
+# The segment-override mutants (23-29, 34) run their named tests too;
+# "lib:path::to::fn" names a unit test of the library itself. In each
+# case below the 23a/23b/24a/24b arms come before the 23*/24* arms.
+# The 66h-prefix mutants (30-33) and the 67h address-size mutant (35)
+# run their named tests too.
 targets_for() {
     case "$1" in
+        03*) echo "o1_compare:jit_matches_o1_oracle_on_corpus_v1" ;;
+        25a*|25b*) echo "generation_events:remap_runs_new_bytes_inprocess" ;;
+        25c*) echo "generation_events:retranslate_after_event_keeps_generation" ;;
+        25d*) echo "generation_events:unmapped_return_refuses_inprocess" ;;
+        25e*) echo "generation_events:direct_edge_into_hole_refuses" ;;
+        25f*) echo "generation_events:handler_err_still_applies_events_syscall" ;;
+        25g*) echo "generation_events:refused_batch_admits_nothing_and_holes_every_range" ;;
+        25h*) echo "generation_events:handler_err_still_applies_events_nondet" ;;
+        25i*) echo "generation_events:handler_err_with_refused_batch_returns_the_handler_refusal" ;;
         23a*) echo "indirect_resolve:push_crossing_inprocess" ;;
         23b*) echo "indirect_resolve:push_crossing_remote" ;;
         24a*) echo "indirect_resolve:push_fault_inprocess" ;;
@@ -41,6 +64,13 @@ targets_for() {
         17*) echo "remote_signal:remote_signal_all" ;;
         18*) echo "indirect_resolve:install_failure_remote" ;;
         19*) echo "indirect_budget_handoff:budget_handoff_inprocess indirect_budget_handoff:budget_handoff_remote" ;;
+        23*|24*|25*|26*) echo "lib:decode::tests::segment_override_refuses_by_name" ;;
+        27*|28*) echo "lib:decode::tests::segment_override_admits o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
+        29*) echo "lib:translate::tests::segment_prefixed_copies_keep_their_prefix o1_compare:seg_override_matches_o1 remote_compare:seg_override_remote_matches" ;;
+        30*|31*|32*) echo "lib:decode::tests::operand_size_prefixed_control_refuses_by_name remote_compare:osz_control_refuses_in_both_modes" ;;
+        33*) echo "lib:decode::tests::operand_size_prefixed_control_refuses_by_name" ;;
+        34*) echo "remote_compare:seg_override_remote_matches" ;;
+        35*) echo "indirect_resolve:resolver_forms indirect_resolve:address_size32_inprocess indirect_resolve:address_size32_remote" ;;
         *) echo "" ;;
     esac
 }
@@ -69,6 +99,9 @@ run_mutant() {
             if [ "$bin" = budget_tail ]; then
                 cargo test --locked -p liteinst-jit --test "$bin" -- \
                     --ignored --exact "$fn" >>"$2" 2>&1 || mrc=1
+            elif [ "$bin" = lib ]; then
+                cargo test --locked -p liteinst-jit --lib -- \
+                    --exact "$fn" >>"$2" 2>&1 || mrc=1
             else
                 cargo test --locked -p liteinst-jit --test "$bin" -- \
                     --exact "$fn" >>"$2" 2>&1 || mrc=1
@@ -116,7 +149,7 @@ expected_for() {
     case "$1" in
         01*) echo "retired branch credited exactly once" ;;
         02*) echo "sum_loop: branches" ;;
-        03*) echo "StaleGeneration" ;;
+        03*) echo "must refuse UnmappedCode" ;;
         04*) echo "outside source range|fault pc offset" ;;
         05*) echo "fault_before_branch branches" ;;
         06*|07*) echo "first: .*W1: " ;;
@@ -138,6 +171,27 @@ expected_for() {
         21*|22*) echo "passed the RIP-delta check" ;;
         23a*|23b*) echo "push crossing: want a named refusal" ;;
         24a*|24b*) echo "push fault: expected a fault" ;;
+        25a*|25b*) echo "remap: want the new bytes" ;;
+        25c*) echo "generation: want one retranslation in all" ;;
+        25d*) echo "unmapped: want UnmappedCode" ;;
+        25e*) echo "hole: want UnmappedCode at the jump" ;;
+        25f*) echo "handler err: want the events applied" ;;
+        25g*) echo "refused batch: want UnmappedCode" ;;
+        25h*) echo "handler err \(nondet\): want the events applied" ;;
+        25i*) echo "handler err \+ refused batch: want the handler's refusal" ;;
+        23*) echo "mov fs, eax: refusal reason" ;;
+        24*) echo "fs movsb: refusal reason" ;;
+        25*) echo "mov rax, fs:\[rip\+0x10\]: refusal reason" ;;
+        26*) echo "fs nop: refusal reason" ;;
+        27*) echo "segment override outside P1a envelope" ;;
+        28*) echo "non-GPR register effect outside P1a envelope" ;;
+        29*) echo "segment-prefixed copy is byte-exact|seg_fs_canary (jit|in-process): " ;;
+        30*) echo "66 jmp rel32: (refusal reason|in-process prepare admitted)" ;;
+        31*) echo "66 ret: (refusal reason|in-process prepare admitted)" ;;
+        32*) echo "66 jmp rax: refusal reason|66 jmp rdi: in-process prepare admitted" ;;
+        33*) echo "rex then 66 jmp rel32: refusal reason" ;;
+        34*) echo "seg_fs_canary remote: " ;;
+        35*) echo "address-size refusal|want IndirectAddressSize32" ;;
         *) echo "FAILED" ;;
     esac
 }

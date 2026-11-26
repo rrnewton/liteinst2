@@ -1,0 +1,18 @@
+--- a/crates/liteinst-jit/src/translate.rs
++++ b/crates/liteinst-jit/src/translate.rs
+@@ -934,7 +934,14 @@
+                 let src = region
+                     .slice_from(insn.pc)
+                     .ok_or(Refuse::Decode { src_pc: insn.pc })?;
+-                e.buf.extend_from_slice(&src[..insn.len]);
++                // MUTANT 29: the copy drops a leading FS/GS prefix
++                // (a NOP keeps the length).
++                if matches!(src[0], 0x64 | 0x65) {
++                    e.buf.push(0x90);
++                    e.buf.extend_from_slice(&src[1..insn.len]);
++                } else {
++                    e.buf.extend_from_slice(&src[..insn.len]);
++                }
+             }
+             e.map(
+                 start,

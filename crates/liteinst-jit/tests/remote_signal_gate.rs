@@ -4869,6 +4869,7 @@ fn bound_inventory() {
     deadline::bound_inventory(&[
         ("budget_tail.rs", Armed),
         ("custody.rs", Armed),
+        ("generation_events.rs", Armed),
         ("indirect_budget_handoff.rs", Armed),
         ("indirect_resolve.rs", Armed),
         ("lifecycle_dispatch.rs", Armed),

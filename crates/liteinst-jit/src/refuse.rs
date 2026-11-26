@@ -18,6 +18,14 @@ pub enum Refuse {
     /// Refused before any retranslation, push or memory write; the
     /// guest is left at the call with the state before it.
     IndirectPushCrossesPage { src_pc: u64, slot: u64 },
+    /// An indirect jump or call whose memory operand has a 32-bit
+    /// address size in absolute form (`67 ff /4|/2` with `[disp32]`).
+    /// The resolver claims 64-bit addressing only, so this is a policy
+    /// refusal, not an unresolved target. `bytes` are the
+    /// instruction's encoding. Refused before any retranslation, push
+    /// or memory write; the guest is left at the instruction with the
+    /// state before it.
+    IndirectAddressSize32 { src_pc: u64, bytes: Vec<u8> },
     /// Source code is writable, shared, or its write ownership is
     /// unknown; P1a refuses self-modifying code instead of tracking it.
     SelfModifyingOrWritableCode { src: u64 },
@@ -49,8 +57,27 @@ pub enum Refuse {
     Arch { what: &'static str },
     /// Invalid or truncated instruction bytes at the source PC.
     Decode { src_pc: u64 },
-    /// A cache entry was offered under a superseded generation.
+    /// A cache entry, or a mapping event, was offered under a
+    /// superseded generation: `expected` is the oldest generation that
+    /// would have been accepted when it was offered, `found` the one
+    /// offered. A refused event batch still moves the executable on
+    /// (its ranges become holes), so afterwards even `expected` is
+    /// no longer accepted.
     StaleGeneration { expected: u64, found: u64 },
+    /// Control reached, or a direct edge leads into, a range the
+    /// caller reported unmapped (a `MappingEvent` without a region),
+    /// under the executable's `generation`. Nothing in the range runs.
+    ///
+    /// `src_pc` names what reaches the hole, which need not be where
+    /// the guest stopped:
+    /// - at a dispatcher entry, the entry PC itself;
+    /// - while a translation is rebuilt, the branch, root or instruction
+    ///   in its reach that leads into the hole, anywhere in that reach;
+    /// - for a resolved indirect jump or call, its in-hole target.
+    ///
+    /// The guest is left with the state before the dispatcher entry or
+    /// the stopping instruction (its own `rip`), never past it.
+    UnmappedCode { src_pc: u64, generation: u64 },
     /// The remote (ptrace) substrate could not complete the named
     /// operation; the guest was left stopped or terminated, never
     /// resumed on partial state.
@@ -81,12 +108,14 @@ impl Refuse {
         match self {
             Refuse::IndirectUnresolved { .. }
             | Refuse::IndirectPushCrossesPage { .. }
+            | Refuse::IndirectAddressSize32 { .. }
             | Refuse::SelfModifyingOrWritableCode { .. }
             | Refuse::Unrelocatable { .. }
             | Refuse::InteriorEntry { .. }
             | Refuse::BudgetExceeded { .. }
             | Refuse::Decode { .. }
             | Refuse::StaleGeneration { .. }
+            | Refuse::UnmappedCode { .. }
             | Refuse::RcbBudget { .. }
             | Refuse::CodeInstall { .. } => "R-CODE",
             Refuse::NoHandler { .. } => "R-INSTR",

@@ -456,6 +456,94 @@ pub fn all() -> Vec<Fixture> {
             name: "ind_jmp_out_budget",
             bytes: vec![0x31, 0xc9, 0x48, 0x39, 0xf1, 0x73, 0x00, 0xff, 0xe7],
         },
+        // Segment-override fixtures. Each engine runs on its own
+        // thread's TLS (in process: the test thread; remote and O1:
+        // their own child), so every fixture that returns normally
+        // cancels each TLS-derived value before `ret`.
+        Fixture {
+            // The stack-protector canary: 00 mov rcx,fs:[0x28];
+            // 09 mov rax,fs:moffs64 0x28; 14 mov fs:[0x28],rcx (TLS
+            // store of the same value); 1d mov rdx,rax;
+            // 20 xor rdx,fs:[0x28] (0); 29 cmp rax,rcx; 2c jne bad;
+            // 2e sub rax,fs:[0x28] (0, the check idiom); 37 jne bad;
+            // 39 cmp rcx,fs:[0x28]; 42 jne bad; 44 xor ecx,ecx;
+            // 46 or rax,rdx; 49 ret (rax 0); 4a bad: xor ecx,ecx;
+            // 4c xor edx,edx; 4e mov eax,1; 53 ret.
+            name: "seg_fs_canary",
+            bytes: vec![
+                0x64, 0x48, 0x8b, 0x0c, 0x25, 0x28, 0x00, 0x00, 0x00, //
+                0x64, 0x48, 0xa1, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
+                0x64, 0x48, 0x89, 0x0c, 0x25, 0x28, 0x00, 0x00, 0x00, //
+                0x48, 0x89, 0xc2, //
+                0x64, 0x48, 0x33, 0x14, 0x25, 0x28, 0x00, 0x00, 0x00, //
+                0x48, 0x39, 0xc8, 0x75, 0x1c, //
+                0x64, 0x48, 0x2b, 0x04, 0x25, 0x28, 0x00, 0x00, 0x00, 0x75, 0x11, //
+                0x64, 0x48, 0x3b, 0x0c, 0x25, 0x28, 0x00, 0x00, 0x00, 0x75, 0x06, //
+                0x31, 0xc9, 0x48, 0x09, 0xd0, 0xc3, //
+                0x31, 0xc9, 0x31, 0xd2, 0xb8, 0x01, 0x00, 0x00, 0x00, 0xc3,
+            ],
+        },
+        Fixture {
+            // The TCB self pointer: 00 mov rax,fs:[0] (thread
+            // pointer); 09 cmp rax,[rax] (a load through it: the
+            // self pointer); 0c jne bad; 0e mov rcx,[rax+0x28];
+            // 12 sub rcx,fs:[0x28] (0); 1b jne bad; 1d mov rdx,fs:[rcx]
+            // (register base, rcx 0); 21 sub rax,rdx (0); 24 jne bad;
+            // 26 xor edx,edx; 28 ret (rax 0); 29 bad: xor ecx,ecx;
+            // 2b xor edx,edx; 2d mov eax,1; 32 ret.
+            name: "seg_fs_tcb",
+            bytes: vec![
+                0x64, 0x48, 0x8b, 0x04, 0x25, 0x00, 0x00, 0x00, 0x00, //
+                0x48, 0x3b, 0x00, 0x75, 0x1b, //
+                0x48, 0x8b, 0x48, 0x28, //
+                0x64, 0x48, 0x2b, 0x0c, 0x25, 0x28, 0x00, 0x00, 0x00, 0x75, 0x0c, //
+                0x64, 0x48, 0x8b, 0x11, 0x48, 0x29, 0xd0, 0x75, 0x03, //
+                0x31, 0xd2, 0xc3, //
+                0x31, 0xc9, 0x31, 0xd2, 0xb8, 0x01, 0x00, 0x00, 0x00, 0xc3,
+            ],
+        },
+        Fixture {
+            // GS base 0: 00 xor ecx,ecx; 02 lp: inc ecx; 04 cmp ecx,3;
+            // 07 jne lp; 09 mov rax,gs:[0x40] faults at linear 0x40
+            // (3 branches and 10 instructions retired first); 12 ret.
+            name: "seg_gs_fault",
+            bytes: vec![
+                0x31, 0xc9, 0xff, 0xc1, 0x83, 0xf9, 0x03, 0x75, 0xf9, //
+                0x65, 0x48, 0x8b, 0x04, 0x25, 0x40, 0x00, 0x00, 0x00, 0xc3,
+            ],
+        },
+        Fixture {
+            // ES, CS, SS and DS overrides (ignored in 64-bit mode):
+            // 00 lea rbx,[rip+data]; 07 mov rax,ds:[rbx];
+            // 0b add rax,cs:[rbx+8]; 10 add rax,es:[rbx+16];
+            // 15 add rax,ss:[rbx+24]; 1a add rax,ds:[rip+data+32]
+            // (re-encoded); 22 nopw cs:[rax+rax] (compiler padding,
+            // executed); 2c mov ds:[rsp-0x10],rax; 32 cs nop;
+            // 34 xor ebx,ebx; 36 ret (rax 31); 37 int3 (pad);
+            // 38 data: dq 1, 2, 4, 8, 16.
+            name: "seg_flat_overrides",
+            bytes: vec![
+                0x48, 0x8d, 0x1d, 0x31, 0x00, 0x00, 0x00, //
+                0x3e, 0x48, 0x8b, 0x03, //
+                0x2e, 0x48, 0x03, 0x43, 0x08, //
+                0x26, 0x48, 0x03, 0x43, 0x10, //
+                0x36, 0x48, 0x03, 0x43, 0x18, //
+                0x3e, 0x48, 0x03, 0x05, 0x36, 0x00, 0x00, 0x00, //
+                0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00, //
+                0x3e, 0x48, 0x89, 0x44, 0x24, 0xf0, //
+                0x2e, 0x90, 0x31, 0xdb, 0xc3, 0xcc, //
+                1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, //
+                4, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, //
+                16, 0, 0, 0, 0, 0, 0, 0,
+            ],
+        },
+        Fixture {
+            // 00 mov rax,fs:[0]; 09 ret: returns the running thread's
+            // TCB self pointer (its FS base). Not O1-comparable: the
+            // value is per thread; tests pin it absolutely.
+            name: "seg_fs_self",
+            bytes: vec![0x64, 0x48, 0x8b, 0x04, 0x25, 0x00, 0x00, 0x00, 0x00, 0xc3],
+        },
         // Call/return corpus: every one completes on today's code.
         // Each takes no arguments (the default all-zero ones) and
         // leaves no stack address in a register, so both engines

@@ -1,0 +1,13 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index 34896239..915b9ff4 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1186,7 +1186,7 @@ impl Executable {
+         self.translation = translation;
+         self.index = index;
+         self.roots = roots;
+-        self.stamp = self.region.generation;
++        // MUTANT 25c: the stamp keeps the generation it had before.
+         self.retranslations += 1;
+         Ok(())
+     }

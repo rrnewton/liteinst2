@@ -1,0 +1,14 @@
+diff --git a/crates/liteinst-jit/src/translate.rs b/crates/liteinst-jit/src/translate.rs
+index d313b6a7..74e59a14 100644
+--- a/crates/liteinst-jit/src/translate.rs
++++ b/crates/liteinst-jit/src/translate.rs
+@@ -291,7 +291,8 @@ pub fn discover_roots_excluding(
+             },
+         );
+         for s in successors {
+-            if in_hole(s) {
++            // MUTANT 25e: a successor in a hole is queued like any other.
++            if false {
+                 // A direct edge into a hole would chain into code that
+                 // is no longer admitted: refuse at the branch. Other
+                 // successors exit to the dispatcher, which refuses.

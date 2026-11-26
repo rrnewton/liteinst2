@@ -1,0 +1,27 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -335,22 +335,8 @@
+     match seg {
+         Register::None | Register::ES | Register::CS | Register::SS | Register::DS => Ok(None),
+         Register::FS | Register::GS => {
+-            if (0..ins.op_count()).any(|i| {
+-                matches!(
+-                    ins.op_kind(i),
+-                    OpKind::MemorySegSI
+-                        | OpKind::MemorySegESI
+-                        | OpKind::MemorySegRSI
+-                        | OpKind::MemoryESDI
+-                        | OpKind::MemoryESEDI
+-                        | OpKind::MemorySegDI
+-                        | OpKind::MemorySegEDI
+-                        | OpKind::MemorySegRDI
+-                        | OpKind::MemoryESRDI
+-                )
+-            }) {
+-                return Err(FS_GS_ON_STRING);
+-            }
++            // MUTANT 24: FS/GS on a string instruction is no longer refused.
++            let _ = FS_GS_ON_STRING;
+             if ins.is_ip_rel_memory_operand() {
+                 return Err(FS_GS_RIP_RELATIVE);
+             }

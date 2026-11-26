@@ -856,6 +856,342 @@ fn ret_remap_remote_matches_or_refuses() {
     }
 }
 
+/// Segment overrides, remote vs in process, exact.
+///
+/// What this covers in remote mode: translated code runs in the
+/// traced child's thread, whose FS/GS bases the dispatcher never
+/// writes (it sets only the general registers, RIP and RFLAGS), so
+/// FS reads that child's own TLS; the in-process reference reads
+/// this test thread's. The fixtures cancel every TLS-derived value,
+/// so the comparison (counts, exits, every register, flags, buffers
+/// and stack window) is exact. `seg_gs_fault` faults identically
+/// (GS base 0: linear 0x40, same instruction, counts and recovered
+/// state). `seg_fs_self` pins the remote read itself: the `fs:[0]`
+/// that translated code returns equals the tracee's FS base
+/// (PTRACE_GETREGS), and names a word in the child that holds its own
+/// address, the TCB self pointer.
+#[test]
+fn seg_override_remote_matches() {
+    let _g = lock();
+    for (name, rax, instructions) in [
+        ("seg_fs_canary", 0u64, 14u64),
+        ("seg_fs_tcb", 0, 11),
+        ("seg_flat_overrides", 31, 11),
+    ] {
+        let b = run_both(name);
+        assert_same_outcome(name, &b);
+        let rem = b
+            .remote
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{name} remote: {e:?}"));
+        assert_eq!(rem.state.rax, rax, "{name}: remote rax");
+        assert_eq!(
+            rem.instructions, instructions,
+            "{name}: remote instructions"
+        );
+        println!("{name}: remote == in-process");
+    }
+    {
+        let b = run_both("seg_gs_fault");
+        let jf = fault_of(&b.jit, "seg_gs_fault", "in-process");
+        let rf = fault_of(&b.remote, "seg_gs_fault", "remote");
+        assert_eq!(rf.kind, jf.kind, "seg_gs_fault: fault kind");
+        assert_eq!(rf.signum, libc::SIGSEGV, "seg_gs_fault: remote signum");
+        assert_eq!(jf.signum, libc::SIGSEGV, "seg_gs_fault: in-process signum");
+        assert_eq!(
+            (rf.branches, rf.instructions),
+            (3, 10),
+            "seg_gs_fault: remote counts"
+        );
+        assert_eq!(
+            (jf.branches, jf.instructions),
+            (3, 10),
+            "seg_gs_fault: in-process counts"
+        );
+        assert_eq!(
+            rf.src_pc - b.remote_ranges[0].0,
+            9,
+            "seg_gs_fault: remote fault pc"
+        );
+        assert_eq!(
+            jf.src_pc - b.jit_ranges[0].0,
+            9,
+            "seg_gs_fault: in-process fault pc"
+        );
+        assert_eq!(rf.state.rip, rf.src_pc, "seg_gs_fault: recovered rip");
+        assert_eq!(
+            rf.addr, 0x40,
+            "seg_gs_fault: remote fault address (GS base 0)"
+        );
+        assert_eq!(jf.addr, 0x40, "seg_gs_fault: in-process fault address");
+        assert_eq!((rf.state.rcx, jf.state.rcx), (3, 3), "seg_gs_fault: rcx");
+        assert_eq!(rf.state.rax, jf.state.rax, "seg_gs_fault: rax");
+        assert_eq!(
+            rf.state.rflags & STATUS_MASK,
+            jf.state.rflags & STATUS_MASK,
+            "seg_gs_fault: status flags"
+        );
+    }
+    {
+        let fixture = fixtures::by_name("seg_fs_self");
+        let (mut remote, _deadline) =
+            deadline::remote_named(CHILD, "seg_fs_self").expect("spawn seg_fs_self");
+        let info = remote.info();
+        let region = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: fixture.bytes.clone(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        remote
+            .prepare(&region, info.base, CountProfile::BranchesAndInstructions)
+            .expect("prepare seg_fs_self");
+        let state = remote.initial_state();
+        let out = remote
+            .run(state, RETURN_SENTINEL)
+            .expect("seg_fs_self remote run");
+        let tp = out.state.rax;
+        assert_ne!(tp, 0, "seg_fs_self: remote fs:[0]");
+        let mut word = [0u8; 8];
+        assert!(
+            remote.read_mem(tp, &mut word),
+            "seg_fs_self: read child TCB"
+        );
+        assert_eq!(
+            u64::from_le_bytes(word),
+            tp,
+            "seg_fs_self: remote fs:[0] is the child's TCB self pointer"
+        );
+        // Absolute: the value equals the tracee's own FS base, read
+        // from the stopped child (this test thread is its tracer).
+        let pid = remote.child_pid_for_test();
+        // SAFETY: zeroed plain-data register struct, filled by the
+        // kernel below.
+        let mut regs: libc::user_regs_struct = unsafe { core::mem::zeroed() };
+        // SAFETY: PTRACE_GETREGS on this test's own stopped tracee,
+        // writing one user_regs_struct through the pointer.
+        let rc = unsafe {
+            libc::ptrace(
+                libc::PTRACE_GETREGS,
+                pid,
+                core::ptr::null_mut::<libc::c_void>(),
+                core::ptr::addr_of_mut!(regs).cast::<libc::c_void>(),
+            )
+        };
+        assert_eq!(
+            rc,
+            0,
+            "seg_fs_self: PTRACE_GETREGS: {}",
+            std::io::Error::last_os_error()
+        );
+        assert_eq!(
+            tp, regs.fs_base,
+            "seg_fs_self: remote fs:[0] is the tracee's FS base"
+        );
+        assert_eq!(
+            (out.branches, out.instructions),
+            (0, 2),
+            "seg_fs_self counts"
+        );
+    }
+}
+
+/// CET `notrack` indirect branches (3E FF /4 jmp, 3E FF /2 call),
+/// pinned at today's outcome. Iced decodes the 3E byte as a DS
+/// segment prefix on `jmp`/`call r/m64`, and the indirect resolver
+/// refuses any segment prefix (`insn.segment_prefix() !=
+/// Register::None` in `indirect::resolve`). So both dispatchers
+/// refuse an in-region notrack transfer by name, as
+/// `IndirectUnresolved` at the instruction, while the same program
+/// without the 3E byte resolves and returns 7. CET builds use
+/// notrack for jump tables, so this is a stretch ender to lift
+/// later, not a guarantee to keep.
+#[test]
+fn notrack_indirect_refused_by_segment_check() {
+    let _g = lock();
+    // 00 lea rax,[rip+L]; 07 notrack jmp rax; 0a L: mov eax,7; 0f ret.
+    let notrack_jmp: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x03, 0, 0, 0, 0x3e, 0xff, 0xe0, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+    // 00 lea rax,[rip+L]; 07 jmp rax; 09 L: mov eax,7; 0e ret.
+    let plain_jmp: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x02, 0, 0, 0, 0xff, 0xe0, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+    // 00 lea rax,[rip+F]; 07 notrack call rax; 0a ret; 0b F: mov eax,7;
+    // 10 ret.
+    let notrack_call: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x04, 0, 0, 0, 0x3e, 0xff, 0xd0, 0xc3, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+    // 00 lea rax,[rip+F]; 07 call rax; 09 ret; 0a F: mov eax,7; 0f ret.
+    let plain_call: &[u8] = &[
+        0x48, 0x8d, 0x05, 0x03, 0, 0, 0, 0xff, 0xd0, 0xc3, 0xb8, 7, 0, 0, 0, 0xc3,
+    ];
+
+    // The resolver itself: the decode is the plain r/m64 form with a
+    // DS prefix, and the segment-prefix check is what refuses it.
+    for (name, insn, code) in [
+        (
+            "notrack jmp rax",
+            &notrack_jmp[7..10],
+            liteinst_x86::Code::Jmp_rm64,
+        ),
+        (
+            "notrack call rax",
+            &notrack_call[7..10],
+            liteinst_x86::Code::Call_rm64,
+        ),
+    ] {
+        let d = liteinst_jit::decode::decode_one(insn, 0x1000).expect("decode");
+        assert_eq!(d.instruction.code(), code, "{name}: decoded code");
+        assert_eq!(d.instruction.op_count(), 1, "{name}: one operand");
+        assert_eq!(
+            d.instruction.segment_prefix(),
+            liteinst_x86::Register::DS,
+            "{name}: notrack decodes as a DS segment prefix"
+        );
+        let s = GuestState {
+            rax: 0x1010,
+            ..GuestState::default()
+        };
+        let r = liteinst_jit::indirect::resolve(&d.instruction, 0x1000, d.len, &s, &mut |_| None);
+        assert_eq!(
+            r,
+            Err(liteinst_jit::indirect::ResolveError::Unsupported),
+            "{name}: the resolver refuses the segment prefix"
+        );
+        let p = liteinst_jit::decode::decode_one(&insn[1..], 0x1000).expect("decode plain");
+        let rp = liteinst_jit::indirect::resolve(&p.instruction, 0x1000, p.len, &s, &mut |_| None);
+        assert_eq!(
+            rp.map(|x| x.target),
+            Ok(0x1010),
+            "{name}: without 3E the resolver resolves"
+        );
+    }
+
+    // Through the indirect path of both dispatchers.
+    let inproc = |bytes: &[u8]| {
+        let guest = MappedGuest::map(bytes).expect("map");
+        let region = guest.region(bytes, Generation(1));
+        let mut exec =
+            Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions)
+                .expect("prepare");
+        let mut handler = CaptureHandler::default();
+        let out = exec.run(
+            guest.initial_state(),
+            &mut handler,
+            &ProcessMemory,
+            RETURN_SENTINEL,
+        );
+        (out, guest.base)
+    };
+    let remote = |bytes: &[u8]| {
+        let (mut r, _deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn remote");
+        let info = r.info();
+        let region = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: bytes.to_vec(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        r.prepare(&region, info.base, CountProfile::BranchesAndInstructions)
+            .expect("remote prepare");
+        let state = r.initial_state();
+        (r.run(state, RETURN_SENTINEL), info.base)
+    };
+    for (name, notrack, plain, off, instructions) in [
+        ("notrack jmp rax", notrack_jmp, plain_jmp, 7u64, 4u64),
+        ("notrack call rax", notrack_call, plain_call, 7, 5),
+    ] {
+        for (mode, (out, base)) in [("in-process", inproc(notrack)), ("remote", remote(notrack))] {
+            match out {
+                Err(RunError::Refuse(Refuse::IndirectUnresolved { src_pc })) => {
+                    assert_eq!(
+                        src_pc - base,
+                        off,
+                        "{name} {mode}: refused at the notrack insn"
+                    );
+                }
+                other => panic!("{name} {mode}: expected IndirectUnresolved, got {other:?}"),
+            }
+        }
+        for (mode, (out, _)) in [("in-process", inproc(plain)), ("remote", remote(plain))] {
+            let o = out.unwrap_or_else(|e| panic!("{name} {mode} control: {e:?}"));
+            assert_eq!(
+                (o.state.rax, o.instructions),
+                (7, instructions),
+                "{name} {mode}: the control without 3E resolves"
+            );
+        }
+        println!("{name}: IndirectUnresolved in both modes; the control resolves");
+    }
+}
+
+/// 66h-prefixed near control transfers (AMD honours the prefix, the
+/// Intel decode here does not): both dispatchers refuse at prepare,
+/// before any guest instruction runs, with the same name at the same
+/// source offset. Each program reaches its 66h form by straight-line
+/// discovery.
+#[test]
+fn osz_control_refuses_in_both_modes() {
+    let _g = lock();
+    let cases: &[(&str, &[u8], u64, &str)] = &[
+        (
+            "66 jmp rel32",
+            &[0x66, 0xe9, 0x00, 0x00, 0x00, 0x00, 0xc3],
+            0,
+            "66h-prefixed near direct branch outside P1a envelope",
+        ),
+        (
+            "66 jz rel8",
+            &[0x48, 0x85, 0xff, 0x66, 0x74, 0x00, 0xc3],
+            3,
+            "66h-prefixed near direct branch outside P1a envelope",
+        ),
+        (
+            "66 ret",
+            &[0x31, 0xc0, 0x66, 0xc3],
+            2,
+            "66h-prefixed near return outside P1a envelope",
+        ),
+        (
+            "66 jmp rdi",
+            &[0x31, 0xc0, 0x66, 0xff, 0xe7],
+            2,
+            "66h-prefixed near indirect branch outside P1a envelope",
+        ),
+    ];
+    for (name, bytes, off, reason) in cases {
+        let guest = MappedGuest::map(bytes).expect("map");
+        let region = guest.region(bytes, Generation(1));
+        match Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions) {
+            Err(Refuse::Unrelocatable { src_pc, reason: r }) => {
+                assert_eq!(r, *reason, "{name}: in-process reason");
+                assert_eq!(src_pc - guest.base, *off, "{name}: in-process offset");
+            }
+            Err(e) => panic!("{name}: in-process refused otherwise: {e:?}"),
+            Ok(_) => panic!("{name}: in-process prepare admitted a 66h control transfer"),
+        }
+        drop(guest);
+        let (mut remote, _deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn remote");
+        let info = remote.info();
+        let rregion = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: bytes.to_vec(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        match remote.prepare(&rregion, info.base, CountProfile::BranchesAndInstructions) {
+            Err(Refuse::Unrelocatable { src_pc, reason: r }) => {
+                assert_eq!(r, *reason, "{name}: remote reason");
+                assert_eq!(src_pc - info.base, *off, "{name}: remote offset");
+            }
+            Err(e) => panic!("{name}: remote refused otherwise: {e:?}"),
+            Ok(()) => panic!("{name}: remote prepare admitted a 66h control transfer"),
+        }
+        println!("{name}: refused by name in both modes");
+    }
+}
+
 /// Spawn census (I1-H H2c): every child this binary starts carries
 /// a run deadline (`common/deadline.rs`).
 #[test]
