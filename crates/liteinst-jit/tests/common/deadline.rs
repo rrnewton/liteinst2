@@ -55,6 +55,12 @@ use liteinst_jit::o1::{
 };
 use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
 
+// The attach-mode driver's host (`attach_host`).
+use liteinst_jit::attach::{ArenaPlacement, PatchSite, inject_syscall, syscall_errno};
+use liteinst_jit::exec::CODE_CAP;
+use liteinst_jit::remote::ARENA_LEN;
+use liteinst_jit::tracee::AttachTracee;
+
 /// Bound on one child's life in this suite. A whole run of the
 /// largest binary takes under 10 s, and one run takes milliseconds.
 pub const RUN_DEADLINE: Duration = Duration::from_secs(120);
@@ -72,6 +78,26 @@ thread_local! {
 /// it: the arming check of every helper (H2c follow-up).
 pub fn take_last_armed() -> Option<(i32, Duration)> {
     LAST_ARMED.with(|c| c.take())
+}
+
+/// The child CPU cap, `(soft, hard)` CPU-seconds, that
+/// [`Deadline::arm_for`] applies to every child armed after
+/// [`set_child_cpu_cap`]. Off (`None`) by default, so no test that
+/// does not opt in changes.
+static CHILD_CPU_CAP: Mutex<Option<(u64, u64)>> = Mutex::new(None);
+
+/// Cap the CPU time of every child this test process arms from now
+/// on: `RLIMIT_CPU` = `{soft, hard}` CPU-seconds, set by `prlimit`
+/// before the child's watchdog starts. `soft` must be below `hard`,
+/// so a child that reaches the cap gets SIGXCPU (a traced child
+/// stops on it, and the harness names it) before the hard limit's
+/// SIGKILL, which would look like any other kill.
+pub fn set_child_cpu_cap(soft: u64, hard: u64) {
+    assert!(
+        soft < hard,
+        "set_child_cpu_cap: soft {soft} must be below hard {hard}"
+    );
+    *CHILD_CPU_CAP.lock().unwrap_or_else(|e| e.into_inner()) = Some((soft, hard));
 }
 
 /// One armed child: see the module doc.
@@ -99,6 +125,23 @@ impl Deadline {
         );
         // SAFETY: a fresh descriptor that only this owner closes.
         let fd = unsafe { OwnedFd::from_raw_fd(fd as RawFd) };
+        let cap = *CHILD_CPU_CAP.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((soft, hard)) = cap {
+            let lim = libc::rlimit {
+                rlim_cur: soft,
+                rlim_max: hard,
+            };
+            // SAFETY: prlimit on this test's own child, spawned and
+            // not reaped; `lim` is a valid limit and no old limit is
+            // read back.
+            let rc =
+                unsafe { libc::prlimit(pid, libc::RLIMIT_CPU, &lim, core::ptr::null_mut()) };
+            assert!(
+                rc == 0,
+                "deadline: prlimit({pid}, RLIMIT_CPU, {soft}/{hard}): {}",
+                std::io::Error::last_os_error()
+            );
+        }
         LAST_ARMED.with(|c| c.set(Some((pid, limit))));
         let (done, rx) = std::sync::mpsc::channel::<()>();
         let watchdog = std::thread::spawn(move || {
@@ -291,6 +334,254 @@ fn command_child_for(cmd: &mut Command, limit: Duration) -> std::io::Result<(Chi
     let child = custody(|| cmd.spawn())?;
     let deadline = Deadline::arm_for(child.id() as i32, limit);
     Ok((child, deadline))
+}
+
+/// One O1 host process for the attach-mode driver, stopped under
+/// ptrace at its own `int3`, with `PTRACE_O_TRACESYSGOOD |
+/// PTRACE_O_EXITKILL` set and an arena placed in rel32 reach of its
+/// fixture. The attach driver never kills or reaps a host, so this
+/// owner does: dropping it kills and reaps the host.
+pub struct AttachHost {
+    /// Kept for its piped stdout only. Not `pub`: no caller can call
+    /// `Child::kill` or `Child::wait` on the host.
+    child: Child,
+    /// The host's pidfd, opened right after spawn while the host was
+    /// this test's unreaped child, so it names that process and no
+    /// other.
+    pidfd: OwnedFd,
+    pub pid: i32,
+    pub tracee: AttachTracee,
+    /// The host's own setup report (`o1_child`'s stdout).
+    pub info: ChildInfo,
+    /// The host's stop: RIP after its `int3`, the 3 bytes there and
+    /// its registers.
+    pub site: PatchSite,
+    pub arena: ArenaPlacement,
+}
+
+impl Drop for AttachHost {
+    fn drop(&mut self) {
+        pidfd_kill_reap(&self.pidfd);
+    }
+}
+
+/// Kill and reap an attach host through its pidfd only, never through
+/// its pid. `pidfd_kill` sends SIGKILL; it returns 0 on a live process
+/// or an unreaped zombie, and ESRCH once the process has been reaped;
+/// either way a pidfd never addresses another process. Then
+/// `waitid(P_PIDFD, fd, WEXITED)` reaps it, retried on EINTR. ECHILD
+/// means the host was already reaped elsewhere, so nothing is reaped,
+/// and certainly no other child. Any other errno is printed once: it
+/// never fails silently. This never calls `Child::kill` or
+/// `Child::wait`.
+fn pidfd_kill_reap(fd: &OwnedFd) {
+    // `P_PIDFD` (include/uapi/linux/wait.h; Linux 5.4 or later).
+    const P_PIDFD: libc::idtype_t = 3;
+    let _ = pidfd_kill(fd);
+    loop {
+        // SAFETY: an all-zero siginfo_t is a valid out-parameter.
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        // SAFETY: waitid on the one process this pidfd names, with a
+        // live siginfo.
+        let rc = unsafe {
+            libc::waitid(P_PIDFD, fd.as_raw_fd() as libc::id_t, &mut info, libc::WEXITED)
+        };
+        if rc == 0 {
+            // Done only on an exit report: the kernel reports a tracee's
+            // ptrace stops to its tracer even under WEXITED alone.
+            if matches!(
+                info.si_code,
+                libc::CLD_EXITED | libc::CLD_KILLED | libc::CLD_DUMPED
+            ) {
+                return;
+            }
+            continue;
+        }
+        match std::io::Error::last_os_error().raw_os_error() {
+            Some(libc::EINTR) => continue,
+            Some(libc::ECHILD) => return,
+            errno => {
+                eprintln!("attach host: waitid(P_PIDFD) failed: errno {errno:?}");
+                return;
+            }
+        }
+    }
+}
+
+/// The attach-mode driver's armed host, inside ONE custody section:
+/// 1. spawn the O1 child `bin name` with stdout piped and arm it at
+///    once (`command_child`: `RUN_DEADLINE` and the child CPU cap),
+///    so every later step runs under its per-child bounds;
+/// 2. read its 40-byte `ChildInfo`, then wait for its initial SIGTRAP
+///    stop, and build the tracee (which sets the options);
+/// 3. save the patch site;
+/// 4. place the arena by `inject_syscall`: one `mmap`, then one
+///    `mprotect` of the code part to RX ([`place_attach_arena`]).
+///
+/// Any failure kills and reaps the host and returns the refusal.
+pub fn attach_host(bin: &str, name: &str) -> Result<(AttachHost, Deadline), Refuse> {
+    custody(|| {
+        let mut cmd = Command::new(bin);
+        cmd.arg(name).stdout(Stdio::piped());
+        let (mut child, deadline) = command_child(&mut cmd).map_err(|e| Refuse::RemoteSubstrate {
+            operation: "attach host: spawn",
+            errno: e.raw_os_error().unwrap_or(0),
+        })?;
+        let pid = child.id() as i32;
+        // The host's pidfd, before any read of its stdout and before any
+        // wait: the host is still this test's unreaped child, so the
+        // pidfd names it and no other process. Nothing has waited on the
+        // host yet, so this one early refusal may still use `child`.
+        let Some(pidfd) = pidfd(pid) else {
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+            let _ = child.kill();
+            let _ = child.wait();
+            drop(deadline);
+            return Err(Refuse::RemoteSubstrate {
+                operation: "attach host: pidfd_open",
+                errno,
+            });
+        };
+        let setup = (|| -> Result<(AttachTracee, ChildInfo, PatchSite, ArenaPlacement), Refuse> {
+            let mut raw = [0u8; 40];
+            let out = child.stdout.as_mut().ok_or(Refuse::RemoteSubstrate {
+                operation: "attach host: stdout",
+                errno: 0,
+            })?;
+            out.read_exact(&mut raw)
+                .map_err(|e| Refuse::RemoteSubstrate {
+                    operation: "attach host: read ChildInfo",
+                    errno: e.raw_os_error().unwrap_or(0),
+                })?;
+            let info = ChildInfo::from_bytes(&raw);
+            let mut status: i32 = 0;
+            loop {
+                // SAFETY: waiting for this test's own traced child.
+                let w = unsafe { libc::waitpid(pid, &mut status, 0) };
+                if w == pid {
+                    break;
+                }
+                let e = std::io::Error::last_os_error();
+                if e.raw_os_error() != Some(libc::EINTR) {
+                    return Err(Refuse::RemoteSubstrate {
+                        operation: "attach host: wait for the initial stop",
+                        errno: e.raw_os_error().unwrap_or(0),
+                    });
+                }
+            }
+            if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP {
+                return Err(Refuse::RemoteSubstrate {
+                    operation: "attach host: the initial stop is not SIGTRAP",
+                    errno: 0,
+                });
+            }
+            let tracee = AttachTracee::attach(pid).map_err(|e| Refuse::RemoteSubstrate {
+                operation: "attach host: PTRACE_SETOPTIONS",
+                errno: e.0,
+            })?;
+            let site = PatchSite::capture(&tracee)?;
+            let arena = place_attach_arena(&tracee, &site, info.base)?;
+            Ok((tracee, info, site, arena))
+        })();
+        match setup {
+            Ok((tracee, info, site, arena)) => Ok((
+                AttachHost {
+                    child,
+                    pidfd,
+                    pid,
+                    tracee,
+                    info,
+                    site,
+                    arena,
+                },
+                deadline,
+            )),
+            Err(e) => {
+                pidfd_kill_reap(&pidfd);
+                drop(deadline);
+                Err(e)
+            }
+        }
+    })
+}
+
+/// The arena's reach rule: with `B` = the
+/// fixture base rounded down to 2 MiB, try `B - k * 64 MiB` for
+/// k = 1..=8, then `B + k * 64 MiB` for k = 1..=8, so every candidate
+/// is at most 512 MiB from the fixture and the whole arena is in
+/// rel32 reach of it. A candidate that overlaps one of Reverie's four
+/// fixed pages is skipped. Each try is `mmap(c, ARENA_LEN, RW,
+/// PRIVATE | ANONYMOUS | MAP_FIXED_NOREPLACE)` (never `MAP_FIXED`):
+/// -EEXIST moves on; any other error, or a result that is not exactly
+/// `c`, refuses by name. Then ONE `mprotect(c, CODE_CAP, RX)`; the
+/// data part stays RW. No free candidate refuses by name.
+fn place_attach_arena(
+    tracee: &AttachTracee,
+    site: &PatchSite,
+    fixture_base: u64,
+) -> Result<ArenaPlacement, Refuse> {
+    const MIB: u64 = 1 << 20;
+    const REVERIE_PAGES: [u64; 4] = [0x7100_0000, 0x7100_1000, 0x7101_0000, 0x14_f000];
+    let b = fixture_base & !(2 * MIB - 1);
+    let len = ARENA_LEN as u64;
+    let below = (1..=8u64).filter_map(|k| b.checked_sub(k * 64 * MIB));
+    let above = (1..=8u64).filter_map(|k| b.checked_add(k * 64 * MIB));
+    for c in below.chain(above) {
+        if REVERIE_PAGES.iter().any(|&p| p < c + len && c < p + 4096) {
+            continue;
+        }
+        let rax = inject_syscall(
+            tracee,
+            site,
+            libc::SYS_mmap as u64,
+            [
+                c,
+                len,
+                (libc::PROT_READ | libc::PROT_WRITE) as u64,
+                (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED_NOREPLACE) as u64,
+                u64::MAX,
+                0,
+            ],
+        )?;
+        match syscall_errno(rax) {
+            Some(e) if e == libc::EEXIST => continue,
+            Some(e) => {
+                return Err(Refuse::MappingPolicy {
+                    operation: "attach arena: mmap",
+                    errno: e,
+                });
+            }
+            None if rax != c => {
+                return Err(Refuse::MappingPolicy {
+                    operation: "attach arena: mmap did not honour the hint",
+                    errno: 0,
+                });
+            }
+            None => {}
+        }
+        let rax = inject_syscall(
+            tracee,
+            site,
+            libc::SYS_mprotect as u64,
+            [c, CODE_CAP as u64, (libc::PROT_READ | libc::PROT_EXEC) as u64, 0, 0, 0],
+        )?;
+        if rax != 0 {
+            return Err(Refuse::MappingPolicy {
+                operation: "attach arena: mprotect code RX",
+                errno: syscall_errno(rax).unwrap_or(0),
+            });
+        }
+        return Ok(ArenaPlacement {
+            code_base: c,
+            code_len: CODE_CAP,
+            data_addr: c + CODE_CAP as u64,
+            data_len: ARENA_LEN - CODE_CAP,
+        });
+    }
+    Err(Refuse::MappingPolicy {
+        operation: "attach arena: no free hint in rel32 reach",
+        errno: libc::EEXIST,
+    })
 }
 
 /// `Command::status`, armed: spawn, arm, wait, then drop the

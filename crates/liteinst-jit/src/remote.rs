@@ -1049,11 +1049,14 @@ fn stop_siginfo(t: &(impl Tracee + ?Sized), sig: i32) -> Option<(i32, i32, u64)>
     Some((info.si_signo, info.si_code, addr))
 }
 
-/// Owns the traced child: every drop path — success, refusal,
-/// fault, or substrate error — kills and reaps it, so no early
-/// return can leak a process.
+/// Owns the traced child. A spawned child is killed and reaped on
+/// every drop path (success, refusal, fault or substrate error), so
+/// no early return can leak a process. An attached guard
+/// (`attach_inner`) is built `reaped`, so it is neither killed nor
+/// reaped, and its caller owns the process.
 struct ChildGuard {
-    child: Child,
+    /// `None` for an attached guard.
+    child: Option<Child>,
     pid: i32,
     /// The child as the tracee seam reaches it (the same pid).
     tracee: PtraceTracee,
@@ -1070,7 +1073,9 @@ impl ChildGuard {
         let status = self.tracee.kill_reap();
         #[cfg(feature = "test-seams")]
         LAST_REAP.with(|c| c.set(Some((self.pid, status))));
-        let _ = self.child.wait();
+        if let Some(child) = self.child.as_mut() {
+            let _ = child.wait();
+        }
     }
 }
 
@@ -1546,7 +1551,7 @@ impl RemoteExecutable {
             .unwrap_or_else(|e| e.into_inner())
             .retain(|w| w.0 != pid);
         let mut guard = ChildGuard {
-            child,
+            child: Some(child),
             pid,
             tracee: PtraceTracee::new(pid),
             reaped: false,
@@ -1554,10 +1559,14 @@ impl RemoteExecutable {
         let mut raw = [0u8; 56];
         let mut dump = [0u8; 65 * 32];
         {
-            let out = guard.child.stdout.as_mut().ok_or(Refuse::RemoteSubstrate {
-                operation: "remote child stdout",
-                errno: 0,
-            })?;
+            let out = guard
+                .child
+                .as_mut()
+                .and_then(|c| c.stdout.as_mut())
+                .ok_or(Refuse::RemoteSubstrate {
+                    operation: "remote child stdout",
+                    errno: 0,
+                })?;
             out.read_exact(&mut raw)
                 .map_err(|_| Refuse::RemoteSubstrate {
                     operation: "read remote child setup",
@@ -4965,6 +4974,148 @@ impl RemoteExecutable {
                 }
             }
         }
+    }
+}
+
+/// The attach-mode driver's two entries into this executable:
+/// an executable over a host the caller already traces, whose arena
+/// the caller placed (code RX, data RW), installed with no mailbox.
+/// Test seams only, like every attach entry (`crate::attach`).
+#[cfg(feature = "test-seams")]
+impl RemoteExecutable {
+    /// An executable over an attached tracee. Its guard is born
+    /// `reaped`, so it never kills, reaps or waits on the process,
+    /// which its caller owns. `actions` is the queried signal-action
+    /// mirror (index 0 unused), seeded verbatim, as `spawn` seeds
+    /// its dump; the blocked mask comes from `/proc`, as in `spawn`.
+    pub(crate) fn attach_inner(
+        tracee: PtraceTracee,
+        info: RemoteChildInfo,
+        actions: [GuestAction; 65],
+    ) -> Result<Self, Refuse> {
+        let pid = tracee.pid();
+        // A reused pid must not inherit an earlier child's recorded
+        // writes (as `spawn` does).
+        TRACER_WRITES
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|w| w.0 != pid);
+        let guard = ChildGuard {
+            child: None,
+            pid,
+            tracee,
+            reaped: true,
+        };
+        let mut registry = SignalRegistry {
+            actions,
+            ..SignalRegistry::default()
+        };
+        registry.set_mask(read_sigblk(pid)?);
+        Ok(RemoteExecutable {
+            guard,
+            info,
+            translation: None,
+            profile: CountProfile::BranchesAndInstructions,
+            registry,
+            pre_redirected_step_signal: core::cell::Cell::new(None),
+            step_plans: core::cell::RefCell::new(Vec::new()),
+            seam_depth: core::cell::Cell::new(0),
+            enter_stop_signals: core::cell::RefCell::new(Vec::new()),
+            enter_stops: core::cell::RefCell::new(Vec::new()),
+            scratch_canary: None,
+            fail_scratch_restore: false,
+            arrival: None,
+            arrival_report: std::cell::RefCell::new(ArrivalReport::default()),
+            poll_budget: None,
+            nspid_status_override: None,
+            zero_raw_poll_at_restore: false,
+            w3_guard_perturb: None,
+            kgen_seam: core::cell::Cell::new(None),
+            rcb_budget: false,
+            budget_run: None,
+            single_steps: core::cell::Cell::new(0),
+            region: None,
+            entry: 0,
+            roots: BTreeSet::new(),
+            retranslations: 0,
+            proc_mem_writes: core::cell::Cell::new(0),
+            poisoned: core::cell::Cell::new(false),
+            install_failure_after: core::cell::Cell::new(None),
+        })
+    }
+
+    /// The attached prepare: `prepare_inner`'s checks and translation,
+    /// then the code through the P1b.1 `/proc/<pid>/mem` install, then
+    /// the signal-entry stub by its own `/proc/<pid>/mem` write. The
+    /// arena is RX, so `write_mem` (`process_vm_writev`) cannot reach
+    /// it. No mailbox. One-shot, as `prepare_inner`.
+    pub(crate) fn prepare_attached(
+        &mut self,
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+        rcb_budget: bool,
+    ) -> Result<(), Refuse> {
+        use std::os::unix::fs::FileExt;
+        if self.translation.is_some() {
+            return Err(Refuse::Arch {
+                what: "remote executable already prepared",
+            });
+        }
+        if region.base != self.info.base {
+            return Err(Refuse::Unrelocatable {
+                src_pc: entry,
+                reason: "remote region base does not match child fixture mapping",
+            });
+        }
+        let translation = translate_with_options(
+            region,
+            entry,
+            profile,
+            self.info.arena_base,
+            self.data_addr(),
+            TranslateOptions {
+                exit_style: ExitStyle::TrapToDispatcher,
+                rcb_budget,
+            },
+        )?;
+        if translation.code.len() > CODE_CAP - STUB_TAIL {
+            return Err(Refuse::BudgetExceeded { what: "code cache" });
+        }
+        self.install_remote(&translation.code, 0, entry)?;
+        // The common signal-entry stub at the reserved tail. A failed
+        // or short write refuses and POISONS, even if no stub byte was
+        // written: the code image above is already installed, so the
+        // arena no longer matches an unprepared executable.
+        let mut stub = [0x90u8; STUB_TAIL];
+        stub[0] = 0xcc;
+        let stub_fail = |errno: i32| Refuse::CodeInstall {
+            src_pc: entry,
+            reason: "signal stub /proc mem write",
+            errno,
+        };
+        let written = std::fs::OpenOptions::new()
+            .write(true)
+            .open(format!("/proc/{}/mem", self.guard.pid))
+            .and_then(|file| file.write_at(&stub, self.signal_stub_addr()));
+        match written {
+            Ok(n) if n == stub.len() => {}
+            Ok(_) => {
+                self.poisoned.set(true);
+                return Err(stub_fail(libc::EIO));
+            }
+            Err(e) => {
+                self.poisoned.set(true);
+                return Err(stub_fail(e.raw_os_error().unwrap_or(0)));
+            }
+        }
+        self.translation = Some(translation);
+        self.profile = profile;
+        self.rcb_budget = rcb_budget;
+        self.region = Some(region.clone());
+        self.entry = entry;
+        self.roots = BTreeSet::from([entry]);
+        Ok(())
     }
 }
 
