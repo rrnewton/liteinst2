@@ -65,11 +65,13 @@ pub enum SemanticsError {
     InvalidProcessIdentifier,
     /// A complete native snapshot differs from the exact modeled result.
     NativeStateMismatch,
-    /// A native single-step stopped somewhere other than the selected
-    /// instruction's fallthrough, so the trace trap was not delivered after
-    /// that instruction and at least one later instruction also retired.
-    /// Some hypervisors emulate CPUID without delivering the pending trap.
-    SingleStepTrapNotDelivered {
+    /// A native single-step over the selected instruction stopped at
+    /// `observed`, not at its fallthrough `expected`. This names the stop, not
+    /// its cause: a trap lost after an emulated instruction, a library error
+    /// stepping from or restoring the site, or any other cause gives the same
+    /// stop. Host attribution comes only from the test probe's UNCALIBRATED
+    /// HOST lines (tests/support/host_cpuid_step.rs), never from this refusal.
+    SingleStepStoppedOffFallthrough {
         /// The selected instruction's exact fallthrough.
         expected: u64,
         /// The instruction pointer at the observed trace stop.
@@ -86,9 +88,9 @@ pub enum SemanticsError {
 impl std::fmt::Display for SemanticsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::SingleStepTrapNotDelivered { expected, observed } => write!(
+            Self::SingleStepStoppedOffFallthrough { expected, observed } => write!(
                 f,
-                "single-step trap not delivered after the selected instruction: \
+                "single-step stopped off the selected instruction's fallthrough: \
                  stopped at {observed:#x}, expected {expected:#x}"
             ),
             _ => write!(f, "{self:?}"),
@@ -721,19 +723,18 @@ impl SelectedInput {
     /// `validate_native_completion` for a snapshot taken at the trace stop
     /// after one native single-step over this selected instruction.
     ///
-    /// A stop anywhere but the exact fallthrough means the trace trap was not
-    /// delivered after this instruction, so the snapshot cannot describe it;
-    /// that is refused by name before the complete comparison runs. Every
-    /// such snapshot is already refused by the complete comparison, which is
-    /// unchanged, so this refuses only a subset of its refusals and accepts
-    /// nothing it refuses.
+    /// A stop anywhere but the exact fallthrough cannot describe this
+    /// instruction's completion; that is refused by name before the complete
+    /// comparison runs. Every such snapshot is already refused by the
+    /// complete comparison, which is unchanged, so this refuses only a subset
+    /// of its refusals and accepts nothing it refuses.
     pub fn validate_native_single_step_completion(
         &self,
         after: &RegisterSnapshot,
     ) -> Result<CompletedInstruction, SemanticsError> {
         let expected = self.instruction.next_pc;
         if after.rip != expected {
-            return Err(SemanticsError::SingleStepTrapNotDelivered {
+            return Err(SemanticsError::SingleStepStoppedOffFallthrough {
                 expected,
                 observed: after.rip,
             });

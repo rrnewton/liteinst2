@@ -749,9 +749,9 @@ fn cpuid_single_step_completion() -> (SelectedInput, RegisterSnapshot) {
 }
 
 #[test]
-fn native_single_step_past_the_fallthrough_is_refused_as_a_lost_trap() {
-    // A trap lost after CPUID retires the next instruction too, for example
-    // a 10-byte `mov r64, imm64`, and stops past the fallthrough.
+fn native_single_step_past_the_fallthrough_is_refused_by_name() {
+    // For example, a stop after the next instruction too (a 10-byte
+    // `mov r64, imm64`) lands past the fallthrough.
     let (input, exact) = cpuid_single_step_completion();
     let mut after = exact;
     after.rip = PC + 2 + 10;
@@ -760,7 +760,7 @@ fn native_single_step_past_the_fallthrough_is_refused_as_a_lost_trap() {
         .unwrap_err();
     assert_eq!(
         error,
-        SemanticsError::SingleStepTrapNotDelivered {
+        SemanticsError::SingleStepStoppedOffFallthrough {
             expected: PC + 2,
             observed: PC + 12,
         }
@@ -768,7 +768,7 @@ fn native_single_step_past_the_fallthrough_is_refused_as_a_lost_trap() {
     assert_eq!(
         error.to_string(),
         format!(
-            "single-step trap not delivered after the selected instruction: \
+            "single-step stopped off the selected instruction's fallthrough: \
              stopped at {:#x}, expected {:#x}",
             PC + 12,
             PC + 2

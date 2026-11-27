@@ -616,12 +616,12 @@ fn verify_siblings(
     Ok(())
 }
 
-/// A trace trap that never arrived after the selected instruction is named
-/// apart from a completion that differs; both remain refusals.
+/// A single-step that stopped off the fallthrough is named apart from a
+/// completion that differs; both remain refusals.
 fn native_cpu_completion_refusal(error: SemanticsError) -> LaunchError {
     match error {
-        SemanticsError::SingleStepTrapNotDelivered { .. } => {
-            LaunchError::Invalid("single-step trap not delivered after the selected instruction")
+        SemanticsError::SingleStepStoppedOffFallthrough { .. } => {
+            LaunchError::Invalid("native selected single-step stopped off the fallthrough")
         }
         _ => LaunchError::Invalid("native selected full register completion differs"),
     }
@@ -1019,13 +1019,13 @@ mod native_cpu_completion_refusal_tests {
     use super::*;
 
     #[test]
-    fn lost_single_step_trap_keeps_its_own_refusal_text() {
+    fn off_fallthrough_step_keeps_its_own_refusal_text() {
         assert!(matches!(
-            native_cpu_completion_refusal(SemanticsError::SingleStepTrapNotDelivered {
+            native_cpu_completion_refusal(SemanticsError::SingleStepStoppedOffFallthrough {
                 expected: 0x1002,
                 observed: 0x1003,
             }),
-            LaunchError::Invalid("single-step trap not delivered after the selected instruction")
+            LaunchError::Invalid("native selected single-step stopped off the fallthrough")
         ));
     }
 

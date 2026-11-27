@@ -685,9 +685,9 @@ fn control_remaining(deadline: Instant) -> Result<Duration, LaunchError> {
 }
 
 /// A selected CPU instruction always falls through, so the trace stop after
-/// its native single-step must be exactly at its end. A stop elsewhere means
-/// the trap was not delivered after it and a later instruction also retired
-/// unobserved. Syscall classes may legitimately move rip and are not checked.
+/// its native single-step must be exactly at its end. A stop elsewhere is
+/// refused; the refusal names the stop, not its cause. Syscall classes may
+/// legitimately move rip and are not checked.
 fn require_cpu_fallthrough(site: &Candidate, rip: u64) -> Result<(), GateError> {
     match site.class {
         SiteClass::Cpuid
@@ -698,7 +698,7 @@ fn require_cpu_fallthrough(site: &Candidate, rip: u64) -> Result<(), GateError> 
         | SiteClass::Rdtscp => {
             if site.address.checked_add(u64::from(site.len)) != Some(rip) {
                 return Err(GateError::Refused(
-                    "single-step trap not delivered after the selected instruction",
+                    "single-step stopped off the selected instruction's fallthrough",
                 ));
             }
             Ok(())
@@ -727,12 +727,12 @@ mod cpu_fallthrough_tests {
     }
 
     #[test]
-    fn cpu_step_past_the_fallthrough_is_refused_as_a_lost_trap() {
+    fn cpu_step_off_the_fallthrough_is_refused() {
         for rip in [0x40_1003, 0x40_100c, 0x40_1000] {
             assert!(matches!(
                 require_cpu_fallthrough(&site(SiteClass::Cpuid), rip),
                 Err(GateError::Refused(
-                    "single-step trap not delivered after the selected instruction"
+                    "single-step stopped off the selected instruction's fallthrough"
                 ))
             ));
         }
