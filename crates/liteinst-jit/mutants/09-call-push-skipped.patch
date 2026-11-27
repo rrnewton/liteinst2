@@ -1,0 +1,24 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1205,7 +1205,8 @@
+             self.retranslate(roots).map_err(IndirectStop::Refuse)?;
+         }
+         let mut next = *state;
+-        if r.kind == IndirectKind::Call {
++        // MUTANT 09: the indirect call's push is skipped (in-process).
++        if false && r.kind == IndirectKind::Call {
+             let slot = state.rsp.wrapping_sub(8);
+             if !mem.write_u64(slot, r.next_ip) {
+                 return Err(IndirectStop::Fault { addr: slot });
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -2950,7 +2950,8 @@
+     /// then the state at the target.
+     fn indirect_push(&self, state: &GuestState, r: &Resolved) -> Result<GuestState, IndirectStop> {
+         let mut next = *state;
+-        if r.kind == IndirectKind::Call {
++        // MUTANT 09: the indirect call's push is skipped (remote).
++        if false && r.kind == IndirectKind::Call {
+             let slot = state.rsp.wrapping_sub(8);
+             if write_mem(&self.guard.tracee, slot, &r.next_ip.to_le_bytes()).is_err() {
+                 return Err(IndirectStop::Fault { addr: slot });

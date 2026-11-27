@@ -561,8 +561,8 @@ pub(super) fn helper_ack(
         return Err("ack length");
     }
     let mut a = [0; 4];
-    for (w, b) in a.iter_mut().zip(bytes.chunks_exact(8)) {
-        *w = u64::from_le_bytes(b.try_into().unwrap());
+    for (w, b) in a.iter_mut().zip(bytes.as_chunks::<8>().0) {
+        *w = u64::from_le_bytes(*b);
     }
     if !matches!(stage, 1 | 2)
         || a[0] != stage
@@ -1294,7 +1294,7 @@ fn protocol_controls() -> [&'static str; 5] {
     }
     let encode = |a: [u64; 4]| {
         let mut b = [0; 32];
-        for (w, out) in a.iter().zip(b.chunks_exact_mut(8)) {
+        for (w, out) in a.iter().zip(b.as_chunks_mut::<8>().0) {
             out.copy_from_slice(&w.to_le_bytes());
         }
         b

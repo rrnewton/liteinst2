@@ -26,12 +26,30 @@ use crate::types::CountProfile;
 pub enum FaultKind {
     /// Synchronous guest fault at the recovered source PC.
     GuestFault,
-    /// Asynchronously sent signal (si_code <= 0) stopped the run;
-    /// state is recovered but no guest delivery is claimed.
+    /// A signal with asynchronous provenance stopped the run:
+    /// either a nonpositive `si_code` (the existing asynchronous
+    /// code class), or a positive `si_code` on a number outside
+    /// the fault set (see [`is_fault_signal`]), such as SIGALRM
+    /// from `setitimer`, SIGCHLD, or an `F_SETSIG` signal. State
+    /// is recovered but no guest delivery is claimed.
     AsyncSignal,
     /// The executor's own machinery faulted (common exit, data
     /// page, unmapped generated PC): not a guest-visible fault.
     ExecutorError,
+}
+
+/// The fault set: the only signal numbers whose positive `si_code`
+/// is taken as a synchronous fault or trap. A positive code on any
+/// other number has asynchronous provenance and stops as
+/// [`FaultKind::AsyncSignal`]. This is a number-and-code policy, not
+/// a proof of synchrony: an asynchronous positive code on a
+/// fault-set number (for example SIGBUS `BUS_MCEERR_AO`) keeps the
+/// fault path.
+pub fn is_fault_signal(sig: i32) -> bool {
+    matches!(
+        sig,
+        libc::SIGSEGV | libc::SIGBUS | libc::SIGILL | libc::SIGFPE | libc::SIGTRAP | libc::SIGSYS
+    )
 }
 
 /// Interrupted-PC provenance supplied by the backend's fault
@@ -107,18 +125,44 @@ pub(crate) fn block_retired_before(t: &Translation, src_pc: u64) -> Option<(u64,
 /// Retired-instruction total when execution stopped *before*
 /// the instruction at `src_pc`, correcting the block-head
 /// pre-credit under the instruction-counting profile.
+///
+/// `None` when `counted` is smaller than the pre-credit it must
+/// remove. Every stop inside a block carries that block's head
+/// credit, so a smaller count means the executor's own count is
+/// inconsistent; the caller reports the stop as
+/// [`FaultKind::ExecutorError`] with the raw count (see
+/// [`kind_and_retired`]), never a wrapped total.
 pub fn instructions_retired_at(
     t: &Translation,
     profile: CountProfile,
     counted: u64,
     src_pc: u64,
-) -> u64 {
+) -> Option<u64> {
     if profile != CountProfile::BranchesAndInstructions {
-        return counted;
+        return Some(counted);
     }
     match block_retired_before(t, src_pc) {
-        Some((pos, total)) => counted - (total - pos),
-        None => counted,
+        Some((pos, total)) => total
+            .checked_sub(pos)
+            .and_then(|owed| counted.checked_sub(owed)),
+        None => Some(counted),
+    }
+}
+
+/// The kind and retired-instruction total for a stop reported as
+/// `kind` at `src_pc`: `kind` with the corrected total, or
+/// [`FaultKind::ExecutorError`] with the raw `counted` when the
+/// block-head credit is missing ([`instructions_retired_at`]).
+pub fn kind_and_retired(
+    t: &Translation,
+    profile: CountProfile,
+    kind: FaultKind,
+    counted: u64,
+    src_pc: u64,
+) -> (FaultKind, u64) {
+    match instructions_retired_at(t, profile, counted, src_pc) {
+        Some(retired) => (kind, retired),
+        None => (FaultKind::ExecutorError, counted),
     }
 }
 
@@ -138,7 +182,7 @@ pub fn recover(t: &Translation, profile: CountProfile, input: RecoveryInput) -> 
     let mut state = raw;
     let mut branches = input.branches;
     let mut instructions = input.instructions;
-    let async_kind = si_code <= 0;
+    let async_kind = si_code <= 0 || !is_fault_signal(signum);
     let Some(entry) = t.pcmap.lookup(gen_pc) else {
         state.rip = 0;
         return RecoveredStop {
@@ -151,7 +195,15 @@ pub fn recover(t: &Translation, profile: CountProfile, input: RecoveryInput) -> 
             instructions,
         };
     };
-    let retired_at = |counted: u64, src: u64| instructions_retired_at(t, profile, counted, src);
+    // A missing block-head credit makes the stop an executor error
+    // with the raw count (see `instructions_retired_at`).
+    let mut credit_missing = false;
+    let mut retired_at = |counted: u64, src: u64| {
+        instructions_retired_at(t, profile, counted, src).unwrap_or_else(|| {
+            credit_missing = true;
+            counted
+        })
+    };
     let kind = if async_kind {
         FaultKind::AsyncSignal
     } else if matches!(
@@ -298,6 +350,11 @@ pub fn recover(t: &Translation, profile: CountProfile, input: RecoveryInput) -> 
         }
         Recovery::Fallthrough { next } => next,
     };
+    let kind = if credit_missing {
+        FaultKind::ExecutorError
+    } else {
+        kind
+    };
     state.rip = src_pc;
     // Preserve siginfo address semantics by access provenance,
     // never by numerical equality: SIGFPE/SIGILL name the
@@ -377,5 +434,190 @@ mod tests {
         assert_eq!(stop.branches, 7);
         assert_eq!(stop.instructions, 9);
         assert_eq!(stop.addr, 0x44);
+    }
+
+    /// H3k: a positive code on a number outside the fault set
+    /// recovers as `AsyncSignal` at every mapped PC class, as the
+    /// existing asynchronous-code class does; fault-set positive codes
+    /// keep `GuestFault` at copied code and `ExecutorError` in the
+    /// executor's machinery. An unmapped generated PC is
+    /// `ExecutorError` for every code. Rows in a fixed order; each
+    /// assertion names its row.
+    #[test]
+    fn recover_kernel_async_at_every_pc_class() {
+        use crate::pcmap::Recovery as R;
+        let fix = crate::fixtures::by_name("sum_loop");
+        let region = RegionFacts {
+            base: 0x10_0000,
+            bytes: fix.bytes,
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        let profile = CountProfile::BranchesAndInstructions;
+        let t =
+            crate::translate::translate(&region, 0x10_0000, profile, 0x80_0000, 0x81_0000).unwrap();
+        let first = |want: fn(&R) -> bool| {
+            t.pcmap
+                .entries()
+                .iter()
+                .find(|e| want(&e.recovery))
+                .map(|e| e.gen_start)
+                .expect("sum_loop has every PC class")
+        };
+        let classes = [
+            ("Copied", first(|r| matches!(r, R::Copied))),
+            ("BranchStub", first(|r| matches!(r, R::BranchStub { .. }))),
+            ("PollStub", first(|r| matches!(r, R::PollStub { .. }))),
+            ("CommonExit", first(|r| matches!(r, R::CommonExit { .. }))),
+            ("Unmapped", 0xdead_0000),
+        ];
+        let kind = |gen_pc: u64, signum: i32, si_code: i32| {
+            recover(
+                &t,
+                profile,
+                RecoveryInput {
+                    provenance: FaultInput {
+                        gen_pc,
+                        addr: 0,
+                        signum,
+                        si_code,
+                        err: 0,
+                    },
+                    interrupted: GuestState::default(),
+                    saved: GuestState::default(),
+                    spill_rax: 0,
+                    spill_flags: 0,
+                    branches: 0,
+                    // A real stop carries at least its block's head
+                    // credit; below that, the count correction would
+                    // underflow (a debug-build panic). The kind does
+                    // not depend on the counts.
+                    instructions: 1_000,
+                    exit_kind: 0,
+                    exit_src: 0x10_0000,
+                },
+            )
+            .kind
+        };
+        type Row<'a> = (&'a [(i32, i32)], [FaultKind; 5]);
+        let rows: [Row; 3] = [
+            (
+                &[(14, 128), (10, 1), (17, 1)],
+                [
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::ExecutorError,
+                ],
+            ),
+            (
+                &[(11, -6), (11, 0)],
+                [
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::ExecutorError,
+                ],
+            ),
+            (
+                &[(11, 1), (7, 2), (7, 5)],
+                [
+                    FaultKind::GuestFault,
+                    FaultKind::ExecutorError,
+                    FaultKind::ExecutorError,
+                    FaultKind::ExecutorError,
+                    FaultKind::ExecutorError,
+                ],
+            ),
+        ];
+        for (codes, want) in rows {
+            for &(sig, code) in codes {
+                for (i, (class, gen_pc)) in classes.iter().enumerate() {
+                    assert_eq!(
+                        kind(*gen_pc, sig, code),
+                        want[i],
+                        "recover {class} sig {sig} code {code}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// A count without its block's head credit is refused, never
+    /// wrapped: `instructions_retired_at` gives `None` one below the
+    /// credit and the exact remainder at it, and `recover` at a
+    /// copied PC reports `ExecutorError` with the raw count, where an
+    /// unchecked subtraction would wrap (release) or panic (debug).
+    #[test]
+    fn missing_block_head_credit_refuses_as_executor_error() {
+        use crate::pcmap::Recovery as R;
+        let fix = crate::fixtures::by_name("sum_loop");
+        let region = RegionFacts {
+            base: 0x10_0000,
+            bytes: fix.bytes,
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        let profile = CountProfile::BranchesAndInstructions;
+        let t =
+            crate::translate::translate(&region, 0x10_0000, profile, 0x80_0000, 0x81_0000).unwrap();
+        // The first copied instruction that owes a pre-credit.
+        let (gen_pc, src_pc, owed) = t
+            .pcmap
+            .entries()
+            .iter()
+            .filter(|e| matches!(e.recovery, R::Copied))
+            .find_map(|e| {
+                let (pos, total) = block_retired_before(&t, e.src_pc)?;
+                (total > pos).then_some((e.gen_start, e.src_pc, total - pos))
+            })
+            .expect("sum_loop has a copied instruction inside a block");
+        assert_eq!(
+            instructions_retired_at(&t, profile, owed - 1, src_pc),
+            None,
+            "retired-before total refuses a count below the block credit"
+        );
+        assert_eq!(
+            instructions_retired_at(&t, profile, owed, src_pc),
+            Some(0),
+            "retired-before total at exactly the block credit"
+        );
+        let stop = |instructions: u64| {
+            recover(
+                &t,
+                profile,
+                RecoveryInput {
+                    provenance: FaultInput {
+                        gen_pc,
+                        addr: 0,
+                        signum: libc::SIGSEGV,
+                        si_code: 1,
+                        err: 0,
+                    },
+                    interrupted: GuestState::default(),
+                    saved: GuestState::default(),
+                    spill_rax: 0,
+                    spill_flags: 0,
+                    branches: 0,
+                    instructions,
+                    exit_kind: 0,
+                    exit_src: 0x10_0000,
+                },
+            )
+        };
+        let missing = stop(owed - 1);
+        assert_eq!(
+            (missing.kind, missing.instructions),
+            (FaultKind::ExecutorError, owed - 1),
+            "recover refuses a missing block credit as ExecutorError with the raw count"
+        );
+        let credited = stop(owed + 5);
+        assert_eq!(
+            (credited.kind, credited.instructions),
+            (FaultKind::GuestFault, 5),
+            "recover with the block credit present"
+        );
     }
 }

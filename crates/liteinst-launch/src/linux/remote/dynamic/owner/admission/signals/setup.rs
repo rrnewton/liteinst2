@@ -72,8 +72,8 @@ impl SignalTransaction {
                 self.profile.restorer,
                 self.profile.action_mask,
             ];
-            for (chunk, expected) in actual.chunks_exact(8).zip(words) {
-                if chunk != expected.to_le_bytes() {
+            for (chunk, expected) in actual.as_chunks::<8>().0.iter().zip(words) {
+                if *chunk != expected.to_le_bytes() {
                     return Err(GateError::Refused(
                         "signal action bytes differ from the fixed profile",
                     ));
@@ -94,8 +94,8 @@ impl SignalTransaction {
             }
             let actual = writable_input(tid, r.rdi, 24)?;
             let words = [range.start, 0, range.end - range.start];
-            for (chunk, expected) in actual.chunks_exact(8).zip(words) {
-                if chunk != expected.to_le_bytes() {
+            for (chunk, expected) in actual.as_chunks::<8>().0.iter().zip(words) {
+                if *chunk != expected.to_le_bytes() {
                     return Err(GateError::Refused(
                         "signal alternate-stack bytes differ from the fixed profile",
                     ));

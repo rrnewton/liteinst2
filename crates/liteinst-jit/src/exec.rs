@@ -8,9 +8,11 @@
 //! source PC recovered through the PC map; it is never delivered as
 //! a cache PC.
 
+use std::collections::BTreeSet;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::cache::{CacheIndex, CacheRecord};
+use crate::indirect::{IndirectKind, ResolveError};
 #[cfg(test)]
 use crate::pcmap::{CallStage, CommonStage, Recovery, StubStage};
 use crate::recovery::RecoveryInput;
@@ -22,8 +24,11 @@ use crate::state::{
     OFF_HOST_RBX, OFF_HOST_RSP, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11, ST_R12, ST_R13, ST_R14,
     ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
-use crate::translate::{Translation, translate};
-use crate::types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
+use crate::translate::{
+    ExitStyle, TranslateOptions, Translation, discover_roots_excluding, translate,
+    translate_blocks, translate_with_options,
+};
+use crate::types::{CacheKey, CountProfile, Generation, MappingEvent, RegionFacts, byte_hash};
 
 pub const CODE_CAP: usize = 1 << 18;
 /// Block entries between pending-signal polls (progress bound).
@@ -135,11 +140,29 @@ pub trait Handler {
     ) -> Result<Resume, Refuse> {
         Err(Refuse::NoHandler { src_pc: insn_pc })
     }
+    /// Mapping changes made or observed while serving the exit just
+    /// returned, as the caller classifies them (this crate never
+    /// interprets the system call). The dispatcher takes them after
+    /// every `syscall` or `nondet` call, also when that call returned
+    /// `Err` (a change already made to guest memory stays made), and
+    /// applies them before the guest resumes or the error returns.
+    /// The batch is applied all or none (a batch with a region event
+    /// that is not strictly newer admits no snapshot, makes every range
+    /// it names a hole, and refuses `StaleGeneration`; see
+    /// [`MappingEvent`]). The default reports none.
+    fn take_mapping_events(&mut self) -> Vec<MappingEvent> {
+        Vec::new()
+    }
 }
 
-/// Guest memory reads the dispatcher needs (return targets).
+/// Guest memory the dispatcher needs: reads of return targets and
+/// indirect memory operands, and the write of the return address an
+/// indirect call pushes (P1b.1).
 pub trait GuestMemory {
     fn read_u64(&self, addr: u64) -> Option<u64>;
+    /// Write 8 guest bytes at `addr`; `false` when the 8 bytes were
+    /// not all written (a guest fault).
+    fn write_u64(&self, addr: u64, value: u64) -> bool;
 }
 
 /// In-process guest memory via `process_vm_readv` on this process, so
@@ -163,6 +186,22 @@ impl GuestMemory for ProcessMemory {
         let n = unsafe { libc::process_vm_readv(libc::getpid(), &local, 1, &remote, 1, 0) };
         (n == 8).then(|| u64::from_ne_bytes(buf))
     }
+    fn write_u64(&self, addr: u64, value: u64) -> bool {
+        let buf = value.to_ne_bytes();
+        let local = libc::iovec {
+            iov_base: buf.as_ptr().cast_mut().cast(),
+            iov_len: 8,
+        };
+        let remote = libc::iovec {
+            iov_base: addr as usize as *mut libc::c_void,
+            iov_len: 8,
+        };
+        // SAFETY: both iovecs describe live 8-byte ranges for the
+        // duration of the call; a bad guest address fails cleanly
+        // instead of faulting the dispatcher.
+        let n = unsafe { libc::process_vm_writev(libc::getpid(), &local, 1, &remote, 1, 0) };
+        n == 8
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -174,6 +213,150 @@ pub struct Outcome {
     /// Pending async signals taken into custody during the return
     /// transition (dequeued while blocked, reported, not lost).
     pub also_pending: Vec<i32>,
+}
+
+/// How a remaining-RCB budget stretch ended (test-seams
+/// experiment, both dispatchers).
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BudgetEnd {
+    /// The target RCB retired: the state is at its successor,
+    /// the point a single-step tail reaches when the count first
+    /// equals the target.
+    Landed,
+    /// The stretch reached something the cache does not execute
+    /// in a tail. The state is stopped before `at`, with the
+    /// named refusal; a single-step tail finishes from there.
+    Handoff { refusal: Refuse, at: u64 },
+    /// The guest returned to the sentinel before the target.
+    Ended,
+}
+
+/// One budgeted stretch: the end, the outcome (state and the
+/// JIT-credited counts) and the exact accounting the PMU witness
+/// needs.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BudgetStop {
+    pub end: BudgetEnd,
+    pub outcome: Outcome,
+    /// The requested target RCB count.
+    pub target: u64,
+    /// RCBs still owed at the end (0 when landed).
+    pub remaining: u64,
+    /// Cache entries made.
+    pub entries: u64,
+    /// Poll-stub executions (one `jnz` each), summed over entries
+    /// as seeded minus remaining poll budget.
+    pub poll_entries: u64,
+}
+
+/// The only place a budget run's target becomes the seeded
+/// remaining count. Both dispatchers call it once per run.
+#[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+pub(crate) fn budget_seed(target: u64) -> u64 {
+    target
+}
+
+/// Budget-run bookkeeping carried across dispatcher entries.
+#[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+#[derive(Clone, Debug, Default)]
+pub(crate) struct BudgetRun {
+    pub(crate) remaining: u64,
+    pub(crate) entries: u64,
+    pub(crate) poll_entries: u64,
+    pub(crate) end: Option<BudgetEnd>,
+}
+
+impl BudgetRun {
+    #[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+    pub(crate) fn new(target: u64) -> BudgetRun {
+        BudgetRun {
+            remaining: budget_seed(target),
+            ..BudgetRun::default()
+        }
+    }
+    /// Account one clean cache exit.
+    pub(crate) fn exited(&mut self, seeded_poll: u64, data: &JitData) {
+        self.entries += 1;
+        self.poll_entries += seeded_poll.wrapping_sub(data.poll_remaining);
+        self.remaining = data.budget_remaining;
+    }
+}
+
+/// Record how a budget stretch ended in `slot` and return its
+/// outcome (a free function, so a dispatcher holding a borrow of
+/// its translation can still call it on the disjoint field).
+pub(crate) fn budget_finish_into(
+    slot: &mut Option<BudgetRun>,
+    end: BudgetEnd,
+    outcome: Outcome,
+) -> Result<Outcome, RunError> {
+    if let Some(run) = slot.as_mut() {
+        run.end = Some(end);
+    }
+    Ok(outcome)
+}
+
+/// The outcome of a budget stretch that stops between exits.
+pub(crate) fn outcome_at(
+    state: GuestState,
+    branches: u64,
+    instructions: u64,
+    exits: u64,
+) -> Outcome {
+    Outcome {
+        state,
+        branches,
+        instructions,
+        exits,
+        also_pending: Vec::new(),
+    }
+}
+
+/// Perf ioctl requests for the test-seams PMU window.
+#[cfg(feature = "test-seams")]
+const PERF_EVENT_IOC_ENABLE: u64 = 0x2400;
+#[cfg(feature = "test-seams")]
+const PERF_EVENT_IOC_DISABLE: u64 = 0x2401;
+
+/// Raw `ioctl(fd, req, 0)` with no libc wrapper, so no
+/// conditional branch of the wrapper runs inside the PMU window
+/// (the window is: this enable, the entry bridge, generated
+/// code, the common exit, the disable). The result is ignored on
+/// purpose: checking it would add a branch inside the window;
+/// the test reads the counter afterwards and judges.
+#[cfg(feature = "test-seams")]
+#[inline(always)]
+fn pmu_ioctl(fd: i32, req: u64) {
+    // SAFETY: an ioctl on a caller-owned perf fd (or a bad fd,
+    // which fails with EBADF); it touches no memory of ours.
+    unsafe {
+        core::arch::asm!(
+            "syscall",
+            inlateout("rax") libc::SYS_ioctl => _,
+            in("rdi") i64::from(fd),
+            in("rsi") req,
+            in("rdx") 0u64,
+            lateout("rcx") _,
+            lateout("r11") _,
+            options(nostack),
+        );
+    }
+}
+
+/// A handler for budget runs: syscall and nondet exits hand off
+/// before any handler is asked, so reaching it is a bug.
+#[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+struct NoServeHandler;
+
+impl Handler for NoServeHandler {
+    fn syscall(
+        &mut self,
+        _state: &mut GuestState,
+        insn_pc: u64,
+        _next_pc: u64,
+    ) -> Result<Resume, Refuse> {
+        Err(Refuse::NoHandler { src_pc: insn_pc })
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -813,7 +996,81 @@ pub struct Executable {
     index: CacheIndex,
     data: *mut JitData,
     profile: CountProfile,
-    valid: bool,
+    /// The generation the live translation was built under. When it
+    /// differs from `region.generation`, the next entry into the cache
+    /// retranslates first (`entry_for`).
+    stamp: Generation,
+    /// Ranges reported unmapped (`MappingEvent` without a region):
+    /// never translated, and control that reaches one refuses
+    /// `UnmappedCode`.
+    holes: Vec<(u64, u64)>,
+    /// The translation carries budget stubs (`prepare_budgeted`).
+    rcb_budget: bool,
+    /// The budget run in progress, if any (`run_budgeted`).
+    budget_run: Option<BudgetRun>,
+    /// Perf fd the dispatcher enables only around cache entries
+    /// (`set_pmu_window_for_test`); -1 when unset.
+    #[cfg(feature = "test-seams")]
+    pmu_fd: i32,
+    /// The admitted region and entry, kept for P1b.1 closure
+    /// retranslation.
+    region: RegionFacts,
+    entry: u64,
+    /// The sorted root set the live translation was made from
+    /// (`{entry}` at prepare time; grows by in-region indirect
+    /// targets, P1b.1).
+    roots: BTreeSet<u64>,
+    /// Successful retranslations (`retranslations()` test seam).
+    retranslations: u64,
+}
+
+/// How the P1b.1 INDIRECT arm stops instead of transferring (both
+/// dispatchers).
+pub(crate) enum IndirectStop {
+    /// A named refusal; the state is the state before the
+    /// instruction.
+    Refuse(Refuse),
+    /// A guest fault at `addr` (the memory operand read, or the
+    /// call's push); the instruction did not retire.
+    Fault { addr: u64 },
+}
+
+/// The cache index over every block of `translation`.
+fn build_index(
+    region: &RegionFacts,
+    translation: &Translation,
+    profile: CountProfile,
+) -> Result<CacheIndex, Refuse> {
+    let mut index = CacheIndex::new(region.generation);
+    for block in translation.blocks.values() {
+        let end = block
+            .insns
+            .last()
+            .map(|i| i.pc + i.len as u64)
+            .unwrap_or(block.start)
+            .max(
+                block
+                    .term
+                    .as_ref()
+                    .map_or(block.start, |t| t.pc + t.len as u64),
+            );
+        let bytes = region
+            .slice_from(block.start)
+            .map(|s| &s[..(end - block.start) as usize])
+            .unwrap_or(&[]);
+        index.insert(CacheRecord {
+            key: CacheKey {
+                src_pc: block.start,
+                byte_hash: byte_hash(bytes),
+                generation: region.generation,
+                profile,
+            },
+            src_start: block.start,
+            src_end: end,
+            gen_entry: translation.block_gen[&block.start],
+        })?;
+    }
+    Ok(index)
 }
 
 impl Executable {
@@ -821,6 +1078,28 @@ impl Executable {
         region: &RegionFacts,
         entry: u64,
         profile: CountProfile,
+    ) -> Result<Executable, Refuse> {
+        Self::prepare_inner(region, entry, profile, false)
+    }
+
+    /// As [`Executable::prepare`], with the remaining-RCB budget
+    /// check in every branch credit stub. Such an executable runs
+    /// only through [`Executable::run_budgeted`].
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn prepare_budgeted(
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+    ) -> Result<Executable, Refuse> {
+        Self::prepare_inner(region, entry, profile, true)
+    }
+
+    fn prepare_inner(
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+        rcb_budget: bool,
     ) -> Result<Executable, Refuse> {
         if !lahf_available() {
             return Err(Refuse::Arch {
@@ -831,70 +1110,345 @@ impl Executable {
         let mut arena = Arena::new()?;
         let base = arena.base as u64;
         let data_addr = arena.data_addr();
-        let translation = translate(region, entry, profile, base, data_addr)?;
-        arena.install_code(&translation.code)?;
-        let mut index = CacheIndex::new(region.generation);
-        for block in translation.blocks.values() {
-            let end = block
-                .insns
-                .last()
-                .map(|i| i.pc + i.len as u64)
-                .unwrap_or(block.start)
-                .max(
-                    block
-                        .term
-                        .as_ref()
-                        .map_or(block.start, |t| t.pc + t.len as u64),
-                );
-            let bytes = region
-                .slice_from(block.start)
-                .map(|s| &s[..(end - block.start) as usize])
-                .unwrap_or(&[]);
-            index.insert(CacheRecord {
-                key: CacheKey {
-                    src_pc: block.start,
-                    byte_hash: byte_hash(bytes),
-                    generation: region.generation,
-                    profile,
+        let translation = if rcb_budget {
+            translate_with_options(
+                region,
+                entry,
+                profile,
+                base,
+                data_addr,
+                TranslateOptions {
+                    exit_style: ExitStyle::ReturnToDispatcher,
+                    rcb_budget: true,
                 },
-                src_start: block.start,
-                src_end: end,
-                gen_entry: translation.block_gen[&block.start],
-            })?;
-        }
+            )?
+        } else {
+            translate(region, entry, profile, base, data_addr)?
+        };
+        arena.install_code(&translation.code)?;
+        let index = build_index(region, &translation, profile)?;
         Ok(Executable {
             arena,
             translation,
             index,
             data: data_addr as *mut JitData,
             profile,
-            valid: true,
+            stamp: region.generation,
+            holes: Vec::new(),
+            rcb_budget,
+            budget_run: None,
+            #[cfg(feature = "test-seams")]
+            pmu_fd: -1,
+            region: region.clone(),
+            entry,
+            roots: BTreeSet::from([entry]),
+            retranslations: 0,
         })
     }
 
-    /// Retired-instruction total when execution stopped *before*
+    /// Test seam: successful P1b.1 retranslations of this
+    /// executable (each one a closure retranslation from a larger
+    /// root set, installed in a fresh arena).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn retranslations(&self) -> u64 {
+        self.retranslations
+    }
+
+    /// P1b.1 closure retranslation, in-process: translate the region
+    /// from `roots` (with the prepare-time options and profile) for a
+    /// FRESH arena, install it through the unchanged `install_code`
+    /// (copy, then RX), rebuild the cache index, and swap arena,
+    /// translation, index and root set at this exit boundary; the old
+    /// arena is unmapped. On any refusal nothing changes. JitData is
+    /// seeded on every entry, so the fresh data page needs no copy.
+    fn retranslate(&mut self, roots: BTreeSet<u64>) -> Result<(), Refuse> {
+        let mut arena = Arena::new()?;
+        // The current snapshot and holes, never the prepare-time
+        // ones: after a mapping event this re-emits the new bytes.
+        let blocks = discover_roots_excluding(&self.region, &roots, &self.holes)?;
+        let translation = translate_blocks(
+            &self.region,
+            self.entry,
+            blocks,
+            self.profile,
+            arena.base as u64,
+            arena.data_addr(),
+            TranslateOptions {
+                exit_style: ExitStyle::ReturnToDispatcher,
+                rcb_budget: self.rcb_budget,
+            },
+        )?;
+        arena.install_code(&translation.code)?;
+        let index = build_index(&self.region, &translation, self.profile)?;
+        self.data = arena.data_addr() as *mut JitData;
+        self.arena = arena;
+        self.translation = translation;
+        self.index = index;
+        self.roots = roots;
+        self.stamp = self.region.generation;
+        self.retranslations += 1;
+        Ok(())
+    }
+
+    /// The P1b.1 INDIRECT arm (`P1B-DESIGN.md` §2, P1b.1), from the
+    /// state before the instruction at `src`: decode it from the
+    /// admitted bytes, read the target, check the region BEFORE any
+    /// push, translate new roots, then push (call only) and return
+    /// the state at the target. A stop leaves `state` as it was.
+    fn resolve_indirect(
+        &mut self,
+        state: &GuestState,
+        mem: &dyn GuestMemory,
+        src: u64,
+    ) -> Result<GuestState, IndirectStop> {
+        let unresolved = || IndirectStop::Refuse(Refuse::IndirectUnresolved { src_pc: src });
+        let insn = self
+            .translation
+            .blocks
+            .range(..=src)
+            .next_back()
+            .and_then(|(_, b)| b.term.as_ref())
+            .filter(|t| t.pc == src)
+            .cloned()
+            .ok_or_else(unresolved)?;
+        let mut read = |a: u64| mem.read_u64(a);
+        let resolved =
+            crate::indirect::resolve(&insn.instruction, insn.pc, insn.len, state, &mut read);
+        let r = match resolved {
+            Ok(r) => r,
+            Err(ResolveError::Unsupported) => return Err(unresolved()),
+            Err(ResolveError::ReadFault { addr }) => return Err(IndirectStop::Fault { addr }),
+            Err(ResolveError::AddressSize32) => {
+                let bytes = self
+                    .region
+                    .slice_from(insn.pc)
+                    .and_then(|b| b.get(..insn.len))
+                    .map(<[u8]>::to_vec)
+                    .unwrap_or_default();
+                return Err(IndirectStop::Refuse(Refuse::IndirectAddressSize32 {
+                    src_pc: src,
+                    bytes,
+                }));
+            }
+        };
+        if !self.region.contains(r.target) {
+            return Err(unresolved());
+        }
+        // A call whose push slot crosses a page could store part of
+        // the slot before faulting; refuse it before any retranslation
+        // or write (`Refuse::IndirectPushCrossesPage`).
+        if r.kind == IndirectKind::Call && crate::indirect::push_crosses_page(state.rsp) {
+            return Err(IndirectStop::Refuse(Refuse::IndirectPushCrossesPage {
+                src_pc: src,
+                slot: state.rsp.wrapping_sub(8),
+            }));
+        }
+        let add = crate::indirect::new_roots(&r, &self.region, &self.translation.block_gen);
+        if !add.is_empty() {
+            let mut roots = self.roots.clone();
+            roots.extend(add);
+            self.retranslate(roots).map_err(IndirectStop::Refuse)?;
+        }
+        let mut next = *state;
+        if r.kind == IndirectKind::Call {
+            let slot = state.rsp.wrapping_sub(8);
+            if !mem.write_u64(slot, r.next_ip) {
+                return Err(IndirectStop::Fault { addr: slot });
+            }
+            next.rsp = slot;
+        }
+        next.rip = r.target;
+        Ok(next)
+    }
+
+    /// Test seam: a perf event fd (opened disabled by the test) that
+    /// the dispatcher enables right before each cache entry and
+    /// disables right after it returns, so the counter sees only the
+    /// entry bridge, generated code and the common exit. `None`
+    /// restores the default (no window).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_pmu_window_for_test(&mut self, fd: Option<i32>) {
+        self.pmu_fd = fd.unwrap_or(-1);
+    }
+
+    /// Run a budgeted executable from `state.rip` until exactly
+    /// `target` retired conditional branches have been credited
+    /// (`BudgetEnd::Landed`, state at the successor), or until the
+    /// stretch reaches a syscall or nondet exit, or an indirect
+    /// transfer P1b.1 refuses (`BudgetEnd::Handoff` with the named
+    /// refusal and the exact count still owed; a resolved indirect
+    /// transfer continues the stretch, budget unchanged), or until
+    /// the guest returns to
+    /// `return_sentinel` first (`BudgetEnd::Ended`). Faults and other
+    /// refusals are returned unchanged. No handler is ever asked to
+    /// serve an exit inside the stretch.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn run_budgeted(
+        &mut self,
+        state: GuestState,
+        mem: &dyn GuestMemory,
+        return_sentinel: u64,
+        target: u64,
+    ) -> Result<BudgetStop, RunError> {
+        if !self.rcb_budget {
+            return Err(Refuse::RcbBudget {
+                what: "translation has no budget stubs",
+            }
+            .into());
+        }
+        self.budget_run = Some(BudgetRun::new(target));
+        let mut handler = NoServeHandler;
+        let r = self.run(state, &mut handler, mem, return_sentinel);
+        let run = self.budget_run.take().unwrap_or_default();
+        let outcome = r?;
+        let end = run.end.ok_or(Refuse::RcbBudget {
+            what: "budget run returned without a recorded end",
+        })?;
+        Ok(BudgetStop {
+            end,
+            outcome,
+            target,
+            remaining: run.remaining,
+            entries: run.entries,
+            poll_entries: run.poll_entries,
+        })
+    }
+
+    /// Record how a budget stretch ended and return its outcome.
+    fn budget_finish(&mut self, end: BudgetEnd, outcome: Outcome) -> Result<Outcome, RunError> {
+        budget_finish_into(&mut self.budget_run, end, outcome)
+    }
+
+    /// `kind` and the retired-instruction total for a stop before
     /// the instruction at `src_pc`, correcting the block-head
-    /// pre-credit under the instruction-counting profile.
-    fn retired_instructions_at(&self, counted: u64, src_pc: u64) -> u64 {
-        crate::recovery::instructions_retired_at(&self.translation, self.profile, counted, src_pc)
+    /// pre-credit under the instruction-counting profile; a missing
+    /// credit gives `ExecutorError` with the raw count
+    /// ([`crate::recovery::kind_and_retired`]).
+    fn kind_and_retired_at(&self, kind: FaultKind, counted: u64, src_pc: u64) -> (FaultKind, u64) {
+        crate::recovery::kind_and_retired(&self.translation, self.profile, kind, counted, src_pc)
     }
 
     pub fn translation(&self) -> &Translation {
         &self.translation
     }
 
-    /// Invalidate overlapping entries and advance the generation.
-    /// After any invalidation the executable refuses to run: P1a
-    /// eviction is flush-and-reprepare, never patch-in-place.
+    /// The executable's current generation: the admitted snapshot's.
+    pub fn generation(&self) -> Generation {
+        self.region.generation
+    }
+
+    /// Report `[src_start, src_end)` unmapped under `new_generation`
+    /// (strictly newer), from outside a run: the same as a
+    /// `MappingEvent` without a region. Returns the number of index
+    /// records dropped. The next entry into the cache retranslates,
+    /// and control that reaches the range refuses `UnmappedCode`.
     pub fn invalidate(
         &mut self,
         src_start: u64,
         src_end: u64,
         new_generation: Generation,
     ) -> Result<usize, Refuse> {
-        let n = self.index.invalidate(src_start, src_end, new_generation)?;
-        self.valid = false;
-        Ok(n)
+        self.apply_event(src_start, src_end, None, Some(new_generation))
+    }
+
+    /// Apply the caller's mapping events as one batch (one global
+    /// generation; flush on any event: the live translation is
+    /// rebuilt at the next entry into the cache).
+    ///
+    /// All or none: the batch is checked first. Each region event must
+    /// carry a generation strictly newer than the one before it (a
+    /// hole event advances by one). If any does not, no snapshot in
+    /// the batch is admitted, every range the batch names becomes a
+    /// hole (guest memory there may have changed in ways the report
+    /// does not describe, so none of it may run from an old
+    /// translation), and the batch refuses `StaleGeneration`. A later
+    /// event with a valid snapshot re-admits a range, but such an event
+    /// arrives only through a handler exit. When the holes cover the
+    /// entry, every later run refuses `UnmappedCode` at the entry before
+    /// any exit, so that executable cannot recover; prepare a new one.
+    fn apply_mapping_events(&mut self, events: Vec<MappingEvent>) -> Result<(), Refuse> {
+        let mut last = self.region.generation;
+        let mut refusal = None;
+        for ev in &events {
+            match &ev.region {
+                Some(r) if r.generation <= last => {
+                    refusal = Some(Refuse::StaleGeneration {
+                        expected: last.next().0,
+                        found: r.generation.0,
+                    });
+                    break;
+                }
+                Some(r) => last = r.generation,
+                None => last = last.next(),
+            }
+        }
+        if let Some(refusal) = refusal {
+            for ev in &events {
+                self.apply_event(ev.start, ev.end, None, None)?;
+            }
+            return Err(refusal);
+        }
+        for ev in events {
+            self.apply_event(ev.start, ev.end, ev.region, None)?;
+        }
+        Ok(())
+    }
+
+    /// One event. The generation check is the index's: a generation
+    /// that is not strictly newer refuses `StaleGeneration`.
+    fn apply_event(
+        &mut self,
+        start: u64,
+        end: u64,
+        region: Option<RegionFacts>,
+        generation: Option<Generation>,
+    ) -> Result<usize, Refuse> {
+        let next = match (&region, generation) {
+            (Some(r), _) => r.generation,
+            (None, Some(g)) => g,
+            (None, None) => self.region.generation.next(),
+        };
+        let dropped = self.index.invalidate(start, end, next)?;
+        match region {
+            Some(r) => {
+                // The fresh snapshot re-admits whatever it covers.
+                self.holes.retain(|&(s, e)| !(s < r.end() && r.base < e));
+                self.roots.retain(|&p| r.contains(p));
+                self.region = r;
+            }
+            None => {
+                self.region.generation = next;
+                self.holes.push((start, end));
+                self.roots.retain(|&p| !(start <= p && p < end));
+            }
+        }
+        Ok(dropped)
+    }
+
+    /// The generated entry for source `pc`, valid under the current
+    /// generation: control into a hole refuses `UnmappedCode`, and a
+    /// translation built under an older generation is rebuilt from
+    /// the current snapshot first. Every dispatcher entry goes
+    /// through here, so a saved PC (a return address, a resume PC) is
+    /// revalidated when it is used, never trusted by address.
+    fn entry_for(&mut self, pc: u64) -> Result<u64, Refuse> {
+        if self.holes.iter().any(|&(s, e)| s <= pc && pc < e) {
+            return Err(Refuse::UnmappedCode {
+                src_pc: pc,
+                generation: self.region.generation.0,
+            });
+        }
+        if self.stamp != self.region.generation {
+            self.retranslate(self.roots.clone())?;
+        }
+        self.translation
+            .block_gen
+            .get(&pc)
+            .copied()
+            .ok_or(Refuse::IndirectUnresolved { src_pc: pc })
     }
 
     /// Run from `state.rip` until a return pops `return_sentinel`, a
@@ -936,10 +1490,14 @@ impl Executable {
         mem: &dyn GuestMemory,
         return_sentinel: u64,
     ) -> Result<Outcome, RunError> {
-        if !self.valid {
-            return Err(Refuse::StaleGeneration {
-                expected: self.index.generation().0,
-                found: self.index.generation().0,
+        // No generation check here: a translation older than the
+        // current generation is rebuilt at the first entry
+        // (`entry_for`), and a hole refuses `UnmappedCode` there.
+        // A budgeted translation always decrements the budget; run
+        // without one, it would wrap below zero and never stop.
+        if self.rcb_budget && self.budget_run.is_none() {
+            return Err(Refuse::RcbBudget {
+                what: "budgeted translation run without a budget",
             }
             .into());
         }
@@ -1112,15 +1670,33 @@ impl Executable {
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
         let mut poll_remaining = POLL_BUDGET;
         loop {
-            let Some(&gen_entry) = self.translation.block_gen.get(&state.rip) else {
-                return Err(Refuse::IndirectUnresolved { src_pc: state.rip }.into());
+            // Budget runs never enter the cache with a budget of 0
+            // (the stub's `dec` would wrap): 0 here is a landing at
+            // this very point, which also covers a target of 0.
+            if self.budget_run.as_ref().is_some_and(|b| b.remaining == 0) {
+                let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                return self.budget_finish(BudgetEnd::Landed, out);
+            }
+            let gen_entry = match self.entry_for(state.rip) {
+                Ok(g) => g,
+                Err(refusal) => {
+                    if self.budget_run.is_some() {
+                        let at = state.rip;
+                        let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                        return self.budget_finish(BudgetEnd::Handoff { refusal, at }, out);
+                    }
+                    return Err(refusal.into());
+                }
             };
+            let seeded_poll = poll_remaining;
+            let seeded_budget = self.budget_run.as_ref().map_or(0, |b| b.remaining);
             // SAFETY: `data` is the RW data page of the live arena.
             unsafe {
                 let mut fresh = JitData::new(state);
                 fresh.branch_count = tot_branches;
                 fresh.instruction_count = tot_instructions;
                 fresh.poll_remaining = poll_remaining;
+                fresh.budget_remaining = seeded_budget;
                 core::ptr::write(self.data, fresh);
             }
             let (bridge_lo, bridge_hi) = bridge_range();
@@ -1140,14 +1716,38 @@ impl Executable {
                 fault_err: 0,
             };
             ACTIVE.store(&mut active, Ordering::SeqCst);
+            #[cfg(feature = "test-seams")]
+            let pmu_fd = self.pmu_fd;
             // SAFETY: sigsetjmp arms the fault return; liteinst_jit_enter
             // transfers full state to generated code which returns only
             // through the common exit or the fault handler.
             let jumped = unsafe { sigsetjmp_raw(core::ptr::addr_of_mut!(JMP_BUF).cast(), 1) };
             if jumped == 0 {
+                // PMU window (test seam): no conditional branch runs
+                // between the enable and the entry, or between the
+                // common exit's return and the disable.
+                #[cfg(feature = "test-seams")]
+                if pmu_fd >= 0 {
+                    pmu_ioctl(pmu_fd, PERF_EVENT_IOC_ENABLE);
+                    // SAFETY: as for the entry below.
+                    unsafe {
+                        liteinst_jit_enter(self.data, gen_entry as *const u8);
+                    }
+                    pmu_ioctl(pmu_fd, PERF_EVENT_IOC_DISABLE);
+                } else {
+                    // SAFETY: as for the entry below.
+                    unsafe {
+                        liteinst_jit_enter(self.data, gen_entry as *const u8);
+                    }
+                }
+                #[cfg(not(feature = "test-seams"))]
                 unsafe {
                     liteinst_jit_enter(self.data, gen_entry as *const u8);
                 }
+            }
+            #[cfg(feature = "test-seams")]
+            if jumped != 0 && pmu_fd >= 0 {
+                pmu_ioctl(pmu_fd, PERF_EVENT_IOC_DISABLE);
             }
             ACTIVE.store(core::ptr::null_mut(), Ordering::SeqCst);
             // SAFETY: reading the data page after exit/fault.
@@ -1189,6 +1789,9 @@ impl Executable {
                 ))));
             }
             exits += 1;
+            if let Some(run) = self.budget_run.as_mut() {
+                run.exited(seeded_poll, &data);
+            }
             poll_remaining = data.poll_remaining;
             tot_branches = data.branch_count;
             tot_instructions = data.instruction_count;
@@ -1199,22 +1802,46 @@ impl Executable {
                 exits,
                 also_pending: Vec::new(),
             };
+            // Budget runs: a landing, or an exit the cache does not
+            // execute in a tail (named handoff, exact count owed).
+            if self.budget_run.is_some() {
+                let src = data.exit_src;
+                let handoff = |refusal: Refuse| BudgetEnd::Handoff { refusal, at: src };
+                // INDIRECT is resolved by the arm below (P1b.1); only
+                // its refusals hand off.
+                let end = match data.exit_kind {
+                    exit_kind::BUDGET => Some(BudgetEnd::Landed),
+                    exit_kind::SYSCALL | exit_kind::NONDET => {
+                        Some(handoff(Refuse::NoHandler { src_pc: src }))
+                    }
+                    _ => None,
+                };
+                if let Some(end) = end {
+                    let mut out = done;
+                    out.state.rip = src;
+                    return self.budget_finish(end, out);
+                }
+            }
             match data.exit_kind {
                 exit_kind::RETURN => {
                     let Some(target) = mem.read_u64(state.rsp) else {
                         // The return did not retire: exclude its
                         // block-head pre-credit (F3).
                         state.rip = data.exit_src;
+                        let (kind, instructions) = self.kind_and_retired_at(
+                            FaultKind::GuestFault,
+                            data.instruction_count,
+                            data.exit_src,
+                        );
                         return Err(RunError::Fault(Box::new(Fault {
                             also_pending: Vec::new(),
-                            kind: FaultKind::GuestFault,
+                            kind,
                             src_pc: data.exit_src,
                             addr: state.rsp,
                             signum: libc::SIGSEGV,
                             state,
                             branches: data.branch_count,
-                            instructions: self
-                                .retired_instructions_at(data.instruction_count, data.exit_src),
+                            instructions,
                         })));
                     };
                     state.rsp = state.rsp.wrapping_add(8).wrapping_add(data.exit_next);
@@ -1222,6 +1849,9 @@ impl Executable {
                     if target == return_sentinel {
                         let mut out = done;
                         out.state = state;
+                        if self.budget_run.is_some() {
+                            return self.budget_finish(BudgetEnd::Ended, out);
+                        }
                         return Ok(out);
                     }
                     // Loop: the block_gen lookup above resolves the
@@ -1252,15 +1882,55 @@ impl Executable {
                     poll_remaining = POLL_BUDGET;
                 }
                 exit_kind::INDIRECT => {
-                    return Err(Refuse::IndirectUnresolved {
-                        src_pc: data.exit_src,
+                    // P1b.1 §1.2. Every stop on this arm reports the
+                    // state before the instruction, its block-head
+                    // pre-credit excluded (F3); a resolved transfer
+                    // retires it (the pre-credit stands) and leaves
+                    // the budget unchanged.
+                    let src = data.exit_src;
+                    state.rip = src;
+                    let (kind, retired_before) = self.kind_and_retired_at(
+                        FaultKind::GuestFault,
+                        data.instruction_count,
+                        src,
+                    );
+                    match self.resolve_indirect(&state, mem, src) {
+                        Ok(next) => {
+                            state = next;
+                        }
+                        Err(IndirectStop::Refuse(refusal)) => {
+                            if self.budget_run.is_some() {
+                                let out =
+                                    outcome_at(state, data.branch_count, retired_before, exits);
+                                return self
+                                    .budget_finish(BudgetEnd::Handoff { refusal, at: src }, out);
+                            }
+                            return Err(refusal.into());
+                        }
+                        Err(IndirectStop::Fault { addr }) => {
+                            return Err(RunError::Fault(Box::new(Fault {
+                                also_pending: Vec::new(),
+                                kind,
+                                src_pc: src,
+                                addr,
+                                signum: libc::SIGSEGV,
+                                state,
+                                branches: data.branch_count,
+                                instructions: retired_before,
+                            })));
+                        }
                     }
-                    .into());
                 }
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;
                     syscall_guard(&self.translation, data.exit_src, state.rax)?;
-                    let resume = handler.syscall(&mut state, data.exit_src, data.exit_next)?;
+                    let served = handler.syscall(&mut state, data.exit_src, data.exit_next);
+                    // Before the guest resumes, and also when the handler
+                    // refuses: a change it made to guest memory stays made,
+                    // so the next entry must revalidate either way.
+                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                    let resume = served?;
+                    applied?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {
@@ -1290,7 +1960,11 @@ impl Executable {
                         .ok_or(Refuse::NoHandler {
                             src_pc: data.exit_src,
                         })?;
-                    let resume = handler.nondet(&mut state, kind, data.exit_src, data.exit_next)?;
+                    let served = handler.nondet(&mut state, kind, data.exit_src, data.exit_next);
+                    // As in the SYSCALL arm: applied even when refused.
+                    let applied = self.apply_mapping_events(handler.take_mapping_events());
+                    let resume = served?;
+                    applied?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {

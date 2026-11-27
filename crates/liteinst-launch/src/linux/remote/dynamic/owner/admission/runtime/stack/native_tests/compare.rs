@@ -244,8 +244,8 @@ pub(super) fn word(
             errno: None
         })
     );
-    for entry in pagemap.bytes[..pagemap.copied].chunks_exact(8) {
-        let bits = u64::from_le_bytes(entry.try_into().unwrap());
+    for entry in pagemap.bytes[..pagemap.copied].as_chunks::<8>().0 {
+        let bits = u64::from_le_bytes(*entry);
         assert_eq!(bits & ((1 << 63) | (1 << 56)), (1 << 63) | (1 << 56));
         assert_eq!(
             bits & !((1 << 63) | (1 << 56) | (1 << 55) | ((1 << 55) - 1)),

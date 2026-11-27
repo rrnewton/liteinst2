@@ -1,0 +1,14 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index fc64b5a1..15e08b72 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1429,7 +1429,8 @@ impl Executable {
+                 generation: self.region.generation.0,
+             });
+         }
+-        if self.stamp != self.region.generation {
++        // MUTANT 25a: a translation from an older generation is used.
++        if false {
+             self.retranslate(self.roots.clone())?;
+         }
+         self.translation

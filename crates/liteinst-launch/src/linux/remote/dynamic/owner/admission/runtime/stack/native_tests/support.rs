@@ -147,8 +147,8 @@ fn resident_pair(owner: &Owner, until: Instant, stack: &std::ops::Range<u64>) ->
     const PRESENT: u64 = 1 << 63;
     const EXCLUSIVE: u64 = 1 << 56;
     const ALLOWED: u64 = PRESENT | EXCLUSIVE | (1 << 55) | ((1 << 55) - 1);
-    for bytes in entries.chunks_exact(8) {
-        let entry = u64::from_le_bytes(bytes.try_into().unwrap());
+    for bytes in entries.as_chunks::<8>().0 {
+        let entry = u64::from_le_bytes(*bytes);
         assert_eq!(entry & (PRESENT | EXCLUSIVE), PRESENT | EXCLUSIVE);
         assert_eq!(entry & !ALLOWED, 0);
     }

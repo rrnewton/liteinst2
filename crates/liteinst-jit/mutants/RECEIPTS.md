@@ -1,11 +1,9 @@
 # Required mutation chains — execution receipts
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
-
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
 workspace root, 2026-11-05; last re-executed for the P1b I1-A
-recovery-core extraction on liteinst2 branch
-`musejit/i1a-20261105` (off main
+recovery-core extraction, landed as liteinst2 commit
+`2b46ed54` (off main
 `46e6e8f3cc6a5cfce0e4b1bf4d7aec93a0e0f336`), after mutants 01
 and 04 were regenerated against the moved recovery code in
 `src/recovery.rs` — same one-line defects, new file/context
@@ -18,11 +16,78 @@ restoration to return green on a clean tree). Script exit code:
 
 Patch SHA-256 are printed by the script at every run and were re-verified at this head (mutants 01 and 04 regenerated for the recovery-core move; same one-line defects).
 
+**Re-executed 2026-11-13** for the checked block-credit subtraction in
+`instructions_retired_at` (commit `217aaf7b`). Mutant 04 no longer
+applied, because the missing-credit decision now sits above its
+context, so it was regenerated with the same two inserted lines.
+
+Mutant 03 stopped applying when generation events replaced the
+executable's `valid` flag. It was regenerated for the new mechanism,
+with the same defect: `Executable::invalidate` drops its index records
+but leaves the executable running its old translation. Its kill
+is now the O1 test's invalidation assertion, `must refuse
+UnmappedCode`. The receipt for the regenerated mutant is in that
+change's own evidence. The table below records the `bedcc8aa` run.
+
+The five mutants were run against `bedcc8aa` (`217aaf7b` plus docs),
+each on its own `git archive` copy with its own target directory,
+under this script's criteria: the full debug suite, the named
+assertion text, `test result: FAILED`, and a compile error counts as
+no kill. The in-place script itself was not used. All five were
+KILLED by their expected assertions. The first failing tests:
+- 01: `branch_stub_credit_timing_and_spill_recovery`;
+- 02: `jit_matches_o1_oracle_on_corpus_v1`, `remote_compare_all`;
+- 03: `jit_matches_o1_oracle_on_corpus_v1`;
+- 04: `jit_matches_o1_oracle_on_corpus_v1`, `remote_compare_all`;
+- 05: `jit_matches_o1_oracle_on_corpus_v1`.
+
+Baseline and restored state: the head's debug suite, green.
+
+**Re-executed 2026-11-22 (UTC)** for the tracee-seam change, which
+rewrote the remote push path in `src/remote.rs`. The indirect-call push
+write became `write_mem(&self.guard.tracee, ...)`, and `indirect_steps`
+binds `tracee` where it bound `pid`. Three mutants quoted the old code:
+- 09 (as context) and 24b (as its changed line) no longer applied;
+- 12 still applied but no longer compiled. Its remote arm wrote through
+  `pid`, which is no longer in scope (`error[E0425]`), so this script
+  would report it NOT KILLED and both of its kills were lost.
+
+All three were regenerated with the same inserted defects:
+- 09: its added and removed lines are byte-identical;
+- 12: only the receiver of its inserted `write_mem` changed, from `pid`
+  to `&tracee`;
+- 24b: only the receiver of `write_mem` changed, and the defect is still
+  `.is_err() && false`.
+
+A build sweep then applied each of the 28 patches, compiled the crate's
+test build (`cargo test --locked --offline -p liteinst-jit --no-run`,
+the targets this script's `cargo test` compiles) and reversed it. All 28
+compile, none reporting `could not compile`. The original mutant 12
+fails this same check with `error[E0425]`, although it passes
+`git apply --check`.
+
+The three regenerated chains ran in the working tree under this
+script's criteria: apply, the named tests, the expected text,
+`test result: FAILED`, every named test's own FAILED line, no compile
+error, then reverse, clean tree and `cargo test --locked --offline -p
+liteinst-jit` green. All three were KILLED:
+- 09: `p1b1_indirect_matches_o1` FAILED (`indirect_call: instructions`)
+  and `p1b1_indirect_remote_matches` FAILED
+  (`indirect_call: remote instructions`);
+- 12: `refusal_inprocess` FAILED (`ind_call_out: rsp-8 written`) and
+  `refusal_remote` FAILED (`ind_call_out remote: tracer wrote the slot
+  below rsp`);
+- 24b: `push_fault_remote` FAILED (`ind_call_reg: push fault: expected a
+  fault, got Ok(...)`).
+
+Restored state after each: the debug suite green and the tree clean. The
+other 25 mutants are unchanged and compile; their chains were not re-run.
+
 | Mutant | Defect simulated | Killing evidence (mutant run) | Restored |
 |---|---|---|---|
 | `01-pending-credit-loss` | Recovery drops the pending branch credit at stub boundaries before the credit store | `branch_stub_credit_timing_and_spill_recovery` FAILED: `retired branch credited exactly once` | green |
 | `02-missing-fallthrough-credit` | Jcc fallthrough edge bypasses its count stub | Two invocations prove different things: (1) the full-suite `run.sh` stops first at `tests/custody.rs:89` (`sum_loop: branches`, 1 vs 17) in the custody Ok test — that is this script's kill evidence, **not** O1 evidence; (2) a separate targeted invocation with only this mutant applied, `cargo test --locked -p liteinst-jit --test o1_compare`, FAILED at `tests/o1_compare.rs:117` (`sum_loop: branches`, 1 vs 17, rc 101) — that is the O1 kill evidence. The targeted patch was reversed and the tree verified clean before the full script ran. | green |
-| `03-disabled-invalidation` | `Executable::invalidate` leaves the executable runnable | O1 integration FAILED: expected `StaleGeneration` refusal | green |
+| `03-disabled-invalidation` | `Executable::invalidate` leaves the executable runnable | O1 integration FAILED: expected `StaleGeneration` refusal (this `bedcc8aa` run; since the generation change, the kill is `must refuse UnmappedCode`, see the note above) | green |
 | `04-cache-pc-fault` | Fault reports the raw generated PC | O1 integration FAILED at the checked range assertion (`pc … outside source range from …`), before offset comparison — no subtraction overflow | green |
 | `05-before-retirement-emission` | Branch credit emitted at block entry (successor stubs credit a dead field) | O1 integration FAILED: `fault_before_branch branches` left 1, right 0 — a fault before the branch must not credit it | green |
 

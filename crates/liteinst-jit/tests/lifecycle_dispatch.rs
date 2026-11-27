@@ -8,6 +8,9 @@ use liteinst_jit::harness::{MappedGuest, RETURN_SENTINEL};
 use liteinst_jit::types::{CountProfile, Generation};
 use liteinst_jit::{GuestState, Refuse};
 
+#[path = "common/deadline.rs"]
+mod deadline;
+
 #[derive(Default)]
 struct CountingHandler {
     calls: usize,
@@ -67,6 +70,7 @@ fn run_guest(bytes: Vec<u8>) -> (Result<liteinst_jit::Outcome, RunError>, usize,
 
 #[test]
 fn lifecycle_syscalls_refuse_before_handler() {
+    let _bound = deadline::TestBound::arm();
     let cases: [(u32, Option<Refuse>); 7] = [
         (59, Some(Refuse::ExecSuccessor)),
         (322, Some(Refuse::ExecSuccessor)),
@@ -154,4 +158,15 @@ fn lifecycle_syscalls_refuse_before_handler() {
         );
         assert_eq!(calls, 0, "sysenter value {value:#x} handler calls");
     }
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("lifecycle_dispatch.rs"),
+        "lifecycle_dispatch.rs",
+        &["bound_census"],
+    );
 }

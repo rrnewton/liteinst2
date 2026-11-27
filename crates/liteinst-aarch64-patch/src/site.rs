@@ -1,15 +1,16 @@
 //! Patch-site identity, custody state, and the stop contract.
-//! Flip/rollback execution lands in a later slice; this module fixes
-//! the types those transitions will move between, exactly as named in
-//! the design note.
+//! The flip protocol moves sites between the states defined here,
+//! exactly as named in the design note.
 
 use crate::PatchError;
 use crate::island::Island;
+use crate::mapping::MappingFacts;
+use crate::store::{DualAliasStore, SiteStore};
 use liteinst_aarch64::Reg;
 
 /// Which stored word a pending sync will settle on completion. After a
 /// rollback store lands but its sync fails, completion must settle
-/// `Unpatched`, not `Flipped` — hence the payload (musereview P3 at
+/// `Unpatched`, not `Flipped` — hence the payload (review P3 at
 /// the design re-confirmation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PendingWord {
@@ -58,15 +59,62 @@ pub enum ResumeState {
     Unknown,
 }
 
-/// Owned trap-route registration for one site (handler wiring itself
-/// is the caller's machinery; this record is the provenance the flip
-/// checks before any Trap write).
+/// Proof token inside [`TrapRoute`], constructible only by the
+/// unsafe [`TrapRoute::arm`] constructor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TrapArmed(());
+
+/// Owned trap-route registration for one exact site. A plain
+/// `{brk_imm, generation}` pair proves nothing — it could be
+/// fabricated in safe code with no handler installed — so the only
+/// constructor is unsafe and binds address + immediate + generation
+/// to a handler the caller guarantees is installed and remains owned
+/// for as long as any site retains this route.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrapRoute {
+    addr: u64,
+    brk_imm: u16,
+    generation: u64,
+    armed: TrapArmed,
+}
+
+impl TrapRoute {
+    /// Arm a route for exactly one site.
+    ///
+    /// # Safety
+    /// A handler for `BRK #brk_imm` at `addr` (site `generation`) must
+    /// already be installed, must preserve guest state apart from its
+    /// documented result/continuation, and must remain installed and
+    /// owned **until the published BRK word itself is retired**
+    /// (rollback/rewrite has landed and possible delivery is
+    /// discharged) or the session ends. That obligation is tied to the
+    /// published word, not to any Rust value's lifetime: dropping this
+    /// token, the retaining `Site`, or a registry discharges nothing,
+    /// and deregistering while the BRK remains reachable leaves it
+    /// trapping into an unowned handler.
+    pub unsafe fn arm(addr: u64, brk_imm: u16, generation: u64) -> Self {
+        Self {
+            addr,
+            brk_imm,
+            generation,
+            armed: TrapArmed(()),
+        }
+    }
+
+    /// The exact site address this route was armed for.
+    pub fn addr(&self) -> u64 {
+        self.addr
+    }
+
     /// The reserved `BRK` immediate for this site.
-    pub brk_imm: u16,
+    pub fn brk_imm(&self) -> u16 {
+        self.brk_imm
+    }
+
     /// Site generation the registration was armed for.
-    pub generation: u64,
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
 }
 
 /// One patchable site: identity, retained original word, state, and —
@@ -76,10 +124,13 @@ pub struct TrapRoute {
 /// [`Site::from_aliases`]; there is no safe constructor from integers.
 pub struct Site {
     rx_addr: u64,
-    rw_alias: *mut u32,
+    store: Box<dyn SiteStore>,
+    facts: Option<MappingFacts>,
     original_word: u32,
     generation: u64,
     state: SiteState,
+    flipped_word: Option<u32>,
+    resume_states: Vec<ResumeState>,
     island: Option<Island>,
     trap_route: Option<TrapRoute>,
 }
@@ -115,13 +166,61 @@ impl Site {
     ) -> Self {
         Self {
             rx_addr,
-            rw_alias,
+            store: Box::new(DualAliasStore::new(rw_alias)),
+            facts: None,
             original_word,
             generation,
             state: SiteState::Unpatched,
+            flipped_word: None,
+            resume_states: Vec::new(),
             island: None,
             trap_route: None,
         }
+    }
+
+    /// Construct a foreign-text site from its RX address, qualified
+    /// mapping facts, and the downstream store that will write it.
+    /// Refuses facts that do not contain the address or are not
+    /// windowable; the generation is taken from the facts.
+    ///
+    /// # Safety
+    /// `store` must name the same physical word the CPU executes at
+    /// `rx_addr` for `facts.generation`; the word at `rx_addr` must
+    /// currently equal `original_word`; and no other live `Site` or
+    /// writer may name this address (see [`SiteStore`]).
+    pub unsafe fn from_rx(
+        rx_addr: u64,
+        original_word: u32,
+        facts: MappingFacts,
+        store: Box<dyn SiteStore>,
+    ) -> Result<Self, PatchError> {
+        if !facts.contains(rx_addr) {
+            return Err(PatchError::MappingRefused(
+                "site address outside qualified page span",
+            ));
+        }
+        if !facts.windowable() {
+            return Err(PatchError::MappingRefused(
+                "shared or indeterminate mapping provenance",
+            ));
+        }
+        Ok(Self {
+            rx_addr,
+            store,
+            generation: facts.generation,
+            facts: Some(facts),
+            original_word,
+            state: SiteState::Unpatched,
+            flipped_word: None,
+            resume_states: Vec::new(),
+            island: None,
+            trap_route: None,
+        })
+    }
+
+    /// The qualified mapping facts, when constructed via `from_rx`.
+    pub fn mapping_facts(&self) -> Option<MappingFacts> {
+        self.facts
     }
 
     /// Executable address of the site word.
@@ -168,10 +267,47 @@ impl Site {
         self.trap_route
     }
 
-    /// Writable alias word (protocol-internal; the design's one store).
-    #[allow(dead_code)]
-    pub(crate) fn rw_word(&mut self) -> *mut u32 {
-        self.rw_alias
+    /// The patch word stored by the in-flight or completed flip.
+    pub fn flipped_word(&self) -> Option<u32> {
+        self.flipped_word
+    }
+
+    /// Per-executor resume states from the latest resume attempt.
+    pub fn resume_states(&self) -> &[ResumeState] {
+        &self.resume_states
+    }
+
+    /// Protocol-internal: record the word about to be stored.
+    pub(crate) fn set_flipped_word(&mut self, word: Option<u32>) {
+        self.flipped_word = word;
+    }
+
+    /// Protocol-internal: record per-executor resume outcomes.
+    pub(crate) fn set_resume_states(&mut self, states: Vec<ResumeState>) {
+        self.resume_states = states;
+    }
+
+    /// Protocol-internal: read the current site word through the
+    /// store's RX view of the same physical word.
+    pub(crate) fn read_word(&self) -> u32 {
+        self.store.read_word()
+    }
+
+    /// Protocol-internal: the store's write address for sync ranges.
+    pub(crate) fn write_addr(&self) -> u64 {
+        self.store.write_addr()
+    }
+
+    pub(crate) fn begin_write(&mut self) -> Result<(), PatchError> {
+        self.store.begin_write()
+    }
+
+    pub(crate) fn store_word(&mut self, word: u32) -> Result<(), PatchError> {
+        self.store.store_word(word)
+    }
+
+    pub(crate) fn finish_write(&mut self) -> Result<(), PatchError> {
+        self.store.finish_write()
     }
 }
 
@@ -196,7 +332,10 @@ pub enum FallbackPermission {
     RefuseTrap,
 }
 
-/// The stop/lease authority a flip runs under.
+/// The stop/lease authority a flip runs under. `acquire` must be
+/// idempotent-confirming: calling it while a stop from an earlier
+/// flip attempt is still retained (post-store custody) succeeds
+/// without releasing anyone.
 ///
 /// # Safety
 /// Implementors guarantee the exclusive publication lease: every
@@ -213,6 +352,25 @@ pub unsafe trait StopControl {
     /// Resume all executors, returning each one's tracked state. An
     /// `Unknown` entry is retained custody, not a retry invitation.
     fn resume(&mut self) -> Result<Vec<ResumeState>, PatchError>;
+}
+
+impl Drop for Site {
+    fn drop(&mut self) {
+        // Retention-on-Drop (design): while any published word may
+        // still reference the island, unmapping it would leave a live
+        // branch into unmapped memory. Leak the island deliberately
+        // (bounded by the session) instead. This also covers unwind
+        // paths, which run the same destructor. The trap-route token
+        // needs no code here precisely because its handler obligation
+        // is tied to the published BRK word's lifetime, not to this
+        // value: dropping the token deregisters nothing, and the
+        // caller must keep the handler installed until the BRK is
+        // retired (see TrapRoute::arm).
+        let published = !matches!(self.state, SiteState::Unpatched);
+        if published && let Some(island) = self.island.take() {
+            island.disarm();
+        }
+    }
 }
 
 /// Site-owning registry: a second live [`Site`] for one address is
@@ -293,17 +451,12 @@ mod tests {
         // transitions, retained trap route, and the writable alias.
         let mut word = 0xd400_0001u32;
         let mut site = site_at(&mut word, 0x8000);
-        site.retain_trap_route(TrapRoute {
-            brk_imm: 0x4c00,
-            generation: 1,
-        });
-        assert_eq!(
-            site.trap_route(),
-            Some(TrapRoute {
-                brk_imm: 0x4c00,
-                generation: 1
-            })
-        );
+        // SAFETY (test): claims an armed route for this stack site.
+        site.retain_trap_route(unsafe { TrapRoute::arm(0x8000, 0x4c00, 1) });
+        let route = site.trap_route().unwrap();
+        assert_eq!(route.addr(), 0x8000);
+        assert_eq!(route.brk_imm(), 0x4c00);
+        assert_eq!(route.generation(), 1);
         for state in [
             SiteState::Flipped,
             SiteState::SyncPending {
@@ -321,7 +474,7 @@ mod tests {
             assert_eq!(site.state(), state);
         }
         // SAFETY (test): alias names `word`, which outlives the site.
-        assert_eq!(unsafe { site.rw_word().read_volatile() }, 0xd400_0001);
+        assert_eq!(site.read_word(), 0xd400_0001);
         #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
             let island = crate::island::Island::build(&[0xd503_24df]).unwrap();

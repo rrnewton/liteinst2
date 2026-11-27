@@ -1581,8 +1581,10 @@ fn leader_exit_event_retains_worker_control_and_separate_actual_group_terminal()
     let record = fs::read(record).unwrap();
     assert_eq!(record.len(), 16);
     let native = record
-        .chunks_exact(4)
-        .map(|b| u8::try_from(i32::from_le_bytes(b.try_into().unwrap())).unwrap())
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| u8::try_from(i32::from_le_bytes(*b)).unwrap())
         .collect::<Vec<_>>();
     assert_eq!(native, [17, 7, 7, 7]);
     let (mut s, parent, worker, handles) = spinning_pair(&path);

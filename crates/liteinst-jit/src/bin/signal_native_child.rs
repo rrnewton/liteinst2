@@ -10,7 +10,7 @@
 //! go byte from stdin (the parent sends the pending signal
 //! first), enters the fixture on the guest stack with
 //! `rbx=dst, rbp=base, r12=base+restorer_off, r13=src`, then
-//! writes `(result rax, dst[0..640])` and exits. The handler
+//! writes `(result rax, dst[0..1024])` and exits. The handler
 //! and restorer offsets are fixture conventions shared with
 //! the test: handler at 0, restorer immediately after it —
 //! the entry trampoline only needs `rbp`/`r12` values the
@@ -101,15 +101,21 @@ fn main() {
         .expect("restorer offset")
         .parse()
         .expect("restorer offset decimal");
+    let block_sig: i32 = std::env::args()
+        .nth(4)
+        .map_or(libc::SIGUSR1, |a| a.parse().expect("block signum decimal"));
     let hex = arg.strip_prefix("hex:").expect("hex bytes only");
     let bytes: Vec<u8> = (0..hex.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).expect("hex bytes"))
         .collect();
-    // Normalize SIGUSR1 to a true zero default, disable the
-    // altstack, and block SIGUSR1 so the parent's signal
-    // stays pending until the guest unblocks it — the same
-    // arrangement the remote child starts from.
+    // Normalize SIGUSR1/SIGUSR2 and the RT range 34..=64 to a
+    // true zero default (the remote child zeroes every
+    // catchable signal), disable the altstack, and set the
+    // mask to exactly the blocked signal so the parent's
+    // signal stays pending until the guest unblocks it — the
+    // same arrangement the remote child starts from, with no
+    // inherited mask bits.
     // SAFETY: single-threaded setup before any guest code.
     unsafe {
         let zero = KernelSigaction {
@@ -118,14 +124,16 @@ fn main() {
             restorer: 0,
             mask: 0,
         };
-        let rc = libc::syscall(
-            libc::SYS_rt_sigaction,
-            libc::SIGUSR1,
-            &zero as *const KernelSigaction,
-            core::ptr::null_mut::<KernelSigaction>(),
-            8usize,
-        );
-        assert_eq!(rc, 0, "normalize SIGUSR1");
+        for sig in [libc::SIGUSR1, libc::SIGUSR2].into_iter().chain(34..=64) {
+            let rc = libc::syscall(
+                libc::SYS_rt_sigaction,
+                sig,
+                &zero as *const KernelSigaction,
+                core::ptr::null_mut::<KernelSigaction>(),
+                8usize,
+            );
+            assert_eq!(rc, 0, "normalize signal");
+        }
         let disabled = libc::stack_t {
             ss_sp: core::ptr::null_mut(),
             ss_flags: libc::SS_DISABLE,
@@ -138,11 +146,11 @@ fn main() {
         );
         let mut set: libc::sigset_t = core::mem::zeroed();
         libc::sigemptyset(&mut set);
-        libc::sigaddset(&mut set, libc::SIGUSR1);
+        libc::sigaddset(&mut set, block_sig);
         assert_eq!(
-            libc::pthread_sigmask(libc::SIG_BLOCK, &set, core::ptr::null_mut()),
+            libc::pthread_sigmask(libc::SIG_SETMASK, &set, core::ptr::null_mut()),
             0,
-            "block SIGUSR1"
+            "block signal"
         );
     }
     let guest = MappedGuest::map(&bytes).expect("map fixture");
@@ -182,6 +190,6 @@ fn main() {
         unsafe { liteinst_native_enter(guest.base + entry_off, guest.stack_top(), regs.as_ptr()) };
     let mut out = std::io::stdout().lock();
     out.write_all(&result.to_le_bytes()).expect("write result");
-    out.write_all(&dst[0..640]).expect("write witness");
+    out.write_all(&dst[0..1024]).expect("write witness");
     out.flush().expect("flush output");
 }

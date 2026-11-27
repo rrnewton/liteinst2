@@ -44,6 +44,10 @@ impl Counters {
     }
 
     pub(super) fn enter(&self, pc: u64) -> bool {
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         let Ok(previous) = self
             .entered
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| v.checked_add(1))

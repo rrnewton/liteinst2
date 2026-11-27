@@ -1,16 +1,14 @@
-# liteinst-jit P1b design note (draft, awaiting Astra verdict)
+# liteinst-jit P1b design note (draft; the external review returned its verdict)
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
-
-Status: **DESIGN ONLY.** P1b implementation is gated on hl-ff-a's
-adversarial review of the P1a code + §6 invalidation design, plus
-the coordinator's go. Nothing here is built, selectable, or claimed. Layering
+Status: **DESIGN NOTE; P1b.1 is implemented at fixture scale only.** P1b implementation is gated on an adversarial review of the P1a code and the §6 invalidation design, plus a project go-ahead. Under the project owner's 2026-11-15 rule for LiteInst, that review is one seat, whose brief carries the project's full goalpost-moving check (no weakened assertion, widened tolerance, added exemption, skipped case, relaxed comparator, relabelled failure or deleted check). That review returned on 2026-11-22 (UTC): approve with nits, and §7 Q1 answered yes with conditions (§7). Its main finding is that the invalidation basis §2 and §3 assume is not implemented yet: dispatch looks translations up by address, and no guest event advances the generation ([#104]). That work and the admission proof ([#107]) are owed before §3's code-discovery stage. P1b.1 was built at fixture scale ahead of the verdict, on §7 Q1's assumption. Nothing else here is built, selectable, or claimed, and §1 still gates every whole-program claim. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
-remains **unbuilt until M4 is met**, and merging to liteinst2 main
-remains barred under the owner's DBT hold regardless of this note.
+remains **unbuilt until M4 is met**. Merging liteinst-jit work to
+liteinst2 main follows normal review and landing: the 2026-11-05 DBT
+hold covered only the DynamoRIO backend's refactor and never applied
+to liteinst-jit (owner ruling, 2026-11-10).
 
-**Scope decision recorded 2026-11-05 via the coordinator:** for **P1a**, the
+**Scope decision recorded 2026-11-05 in project review:** for **P1a**, the
 disclosed asynchronous-signal reduction is accepted (admission
 refuses installed async handlers; poll-bounded `AsyncSignal`
 stops; no transparency claim). That acceptance is **for P1a only**.
@@ -22,7 +20,7 @@ none is satisfied by this note.
 
 Goal (M4 shape, final wording is the owner's): the standalone driver
 counts every retired conditional branch (then every instruction) of
-a real dynamically-linked program (`/bin/ls` or a coordinator-approved equivalent),
+a real dynamically-linked program (`/bin/ls` or a review-approved equivalent),
 with the refusal list explicit and costs reported per the owner
 rule (DR-null ratio, run count, machine; dense counting labelled
 vs a DR counting client). Everything P1a refuses that P1b still
@@ -100,8 +98,12 @@ Two stages, separately landable:
   Hit-path chaining (patching the indirect site to a direct jump
   after a hit) is explicitly **deferred**: it creates the
   incoming-link bookkeeping §6 of the first report reserves for
-  after quiescence is proven. Table invalidation is whole-table
-  flush on any generation advance (P1a's flush discipline).
+  after quiescence is proven. Table invalidation is to be a
+  whole-table flush on any generation advance. That is a P1b target,
+  not existing behaviour: P1a's documented flush-whole-cache
+  discipline is not wired up (`Executable` never calls
+  `CacheIndex::flush`), and no guest event advances the generation
+  yet ([#104], [#106]).
 - PLT/GOT and jump tables need no special case under either stage:
   the target is whatever value memory/register holds at run time.
   Lazy binding means the dynamic linker's resolver is itself
@@ -125,13 +127,23 @@ P1a admits one immutable private region up front. P1b admits
   executable, `munmap`/`mremap`, and `execve` are **generation
   events**: the driver records mapping identity + generation and
   calls `Executable::invalidate` equivalents before the guest
-  resumes. No region is scanned or translated at syscall time —
+  resumes. None of this path exists yet ([#104]): in-process, a
+  handler cannot reach `Executable::invalidate` while `run` holds
+  the executable, and the remote path has no generation or
+  invalidate API. No region is scanned or translated at syscall time —
   translation happens only when control actually transfers into
   the mapping (discovery by execution), from a byte snapshot taken
   at admission and hashed into the cache key.
-- Admission requires the same proof as P1a: private, non-writable,
-  file-backed or provably immutable; writable/shared/memfd
-  executable mappings keep refusing `SelfModifyingOrWritableCode`.
+- Admission requires a proof that the mapping is private,
+  non-writable, file-backed or provably immutable. P1a has no such
+  proof to reuse: it checks only the caller-asserted
+  `RegionFacts::immutable_private` flag and never reads the
+  mapping's protections, and "private, non-writable, file-backed"
+  alone does not make a mapping immutable (a private file mapping's
+  not-yet-copied pages show later writes to the file). P1b must
+  define the proof, or carry it as a named non-claim ([#107]).
+  Under that proof, writable/shared/memfd executable mappings
+  refuse `SelfModifyingOrWritableCode`.
   That refuses JIT-emitting guests by name in P1b (M5 territory);
   ordinary `dlopen`ed shared libraries (RELRO, RX after relocation)
   are the intended admittees. A library whose text is still being
@@ -139,10 +151,13 @@ P1a admits one immutable private region up front. P1b admits
   after the `mprotect` that seals it — control cannot legitimately
   transfer in before then, and if it does, refusal is correct.
 - Multiple regions need the cache index keyed per (mapping
-  identity, generation) rather than one global generation; the
-  `CacheKey` already carries generation, so the change is to stop
-  assuming a single current generation in `Executable` and key
-  validity per region. Invalidation of one mapping must not flush
+  identity, generation) rather than one global generation. The
+  `CacheKey` carries a generation, but dispatch never consults it:
+  both dispatchers enter blocks by address, and
+  `CacheIndex::lookup` is never called ([#104]). So the change is to
+  check entry validity at dispatch, keyed per (mapping identity,
+  generation), and to stop assuming a single current generation in
+  `Executable`. Invalidation of one mapping must not flush
   unrelated regions' translations, but **must** flush the indirect
   hash table entries pointing into it (whole-table flush is the
   P1b-simple correct choice).
@@ -150,7 +165,9 @@ P1a admits one immutable private region up front. P1b admits
   from the first report's §6 design: return/signal PCs into an unmapped library
   remain recorded; resuming to one faults/refuses by name, never
   silently lands in a reused mapping (generation, not address,
-  decides).
+  decides). That is the target: today no mapping identity or
+  generation is recorded with a saved return or signal PC, so a
+  saved PC resolves by address ([#104]).
 
 ## 4. The `/bin/ls` driver (standalone, no Reverie binding)
 
@@ -230,41 +247,66 @@ Self-modifying/JIT code (M5), `execve` successors, attach (A4),
 external-debugger coexistence (the P1b driver *is* the tracer),
 CET shadow-stack call rewriting, aarch64, any Reverie core change,
 and any V10-selectable or product claim before M4 exit is declared
-by the coordinator/owner. Cost guardrail from li2adm: steady state does no
+by the project owner. Cost guardrail from the admission work: steady state does no
 per-page or per-admission work — discovery is per first-transfer
 into a block, and every reported number carries DR-null ratio +
 exactly-10 median + IQR + machine or is labelled UNMEASURED.
 
-## 7. Open questions for the Astra review
+## 7. Questions put to the external review, and its answers
+
+The review returned on 2026-11-22 UTC (approve with nits). Its answers
+follow each question.
 
 1. Is dispatcher-side indirect resolution (P1b.1) an acceptable M4
    shape if its measured cost is honest, with the hash stub as a
-   pure optimization? (This note assumes yes.)
+   pure optimization? **Answer: yes, with conditions.** The
+   measured cost includes P1b.1's whole-closure retranslation on
+   every new root; the page-crossing push and the 66h-prefixed
+   forms refuse by name before any whole-program claim ([#102],
+   [#101]); and §1 still gates every claim. P1b.1 was built at
+   fixture scale on this assumption, ahead of the verdict.
 2. Per-region generations vs one global generation with
    flush-on-any-mapping-event: is the simpler global flush
    acceptable for M4 if `dlopen`-heavy reruns retranslate?
-3. **Resolved 2026-11-05 via the coordinator:** mid-cache transparent
+   **Answer: yes;** per-region generations are an optimization.
+   Conditions: "flush" means retranslate on the next transfer; the
+   event hook is tested with a byte-changing fixture; and every
+   saved PC is revalidated by mapping identity and generation,
+   never by address ([#104]).
+3. **Resolved 2026-11-05 in project review:** mid-cache transparent
    async delivery **does** gate every P1b whole-program claim
    (§1). The remaining questions are mechanism-specific: exact
    genuine-frame construction and resume rule, nested/RT ordering
    and coalescing rules, interrupted-syscall restart semantics,
    and how much of that surface must be validated before the first
    staged `/bin/ls` result may be called whole-program.
+   **Answer:** the kernel-built frame mechanism (the tracer rewrites
+   only the resume RIP) is the right basis. Its rules gain one:
+   retranslation under a live signal frame refuses (`CodeInstall`,
+   "live signal frame"), so a handler that reaches new code stops
+   the run. P1b must either remap frame resume PCs or count that
+   refusal as a named stop. H3k's undelivered positive-code class
+   stays a named non-claim.
 4. Remote-arena injection at exec-stop vs a preload-shaped child
    bootstrap: any objection to ptrace syscall injection as the
    *driver-only* mechanism (explicitly not the future V10 loader)?
+   **Answer: no objection,** as a driver-only mechanism, provided
+   registers are restored exactly and that is checked; `MAP_FIXED`
+   over the arena refuses by name; and the arena (with its
+   read-write `JitData` page) is disclosed as occupying guest
+   address space. A wild guest store that would fault natively
+   lands there silently, and can forge exit fields the tracer
+   reads.
 
-Estimated against L10 §6.4's P1b stage (15–30 agent-days, estimate):
-transparent delivery is now scope item 1 and a claim gate, so
-that stage estimate must be repriced after the Astra verdict and
-P1b authorization rather than treated as already covering §1.
-Within the remaining scope, P1b.1 + driver staging is the bulk of
+Scope: transparent delivery is now scope item 1 and a claim gate
+(§1), so no earlier sizing of the P1b stage covers it. Within the
+remaining scope, P1b.1 + driver staging is the bulk of
 the work; P1b.2's hash stub is the tail risk if flag-neutral
 probing resists the simple template.
 
 ## 8. Item-1 staging: I1-A through I1-H
 
-Staging source: musejit's P1b scoping report stage map (I1-A
+Staging source: the P1b scoping report's stage map (I1-A
 recovery core through I1-G RT/payloads/restart, plus I1-H gate
 evidence), committed here so the staging survives outside the
 untracked report. This section sequences §1's gate only; it does
@@ -275,7 +317,8 @@ work (§§2–4 above) may use these stages as development fixtures
 but may not be claimed whole-program until I1-H review passes.
 
 Status at this section's commit (liteinst2 `main`
-`c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`):
+`c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`), updated for I1-E
+through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
 
 - **I1-A landed** (`2b46ed54a14839513ebc122246e7926333c6f499`):
   backend-neutral recovery core in `src/recovery.rs`.
@@ -291,14 +334,231 @@ Status at this section's commit (liteinst2 `main`
   **not** install the common signal-entry stub and does not
   virtualize old-action results; that half of the mechanism
   below belongs to I1-D.
-- **I1-D implemented on branch `musejit2/i1d-20261106`,**
-  pending its two signal-frame reviews (not landed at this
-  writing): stub install + old-action virtualization, genuine
-  frame delivery at recovered block starts, translated
-  handler, kernel `rt_sigreturn` resume, native-child
-  differential — bounded exactly to the admitted shape in the
-  I1-D detail below, with mid-block resume splitting left to
-  I1-E. I1-E through I1-H unstarted.
+- **I1-D landed** ([PR 65](https://github.com/rrnewton/liteinst2/pull/65),
+  `db60f1d1f421337406e3281fab06ecf45e9a5d6c`): stub install +
+  old-action virtualization, genuine frame delivery at
+  recovered block starts, translated handler, kernel
+  `rt_sigreturn` resume, native-child differential — bounded
+  exactly to the admitted shape in the I1-D detail below.
+- **I1-E landed** (`cbd319d83fb006d8866d8541c7bb913893f20af1`,
+  then `2edcd80eab955e476b1c281dbbd680a37dd175c5`): arbitrary
+  generated-phase async recovery with exact mid-block
+  generated re-entry (raw precredit re-based, not a new
+  translation), synchronous SIGSEGV/SIGFPE delivery at
+  copied insns with source-form instruction addresses, same
+  admitted flag/mask/restorer bounds. Async stops in
+  common-exit spilled stages and at generated PCs with no
+  pcmap entry (entry-loader bridge class), stepped-syscall
+  and original-step async stops, blocked-poll delivery,
+  sync faults outside copied insns, and handler-mutated
+  mid-block resume PCs still stop by name (see I1-E detail).
+  I1-H H2b later closes the common-exit stages (except an
+  INDIRECT exit's) and the original-step stop, and I1-H H2d
+  the stepped-syscall stop before syscall entry (W3s below).
+- **I1-F landed** (`736454bcaff828689cc7f97ec962d495d3015399`):
+  masks, alternate stack, capped nesting (see its detail).
+- **I1-G split** (project decision 2026-11-10): **I1-G1**
+  (RT ordering, RT retention vs standard coalescing,
+  `rt_(tg)sigqueueinfo` payloads and sender words, kernel
+  back-to-back frame setup) **landed**
+  ([PR 76](https://github.com/rrnewton/liteinst2/pull/76),
+  merge `4210776c6485989dfb6ead7e61c745912d04e191`).
+  **I1-G2** (syscall restart, `SA_RESTART`) **landed**
+  ([PR 77](https://github.com/rrnewton/liteinst2/pull/77),
+  merge `ca1152214e221b437caa11fb48c3e36d5069da21`).
+- **I1-H** (scope approved in lead review 2026-11-10) runs as four
+  PRs in order: a standalone poll fix (W4: a blocked pending
+  signal stopped the run at a poll exit; **landed**,
+  [PR 78](https://github.com/rrnewton/liteinst2/pull/78),
+  merge `ec2a98f8eaf0b959b1acb6430abd0c7e578a051d`; see I1-F
+  below), then H1 evidence (an O1 signal oracle, deterministic
+  arrival at any generated PC, a differential sweep, the frozen
+  corpus), H2 (deliver arrivals in common-exit stages and
+  original-instruction steps; W5; plus the `kill` gate's NSpid
+  proof; the entry-bridge class W2 turned out empty, see below;
+  H1 landed as [PR 79](https://github.com/rrnewton/liteinst2/pull/79),
+  merge `e207a8ea`; H2 runs as two PRs, H2a = W5, the NSpid
+  proof, the poll-budget fix and the H1 review follow-ups, then
+  H2b = W1 and W3), and H3 (the S1 overhead
+  breakdown, a replay of every retained mutant, and the one
+  bounded claim).
+- **W5** (found in the W4 review, pre-existing; **closed in
+  H2a**): the mirrored signal mask is refreshed after a stepped
+  `rt_sigprocmask` and at sigreturn, but not at handler entry,
+  so during a handler a signal blocked only by its `sa_mask`
+  (or its own signal without `SA_NODEFER`) read as unblocked
+  at a poll, and an ineligible one stopped the run early. The
+  poll now takes `SigBlk` from the same `/proc/<pid>/status`
+  text it reads for the pending sets, through the one
+  fail-closed parser (`status_masks`, which also serves mirror
+  seeding and `rt_sigprocmask` reconciliation), so the poll's
+  mask is the kernel's at every poll; there is no handler-entry
+  refresh. Discriminating tests (the old poll stopped inside the
+  handler): SIGUSR2 in a USR1 handler's `sa_mask` with no
+  handler, and the handler's own USR1 reset to `SIG_DFL` and
+  self-sent; after sigreturn each stops where the native child
+  dies. Regression tests (eligible signals were deferred under
+  the old poll too): signal 34 in `sa_mask` and the handler's own
+  USR1 with its handler, each delivered after sigreturn, equal to
+  O1-S. Each crosses several polls inside the handler. Mutant:
+  the poll reads the mirror again.
+- **Poll budget 0 handed to a handler** (found reading the code
+  in the H2 scope review; latent since I1-E; fixed in H2a). The
+  poll stub is `dec qword [poll]; jnz`, so every stop on the
+  poll path has a raw budget of 0. A delivery from there passed
+  the 0 to the handler, whose first `dec` wrapped it to 2^64 - 1:
+  no poll fired for the rest of the run. Every delivery from a
+  raw 0 now restarts the full budget (`resume_budget`, a pure
+  function of the stop state). The mid-block sigreturn re-base
+  refuses a raw 0 by name instead (lead review): every budget-0 stop
+  recovers to its block start and resumes through the block
+  index, so a 0 restored mid-block is a broken invariant, and
+  resetting it would hide the bug; a test seam presents it. The
+  seam counts poll exits so the fix is observable.
+- **W1 and W3** (**closed in H2b**). W1: a common-exit stop of a
+  RETURN, SYSCALL, NONDET or POLL exit is resumable. It recovers
+  to the exit's source PC with the terminator not yet run and
+  resumes through the exit stub's pristine entry (or the block
+  index), so the terminator runs once after the handler; a POLL
+  exit recovers to its block start. An INDIRECT (or unknown)
+  kind keeps the named refusal, pinned by a `jmp rax` fixture.
+  W3: a signal-delivery stop presented before the original
+  `cpuid` step runs is delivered at the `cpuid`, nothing
+  credited, and the `cpuid` is stepped once after sigreturn; a
+  three-part provenance guard (RIP, GPRs, RFLAGS exactly, against
+  the recorded pre-step copy, no TF exception) refuses any other
+  asynchronous stop by name, shown per part through a seam. The
+  restore invariant above extends to POLL-kind common-exit stops
+  (they recover to a block start), pinned on the PC map. Left
+  open by H2b: an asynchronous stop before a stepped syscall's
+  entry (the W3 sibling, closed in H2d: W3s below), and
+  kernel-generated signals during the original step (closed in
+  H3k, below). Liveness non-claim: W3 retries the `cpuid`
+  where a native run progresses, if an asynchronous signal (a
+  short-period timer, say) fires faster than the
+  deliver-and-retry round trip; before H2b that case was refused
+  by name. **Since H2c** the retry is bounded: after 64
+  consecutive W3 deliveries with no completed original step, the
+  next interrupt refuses by name (`BudgetExceeded`, "original
+  step interrupted without progress"); fail-closed liveness,
+  deterministic given the same delivery sequence. Ordering
+  condition (H2b lead review P3-3): the H2c test-hygiene items, a
+  one-shot `pre_redirected_step_signal` seam and the per-run
+  deadline in the other six ptrace test binaries
+  (remote_signal_rt, remote_signal, remote_registry,
+  remote_compare, o1_compare, custody), land in or before the
+  slice that closes the stepped-syscall stop. Closing that stop
+  with the seam still persistent would bring back the H2b
+  record-pass hang, in a binary with no deadline. **H2c lands
+  both**, so the stepped-syscall slice (H2d) comes after it.
+- **W3s** (**closed in H2d**,
+  [PR 86](https://github.com/rrnewton/liteinst2/pull/86)): an
+  asynchronous stop presented after a stepped `syscall` began
+  but before the kernel entered the call is delivered at the
+  `syscall`, with the call not made, and the call is stepped
+  again after sigreturn against the handler's registers,
+  memory and registry. A four-part guard (RIP, every GPR and
+  RFLAGS exactly against the recorded pre-step copy, and
+  `orig_rax` still -1) refuses by name any other asynchronous
+  entry-phase stop; a fault-set signal at entry (positive
+  `si_code`) still stops as a recovered fault, as before (since
+  H3k, a positive code on any other number stops as
+  `AsyncSignal` under the same guard). On a redirected (staged) step the scratch is restored
+  before anything is delivered, a failed restore refuses, and
+  the frame holds the guest's own argument register. W3 and
+  W3s share one delivery path. The retry is bounded per frame
+  depth, and for a `cpuid` also by H2c's aggregate, which is
+  checked first: the 65th interrupted step at one depth since
+  that depth last made progress refuses by name ("frame-depth
+  bound: cpuid step interrupted without progress", "...
+  syscall step ..."); a `cpuid` makes progress when it
+  completes, a syscall when it has entered the kernel, and a
+  sigreturn that abandons frames drops their counters.
+  Non-claims: no run-wide W3s budget (nested floods across
+  depths are bounded only per depth), and the sigreturn
+  interception's own entry stop stays refused by name. The
+  same PR sets `PTRACE_O_EXITKILL` for the remote substrate's
+  and both O1 oracles' traced children.
+- **H3k** (positive-code signals outside the fault set): a
+  signal whose `si_code` is positive and whose number is outside
+  the fault set (SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP,
+  SIGSYS), such as SIGALRM from `setitimer`, SIGCHLD or an
+  `F_SETSIG` signal, takes the path of a nonpositive-code signal
+  with no eligible handler at every arrival site and is never
+  delivered. Where the state is exact it is a recovered
+  `AsyncSignal` stop: in generated code, before an original step
+  or a stepped call's entry (under the W3 and W3s guards, reused
+  as they are), and at the frame-setup stub (at the first
+  handler's entry, nothing injected). At the I1-G2 restart exit
+  it is the existing "not eligible" refusal; elsewhere the
+  existing named refusals stand. §1's rule now holds for this
+  class too: the reported kind no longer depends on where the
+  signal landed (before H3k: `GuestFault`, `ExecutorError` or a
+  provenance refusal). Non-claims: no delivery or transparency
+  for the class; nonpositive kernel codes (`SI_TIMER`,
+  `SI_SIGIO`) keep the existing path, including delivery of an
+  admitted real-time number; a fault-set number with a positive
+  code keeps the fault path, including asynchronous positive
+  codes such as `BUS_MCEERR_AO`, and with a nonpositive code (a
+  `tgkill`-sent SIGSEGV, `SI_TKILL`) it stays asynchronous
+  (`Async`), as before.
+  **Capability limit.** A guest that installs a handler for such
+  a signal (a SIGALRM handler with `setitimer`, a SIGCHLD
+  handler, an `F_SETSIG` handler) gets that stop or refusal,
+  never its handler. That is the H3k rule, not a regression.
+  Delivering the class in a later stage would need, as the
+  delivery stages for nonpositive codes had:
+  1. provenance that stays unforgeable: a positive code is
+     kernel-only here because the pass-through gate admits
+     self-queueing only with `SI_QUEUE`;
+  2. a frame that carries the kernel's `siginfo` unchanged,
+     including its code-specific fields (`si_pid` and
+     `si_status` for `CLD_*`, `si_band` and `si_fd` for
+     `POLL_*`);
+  3. native comparisons per source (a real timer, a real child,
+     real I/O), including standard-signal coalescing and the
+     `F_SETSIG` queue;
+  4. a delivery arm with its own tests and mutants at every
+     arrival site: generated code, W3, W3s, the I1-G2 restart
+     exit and the frame-setup stub.
+- **W2 is closed by evidence, not code** (H1). The scope named
+  W2 as "generated PCs with no pcmap entry (the entry-loader
+  bridge class)", but the remote substrate has no such PCs. The
+  tracer enters every block by setting registers, so no
+  generated entry bridge exists, and every byte the remote
+  translation emits (exit style `TrapToDispatcher`) lies in
+  exactly one PC-map entry, contiguously. The H1 test
+  `w2_remote_translation_maps_every_generated_byte` checks this
+  for both sweep fixtures and every corpus-v1 fixture that
+  translates. The arena's only other code is the signal-entry
+  stub, which only a kernel delivery enters; an arrival there is
+  the I1-G1 back-to-back case. `resume_gen`'s unmapped-PC refusal
+  therefore has no reachable input in this substrate.
+- **H2 follow-ups from the H1 reviews** (recorded in H1; **done
+  in H2a**: `rf_at_hits` asserted at every hit, R5 recorded as
+  equivalent, and O1-S's handler entry pinned to `si_code ==
+  SIGTRAP` with the `!= TRAP_TRACE` clause dropped; the pin is
+  load-bearing, not redundant: an ignored signal re-injected over
+  a step whose registers happen to have the handler-argument
+  shape reports TRAP_TRACE, and a regression test covers it):
+  - The arrival seam's "ensure RF" step on non-final hits is
+    defence in depth. For an execute breakpoint the kernel's
+    `hw_breakpoint_handler` already sets `X86_EFLAGS_RF`
+    (`arch/x86/kernel/hw_breakpoint.c`, about line 562) before
+    the tracer reads RFLAGS, so a mutant that drops the step is
+    **equivalent** on this kernel (the lead review's R5 passes every
+    test). H2 records it as equivalent, and may assert that the
+    recorded `rf_at_hits` are all set, as a pin of the kernel
+    rule rather than of the seam.
+  - O1-S recognises the handler-entry stop without pinning its
+    `si_code`. Per the kernel source, `signal_delivered` calls
+    `ptrace_notify(SIGTRAP, 0)` when the tracee is stepping, and
+    `ptrace_do_notify` sets `si_code` to the exit code, so the
+    stop reports `si_code == SIGTRAP` (5), distinct from
+    `TRAP_TRACE` (2) and `TRAP_BRKPT` (1). H2 pins
+    `si_code == SIGTRAP` there; today's `si_code != TRAP_TRACE`
+    clause is redundant with the `rdi`/`rdx` frame tests (R3
+    survives).
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -343,7 +603,8 @@ rejected for exactly that reason.
 | I1-D One-signal round trip | Handler sees source PC/state; resume exact | Nesting, RT, altstack, mutation edge cases |
 | I1-E Arbitrary phases + sync faults | Boundary matrix matches native oracle | Nested/RT/restart completion |
 | I1-F Masks, altstack, nesting | Signal-state matrix matches native | RT queue payload/restart gaps named |
-| I1-G RT, payloads, restart | Ordering/coalescing matrix matches native | Only undisclosed gaps block claim |
+| I1-G1 RT, payloads, back-to-back | Ordering/coalescing/payload matrix matches native | Syscall restart, `SA_RESTART` |
+| I1-G2 Syscall restart | Restart matrix matches native | Only undisclosed gaps block claim |
 | I1-H Gate evidence | Differential + fuzz + mutants causal | Item-1 claim only after review |
 
 ### Stage detail
@@ -407,14 +668,26 @@ asynchronous-transparency claim beyond what I1-D tests.
 **I1-E — Arbitrary phases, synchronous faults, partial
 blocks.** Generalize I1-D across copied instructions,
 branch/count/poll stubs, call sequences, exit stubs, common
-exit, entry loader, and syscall entry/exit. Owns resume-PC
-block splitting: a resumed source PC mid-block gets an
-exact-start translation whose pre-credit excludes the retired
-prefix. Synchronous SIGSEGV/SIGBUS/SIGILL/SIGFPE preserve
-original fault fields; only instruction-address semantics
-translate to source form, data addresses stay raw. Still
-refused: nested delivery, alternate stack, real-time queueing
-semantics, uncovered restart cases.
+exit, entry loader, and syscall entry/exit. Resume-PC
+splitting as implemented: a mid-block resume re-enters the
+already-emitted generated insn exactly (copied/call-pristine/
+exit-pristine entries only) with the interrupted raw
+counters — which already carry the block precredit —
+re-based by the handler delta, so the retired prefix is
+never re-credited and no new translation is published; a
+handler-mutated resume PC must land on a block start or it
+fails closed. Synchronous delivery as implemented admits
+SIGSEGV/SIGFPE guest faults at copied insns only, preserves
+original fault fields (instruction-address `si_addr`
+rewritten to source form via `PTRACE_SETSIGINFO`, data
+addresses raw). Still refused in this stage's
+implementation: async stops in common-exit spilled stages
+or at generated PCs with no pcmap entry (entry-loader
+bridge class), async stops while stepping original/syscall
+insns, blocked-signal poll delivery, sync faults outside
+copied insns and other sync signals, nested delivery,
+alternate stack, real-time queueing semantics, uncovered
+restart cases.
 
 **I1-F — Masks, alternate stack, nesting.** Guest kernel
 state authoritative, mirror proven after every relevant
@@ -426,6 +699,32 @@ under a live frame. Active frames form an explicit tracer
 records stack; `rt_sigreturn` pops exactly one. Still refused:
 queued RT payload ordering beyond one pending instance,
 multi-threaded guests, uncovered restarted syscalls.
+As implemented in commit `736454bc`: async set is
+exactly SIGUSR1/SIGUSR2 (sync stays SIGSEGV/SIGFPE, empty
+frame stack only); flags are the I1-D base plus optional
+`SA_NODEFER`/`SA_ONSTACK` only, `sa_mask` arbitrary; the
+frame stack is capped at 8; `SA_ONSTACK` onto an enabled
+altstack needs size ≥ 8192 (disabled altstack keeps the
+kernel normal-stack fallback); poll deferral picks the
+lowest-numbered unblocked eligible pending signal (a pending
+signal the kernel shows as blocked does not stop the run at a
+poll: it stays pending, as natively, until the guest unblocks
+it and the kernel presents it; fixed after I1-G2 as the I1-H
+"W4" PR, whose test blocks SIGUSR1, receives it, runs past two
+poll exits, probes `rt_sigpending`, and then unblocks it. The
+blocked mask is the kernel's `SigBlk` at every poll since
+I1-H H2a, which closed W5: before, the poll used the mirror,
+which is not refreshed at handler entry, so a signal blocked
+only by a running handler's `sa_mask`, or by its own signal
+without `SA_NODEFER`, read as unblocked and, if ineligible,
+stopped the run early); and the self-send syscalls
+`getpid`/`kill` pass through with `kill` gated to the traced
+child's own pid (proven through `NSpid` since I1-H H2a). Evidence: mask matrix
+with in-handler mask query (NODEFER on/off), altstack frame
+placement, distinct-signal nesting and `SA_NODEFER`
+same-signal reentry by self-send with LIFO order words, and
+disposition change under a live frame, each translated vs
+the native child.
 
 **I1-G — Real-time ordering, payloads, syscall restart.**
 `SIGRTMIN..SIGRTMAX` kernel ordering (lowest first, FIFO
@@ -436,6 +735,269 @@ signals during pass-through syscalls with and without
 signals are not dequeued into tracer custody as the normal
 mechanism. Still refused: multi-threaded guests, `execve`
 successors (separately scoped), any unadmitted signal feature.
+Split into I1-G1 (everything but restart) and I1-G2
+(syscall restart).
+
+As implemented for I1-G1 in
+[PR 76](https://github.com/rrnewton/liteinst2/pull/76)
+(kernel citations are `kernel/signal.c` in the Linux 7.1.3
+source at `199c9959d3a9b53f346c221757fc7ac507fbac50`, the
+running kernel's version; the native child confirms each
+behaviour on the host):
+
+- *Delivery set.* Async delivery admits SIGUSR1/SIGUSR2 and
+  the RT range 34..=64 (glibc SIGRTMIN..SIGRTMAX) under the
+  unchanged I1-F flag/mask/altstack/8-frame bounds. 32 and 33
+  (reserved by glibc/NPTL) stay outside, for delivery and for
+  queueing: one predicate serves both. `SA_RESTART` actions
+  stay ineligible (admitted by I1-G2, below).
+- *Ordering is the kernel's.* The tracer only injects the
+  signal the kernel presents at each delivery stop, with the
+  kernel's own siginfo (no rebuild, no rewrite for async
+  signals), so lowest-first, FIFO within an RT number,
+  private-before-shared dequeue (`:629`, `:632`), and
+  standard-signal coalescing (`legacy_queue`, `:1061`, which
+  keeps the first payload and still returns 0) all come from
+  the kernel.
+- *Back-to-back frames.* With several unblocked signals
+  pending, the kernel builds the next frame before the
+  stub runs and reports that delivery stop at the stub entry.
+  The tracer validates the frame just built, records it, and
+  injects the next signal over that frame's guest-visible
+  handler entry (the source handler, never the stub), so the
+  second frame's ucontext names the first signal's source
+  handler exactly as natively. An ineligible next signal is a
+  recovered `AsyncSignal` stop at that source handler entry.
+- *Queueing gate.* `rt_sigqueueinfo` and `rt_tgsigqueueinfo`
+  pass through, stepped over a tracer-staged copy of the guest
+  siginfo, so the kernel copies exactly the bytes classified.
+  The gate reads and stages the whole 128-byte record as a
+  conservative policy; the kernel copies the 48-byte
+  `kernel_siginfo` prefix and checks the rest only for unknown
+  layouts (`__copy_siginfo_from_user`, `:3535`). Every
+  returned guest state — including a recovered asynchronous
+  stop before syscall entry — carries the guest's own pointer
+  argument, never the staging address. The I1-D
+  `rt_sigaction` stub redirect shares that restore path; it
+  previously leaked the scratch address in `rsi` on the same
+  stop (fixed here, pre-existing on `main`). A failed scratch
+  restore is a named refusal.
+  Calls the kernel provably refuses with no side effect step,
+  so the guest sees the kernel's own errno, equal to native:
+  a forged code (`si_code >= 0` or `SI_TKILL`) whose compared
+  target (`pid`, or `tid` for the tg form, as a 32-bit
+  `pid_t`) is not the caller gets `-EPERM` before any lookup
+  (`:4199`, tg `:4246`, after the tg form's `-EINVAL` for a
+  non-positive id at `:4240`); and the tg form with the
+  caller's own TID but a foreign TGID gets `-ESRCH` from
+  `do_send_specific` (`:4124`, `:4128`) whatever the code.
+  `si_signo` is not checked: the kernel overwrites it with the
+  requested signal (`:3540`), as natively.
+  **Deliberate divergences from native, all failing closed by
+  name (`NoHandler`):** (1) a forged code aimed at the caller
+  itself (own pid, or own TID and TGID) is accepted by Linux
+  but refused here, because delivering it would forge kernel
+  provenance (`SI_KERNEL` SIGTRAP reads as an exit trap, a
+  positive SIGSEGV code as a synchronous fault); (2) a
+  non-forged call aimed at another task (foreign pid, or a
+  foreign TID) is refused even where native would fail (a
+  nonexistent pid gets `ESRCH`), because nothing proves the
+  kernel would not queue it; (3) an unreadable 128-byte
+  siginfo is refused, though native could succeed when only
+  the tail beyond the 48-byte prefix is unreadable. Otherwise
+  only the tested shape steps: `SI_QUEUE`, an admitted
+  signal, and every target word (full 64-bit register) equal
+  to the child's own pid, proven to be its own-namespace pid
+  through `NSpid` (the guest is single-threaded, so its TID
+  and TGID equal its pid).
+  *Invariant:* staging is sound only while `mprotect` and
+  `pkey_*` are not passed through. The kernel reads the
+  tracer-written copy, so readability of the guest buffer is
+  decided by the tracer's `process_vm_readv` (which applies no
+  protection keys), not by the guest's `copy_from_user`;
+  recheck when either syscall family is admitted.
+- *Follow-ups (not blockers):* (a) **closed in I1-H H2a**: the
+  I1-F `kill` self-send gate compared the target with the
+  tracer's view of the child pid without the `NSpid` proof the
+  queueing gate uses; it now takes the same proof (exactly one
+  `NSpid` entry, ours), shown through a test seam that presents
+  a nested namespace to the proof only. (b) For native `EFAULT`
+  parity on an unreadable siginfo, a later stage may step
+  with the guest's original pointer only when the first 48
+  bytes are unreadable to the tracer, require `-EFAULT` as
+  the result (named stop otherwise), and never step when 48
+  bytes are readable but 128 are not.
+- *Evidence* (`tests/remote_signal_rt.rs`, translated vs the
+  native child): the RT order/retention/coalescing matrix
+  with kill-sent and forged-sender entries; back-to-back
+  frames for standard and RT pairs with a distinct handler
+  per signal (the second frame names the first signal's
+  handler, not its own); private-first `rt_tgsigqueueinfo`
+  with a 64-bit `sival_ptr`; kernel-refused calls with the
+  native errno (`EPERM`, `ESRCH`); a mismatched `si_signo`
+  overwritten as natively; the pointer argument registers
+  (`rsi`, `rdx`, `r10`) after every redirected syscall
+  compared with native; named refusals for forged self-sends,
+  foreign `SI_QUEUE` targets (including a tg call with both
+  ids naming a real process the test spawns, with nothing
+  queued in it), 32/33, an unmodelled flag word (`SA_RESTART`
+  at I1-G1, `SA_RESETHAND` since I1-G2 admitted `SA_RESTART`),
+  unreadable siginfo, and unadmitted signals; and, through a
+  test seam compiled only
+  with the test-only `test-seams` cargo feature (enabled for
+  the crate's own tests through a self dev-dependency, inert
+  unless a test sets it, and restoring scratch before it
+  reports its own failure) that signals the traced child
+  between staging and the step, the guest pointer argument in
+  recovered pre-entry stops for both queue forms and
+  `rt_sigaction`. No claim beyond the tested shapes.
+
+As implemented for I1-G2 in
+[PR 77](https://github.com/rrnewton/liteinst2/pull/77), from
+`main` `4210776c6485989dfb6ead7e61c745912d04e191` (kernel
+citations are `arch/x86/kernel/signal.c` in the same Linux
+7.1.3 source unless another file is named; the native child
+confirms each behaviour on the host):
+
+- *Interruptible set.* The pass-through set adds
+  `rt_sigsuspend`, `futex` and `nanosleep`. `futex` steps only
+  as `FUTEX_WAIT_PRIVATE` (128) with a NULL timeout, comparing
+  the full 64-bit `rsi` and `r10`; any other operation and any
+  timeout is refused by name before it runs (`NoHandler`),
+  because a timed wait returns `-ERESTART_RESTARTBLOCK`
+  (`kernel/futex/waitwake.c:728`) and would restart through
+  `restart_syscall`. `nanosleep` is the plain relative sleep;
+  `clock_nanosleep` is not passed through. Delivery at a
+  restart exit applies to these three calls only, classified
+  by the low 32 bits of `orig_rax` as the kernel dispatches
+  and as pass-through admission classifies (`0x1_000000ca`
+  runs futex and is delivered like it; the full `orig_rax`
+  stays the provenance check and a restart's frame RAX). Any
+  other pass-through call whose exit carries a restart code
+  keeps the named stop `syscall restart pending at exit stop`.
+  This is tested with a blocking `write`: the test harness
+  hands the child a pipe it has already filled to
+  `F_GETPIPE_SZ`.
+- *Delivery at the syscall exit.* An exit stop carrying
+  `-ERESTARTSYS`, `-ERESTARTNOHAND` or `-ERESTART_RESTARTBLOCK`
+  is not completion. The tracer resumes once with
+  `PTRACE_SYSCALL` and requires the interrupting signal's
+  delivery stop, with the restart code, `orig_rax` and RIP
+  (just after the syscall) unchanged. It injects an eligible
+  action with RAX still holding the code, so the kernel's own
+  `handle_signal` (`:264`-`:283`) applies the rule:
+  `NOHAND` and `RESTARTBLOCK` become `-EINTR`, and `SYS`
+  restarts (`ip -= 2`, `ax = orig_ax`) only under
+  `SA_RESTART`. The tracer predicts the outcome and the frame
+  must match it: ucontext RIP at the syscall (restart) or just
+  after it (`-EINTR`), and ucontext RAX the syscall number or
+  `-EINTR`. A mismatch is a named substrate refusal. With a
+  handler, `handle_signal` sets RIP and RAX together, so a
+  wrong prediction already fails the frame-RIP check; the RAX
+  check is defence in depth (it turns a tracer that corrupted
+  RAX before injection into a named stop instead of a wrong
+  syscall result).
+  `rt_sigsuspend`'s saved mask lands in the frame's
+  `uc_sigmask` and sigreturn restores it. That is the kernel's
+  doing, compared with native. On this path the tracer writes
+  only its own data page and, at sigreturn, the frame's saved
+  RIP (rewritten to the generated re-entry). `nanosleep`'s
+  remainder, like every syscall result, is written by the
+  kernel through the guest's own pointer.
+- *Restart resume and counts.* A restarted frame resumes at
+  the syscall and the call steps again. When the syscall is
+  mid-block, the resume is the I1-E exact mid-block re-entry:
+  the syscall's exit stub at its pristine stage, which retires
+  nothing, and the dispatcher re-bases the counters at
+  sigreturn (`tot = raw + (tot - resolved)`, with `raw` the
+  count before the syscall). When the syscall starts its own
+  block, the resume goes through the normal block index with
+  no re-base. The syscall instruction is credited once, at
+  completion: an `-EINTR` return credits it at delivery, a
+  restarted attempt is not credited, and the completed
+  restart is. A wrong restart credit is invisible on the
+  mid-block path (the re-base cancels it), so the block-start
+  path is tested too.
+- *Back-to-back.* With several unblocked signals pending at
+  the exit (for example, `rt_sigsuspend` unblocking two), the
+  I1-G1 loop builds back-to-back frames. The first frame
+  records the restart outcome; the next names the first
+  signal's source handler, with RAX 0 as the kernel leaves it
+  at handler entry. This widens the I1-G2 scope as first
+  proposed (several signals at a restart exit refused); the
+  lead review acknowledged the widening explicitly. Tested only
+  with an `-EINTR` bottom frame: a restarting bottom frame
+  under another frame is untested, because nothing makes two
+  signals reliably pending at a futex exit natively
+  (`rt_sigsuspend` has a mask but never restarts).
+- *Flags.* `SA_RESTART` joins the admitted flag words. Outside
+  a syscall restart it changes nothing, which is tested for an
+  RT handler. `SA_RESETHAND` and `SA_NOCLD*` stay ineligible.
+- **Not modelled, failing closed by name:** an interrupting
+  signal with no eligible action (no handler, default-ignored,
+  or otherwise ineligible) at a restart exit stops as
+  `syscall restart: signal not eligible for delivery`, with
+  nothing injected. Natively the kernel would restart the
+  call: a rewind for `SYS`, `NOHAND` and `NOINTR`, and
+  `restart_syscall` for `RESTARTBLOCK`
+  (`arch_do_signal_or_restart`, `:344`-`:359`). A
+  default-ignored signal reaches this stop only because the
+  child is traced (`sig_ignored`, `kernel/signal.c:121`);
+  natively it would be discarded at send.
+  `-ERESTARTNOINTR` (it always restarts, and no admitted
+  syscall produces it) and any unknown code are named stops.
+  So is a restart exit followed by a syscall stop instead of a
+  delivery stop.
+- *Evidence* (`tests/remote_signal_rt.rs`). Interruption is
+  external, and the signal lands only while the call sleeps.
+  A test thread polls until the child (translated or native)
+  is asleep in the expected syscall: `/proc/<pid>/syscall`
+  names it, the scheduler state is `S`, and `wchan` names a
+  kernel sleep site. The syscall number alone is not enough,
+  since it is already visible at a ptrace syscall-entry stop
+  (state `t`); a test holds a child there and checks that it
+  is not taken for asleep. The thread then waits 50 ms,
+  checks that the child is still asleep there, and signals
+  it through a pidfd opened while the child was known alive
+  and unreaped, so a reused pid cannot be hit. A 5 s bound on
+  sleeping and a 10 s bound after the send each fail the test
+  by name.
+  Translated vs native:
+  - `rt_sigsuspend` interrupted returns `-EINTR`, with and
+    without `SA_RESTART`, and the saved mask is restored;
+  - two pending signals released by `rt_sigsuspend` build
+    back-to-back frames;
+  - `FUTEX_WAIT_PRIVATE` restarts under `SA_RESTART` (the
+    handler changes the word, so the restarted wait returns
+    `-EAGAIN`) and returns `-EINTR` without it;
+  - `nanosleep` returns `-EINTR` even under `SA_RESTART`
+    (`RESTARTBLOCK` is not `RESTARTSYS`). Each child's
+    kernel-written remainder is bracketed by that child's
+    measured times: at most the request plus timer slack and
+    clock resolution minus the time from first seeing the
+    child asleep to sending (at least 50 ms), and at least the
+    request minus the whole run. A copied request fails;
+  - the futex wait issued as `0x1_000000ca` restarts like
+    native, with the full value as the frame's RAX;
+  - every case compares the frame's ucontext RIP, RAX and
+    saved mask;
+  - an interrupted blocking `write` (outside the delivery set)
+    keeps the named stop translated, while native shows the
+    handler and `-EINTR`.
+
+  A record-only test seam (`test-seams` feature) logs every
+  call to `write_mem`, the tracer's only guest-memory write
+  path. Every differential test asserts that the tracer wrote
+  nothing into the guest's data buffer. The `nanosleep` test
+  also asserts that the remainder pointer reaching the kernel
+  is the guest's own, so the remainder is the kernel's value,
+  never rewritten or synthesized.
+
+  Named refusals: the no-handler restart (SIGWINCH) for
+  `nanosleep` and for `futex`, the `futex` shapes outside the
+  bound, and `clock_nanosleep`. Counts are pinned to the
+  fixture formula, with each interrupted syscall credited
+  once. No claim beyond the tested shapes.
 
 **I1-H — Gate evidence and envelope rewrite.** Freeze the
 signal corpus, run the assigned differential/fuzz slices, and
@@ -443,3 +1005,9 @@ replace per-stage statements in `README.md`, `src/lib.rs`, and
 dispatcher documentation with one positive claim bounded
 exactly by the admitted matrix. Only after this stage's
 review may any result be called whole-program under §1.
+
+[#101]: https://github.com/rrnewton/liteinst2/issues/101
+[#102]: https://github.com/rrnewton/liteinst2/issues/102
+[#104]: https://github.com/rrnewton/liteinst2/issues/104
+[#106]: https://github.com/rrnewton/liteinst2/issues/106
+[#107]: https://github.com/rrnewton/liteinst2/issues/107

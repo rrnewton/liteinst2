@@ -142,7 +142,7 @@ fn host_page_size() -> Result<usize, SyscallRefusal> {
     ZpolineSledLayout::new(page_size, 0).map(|_| page_size)
 }
 
-struct DualMapping {
+pub(crate) struct DualMapping {
     fd: c_int,
     writable: *mut u8,
     executable: *mut u8,
@@ -157,13 +157,13 @@ impl DualMapping {
         Self::probe_at(len, 0, b"liteinst-zpoline-sled\0")
     }
 
-    fn probe_at(len: usize, address: u64, name: &[u8]) -> Result<Self, SyscallRefusal> {
+    pub(crate) fn probe_at(len: usize, address: u64, name: &[u8]) -> Result<Self, SyscallRefusal> {
         let mut mapping = Self::new_memfd(len, address, name)?;
         mapping.map_executable()?;
         Ok(mapping)
     }
 
-    fn probe_anywhere(len: usize, name: &[u8]) -> Result<Self, SyscallRefusal> {
+    pub(crate) fn probe_anywhere(len: usize, name: &[u8]) -> Result<Self, SyscallRefusal> {
         let mut mapping = Self::new_memfd(len, 0, name)?;
         // SAFETY: a fresh shared executable alias of the sized owned memfd;
         // the kernel chooses its address.
@@ -344,7 +344,7 @@ impl DualMapping {
         Ok(observed)
     }
 
-    fn publish_bytes(&mut self, bytes: &[u8]) -> Result<Vec<u8>, SyscallRefusal> {
+    pub(crate) fn publish_bytes(&mut self, bytes: &[u8]) -> Result<Vec<u8>, SyscallRefusal> {
         if bytes.len() != self.len
             || self.writable.is_null()
             || !self.executable_mapped
@@ -391,7 +391,7 @@ impl DualMapping {
         Ok(observed)
     }
 
-    fn unmap(&mut self) -> Result<(), SyscallRefusal> {
+    pub(crate) fn unmap(&mut self) -> Result<(), SyscallRefusal> {
         let writable = self.unmap_writable();
         let executable = self.unmap_executable();
         if self.fd >= 0 {
@@ -402,11 +402,15 @@ impl DualMapping {
         writable.and(executable)
     }
 
-    fn len(&self) -> usize {
+    pub(crate) fn address(&self) -> u64 {
+        self.address
+    }
+
+    pub(crate) fn len(&self) -> usize {
         self.len
     }
 
-    fn commit(mut self) -> Self {
+    pub(crate) fn commit(mut self) -> Self {
         self.committed = true;
         self
     }
@@ -628,7 +632,7 @@ impl Drop for DualMapping {
     }
 }
 
-fn qualify_host() -> Result<usize, SyscallRefusal> {
+pub(crate) fn qualify_host() -> Result<usize, SyscallRefusal> {
     let page_size = host_page_size()?;
     let leaf = core::arch::x86_64::__cpuid_count(7, 1);
     if leaf.edx & (1 << 21) != 0 {
@@ -788,7 +792,9 @@ fn scan_refusal(error: ScanError) -> SyscallRefusal {
 /// dynamic syscall wrapper therefore needs a stronger future certificate and
 /// is not admitted by merely naming one observed number as a guess.
 pub struct ZpolineSite<'a> {
-    /// Frozen strategy selection; its strategy must be `Zpoline`.
+    /// Frozen strategy selection; `Zpoline` for eager preparation, or
+    /// `Lazypoline` when the site is certified for lazypoline patch
+    /// application through the SUD substrate.
     pub config: SyscallStrategyConfig,
     /// Actual mapping incarnation and generation.
     pub identity: CodeIdentity,
@@ -824,8 +830,30 @@ pub struct PreparedZpoline {
 impl PreparedZpoline {
     /// Validates the certified site and builds the exact-syscall handler plan.
     pub fn prepare(site: ZpolineSite<'_>) -> Result<Self, SyscallRefusal> {
+        Self::prepare_inner(site, None)
+    }
+
+    /// Lazypoline preparation: identical certification and plan to
+    /// [`Self::prepare`], but the strategy may be `Lazypoline` and the
+    /// genuine-syscall delegate is supplied by the discovery substrate (the
+    /// SUD gateway forwarder), because the selected callback's own syscall
+    /// instruction would itself be dispatched while SUD is enabled.
+    pub(crate) fn prepare_lazy(
+        site: ZpolineSite<'_>,
+        delegate: HookCallback,
+    ) -> Result<Self, SyscallRefusal> {
+        Self::prepare_inner(site, Some(delegate))
+    }
+
+    fn prepare_inner(
+        site: ZpolineSite<'_>,
+        delegate_override: Option<HookCallback>,
+    ) -> Result<Self, SyscallRefusal> {
         site.config.validate()?;
-        if site.config.strategy() != SyscallStrategy::Zpoline {
+        let lazy = delegate_override.is_some();
+        if site.config.strategy() != SyscallStrategy::Zpoline
+            && !(lazy && site.config.strategy() == SyscallStrategy::Lazypoline)
+        {
             return Err(SyscallRefusal::InvalidConfig {
                 field: "strategy",
                 reason: "zpoline site requires the zpoline strategy",
@@ -915,7 +943,10 @@ impl PreparedZpoline {
                 })?,
         )
         .map_err(core_refusal)?;
-        let delegate = syscall_callback(&instruction).map_err(core_refusal)?;
+        let delegate = match delegate_override {
+            Some(delegate) => delegate,
+            None => syscall_callback(&instruction).map_err(core_refusal)?,
+        };
 
         let scan = InstructionScanner::default()
             .scan(site.code, site.base_address)
@@ -1453,7 +1484,8 @@ unsafe fn retire_inner(
 pub struct PlacementCounts {
     /// Near handler/dispatcher allocations.
     pub near_allocation: usize,
-    /// Memfd dual-mapped sled/dispatcher backings.
+    /// Memfd dual-mapped backings retained for the sled, dispatcher, and
+    /// each per-site handler trampoline.
     pub memfd_dual_map: usize,
     /// Low-page sled mappings (zero or one in this slice).
     pub low_page: usize,
@@ -1468,7 +1500,7 @@ pub struct PlacementCounts {
 pub struct ZpolineMetrics {
     /// Sites currently rewritten by zpoline.
     pub rewritten_zpoline: usize,
-    /// Sites currently rewritten by lazypoline (always zero in slice 3).
+    /// Sites currently rewritten by lazypoline.
     pub rewritten_lazypoline: usize,
     /// Sites left to a trap substrate.
     pub trap: usize,
@@ -1555,7 +1587,23 @@ impl PreparedZpolineSet {
 
     /// Prepares an explicitly certified batch in one snapshot/identity.
     /// Every named site must be eligible; use `census` for mixed outcomes.
-    pub fn prepare_batch(mut sites: Vec<ZpolineSite<'_>>) -> Result<Self, SyscallRefusal> {
+    pub fn prepare_batch(sites: Vec<ZpolineSite<'_>>) -> Result<Self, SyscallRefusal> {
+        Self::prepare_batch_inner(sites, None)
+    }
+
+    /// Lazypoline batch preparation with the substrate gateway delegate;
+    /// see [`PreparedZpoline::prepare_lazy`].
+    pub(crate) fn prepare_lazy_batch(
+        sites: Vec<ZpolineSite<'_>>,
+        delegate: HookCallback,
+    ) -> Result<Self, SyscallRefusal> {
+        Self::prepare_batch_inner(sites, Some(delegate))
+    }
+
+    fn prepare_batch_inner(
+        mut sites: Vec<ZpolineSite<'_>>,
+        delegate_override: Option<HookCallback>,
+    ) -> Result<Self, SyscallRefusal> {
         let first = sites.first().ok_or(SyscallRefusal::InvalidConfig {
             field: "sites",
             reason: "batch requires at least one site",
@@ -1582,7 +1630,7 @@ impl PreparedZpolineSet {
                 return Err(SyscallRefusal::DependencyNotHeld);
             }
             outcomes.push((site.logical_pc, crate::syscall::SiteOutcome::Trap));
-            prepared.push(PreparedZpoline::prepare(site)?);
+            prepared.push(PreparedZpoline::prepare_inner(site, delegate_override)?);
         }
         let sled_layout = prepared[0].sled_layout;
         Self::from_prepared(
@@ -2133,6 +2181,11 @@ unsafe fn publish_set_inner(
             .expect("handler was retained through publication")
             .publish_program_counter_mappings();
     }
+    let rewritten = if retained.prepared.config.strategy() == SyscallStrategy::Lazypoline {
+        crate::syscall::SiteOutcome::RewrittenLazypoline
+    } else {
+        crate::syscall::SiteOutcome::RewrittenZpoline
+    };
     for outcome in &mut retained.outcomes {
         if retained
             .prepared
@@ -2140,7 +2193,7 @@ unsafe fn publish_set_inner(
             .iter()
             .any(|site| site.logical_pc == outcome.0)
         {
-            outcome.1 = crate::syscall::SiteOutcome::RewrittenZpoline;
+            outcome.1 = rewritten;
         }
     }
     retained.placement = PlacementCounts {
@@ -2148,7 +2201,7 @@ unsafe fn publish_set_inner(
             + usize::from(
                 retained.dispatcher_family == crate::syscall::PlacementFamily::NearAllocation,
             ),
-        memfd_dual_map: 2,
+        memfd_dual_map: retained.prepared.sites.len() + 2,
         low_page: 1,
         two_hop_veneer: 1,
         trap: retained
@@ -2272,13 +2325,99 @@ unsafe fn retire_set_inner(
         return Err(keep(reason));
     }
     for outcome in &mut retained.outcomes {
-        if outcome.1 == crate::syscall::SiteOutcome::RewrittenZpoline {
+        if matches!(
+            outcome.1,
+            crate::syscall::SiteOutcome::RewrittenZpoline
+                | crate::syscall::SiteOutcome::RewrittenLazypoline
+        ) {
             outcome.1 = crate::syscall::SiteOutcome::Trap;
         }
     }
     retained.verified = false;
     retained.write_attempted = false;
     Ok(())
+}
+
+#[cfg(test)]
+impl InstalledZpolineSet {
+    /// Builds a retained batch with its hook table published, without
+    /// mapping or writing anything, so wrapper-custody tests can watch the
+    /// table allocation. Returns the owner and the hook-table address.
+    pub(crate) fn retained_for_test(delegate: HookCallback) -> (Box<Self>, usize) {
+        use liteinst::contracts::{EntryProvenance, LegalEntry, SourceIdentity};
+        const BASE: u64 = 0x40_0000;
+        let code: &[u8] = &[0x0f, 0x05, 0xc3];
+        let identity = CodeIdentity {
+            source: SourceIdentity([7; 32]),
+            mapping: 11,
+            generation: 3,
+        };
+        let entries = LegalEntrySet {
+            identity,
+            scope: AddressRange::new(BASE, code.len()).unwrap(),
+            provenance: EntryProvenance::Declared("retained-for-test fixture".into()),
+            completeness: EntryCompleteness::Complete,
+            entries: vec![LegalEntry {
+                address: BASE,
+                requires_endbr: false,
+            }],
+            resumes: ResumeObligation::NoneExist,
+        };
+        let prepared = PreparedZpolineSet::prepare_lazy_batch(
+            vec![ZpolineSite {
+                config: SyscallStrategyConfig::new(SyscallStrategy::Lazypoline),
+                identity,
+                code,
+                base_address: BASE,
+                logical_pc: BASE,
+                entries: &entries,
+                syscall_nr: 39,
+            }],
+            delegate,
+        )
+        .unwrap();
+        let hook_sites: Vec<HookSite> = prepared
+            .sites
+            .iter()
+            .map(|site| HookSite {
+                logical_pc: site.logical_pc,
+                return_pc: site.return_pc,
+                syscall_nr: site.syscall_nr,
+                delegate: site.delegate,
+            })
+            .collect();
+        let outcomes = vec![(BASE, crate::syscall::SiteOutcome::RewrittenLazypoline)];
+        let retained = Box::new(Self {
+            prepared,
+            hook_sites: hook_sites.into_boxed_slice(),
+            sled: None,
+            dispatcher: None,
+            dispatcher_address: 0,
+            dispatcher_family: crate::syscall::PlacementFamily::Trap,
+            dispatcher_attempts: 0,
+            sites: vec![InstalledSiteState {
+                trampoline: None,
+                observed_handler: Vec::new(),
+            }],
+            observed_source: vec![0; code.len()],
+            observed_sled: Vec::new(),
+            observed_dispatcher: Vec::new(),
+            outcomes,
+            placement: PlacementCounts::default(),
+            stale: false,
+            captured: false,
+            verified: true,
+            write_attempted: false,
+        });
+        publish_hook_sites(&retained.hook_sites);
+        let hook_ptr = retained.hook_sites.as_ptr() as usize;
+        (retained, hook_ptr)
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn clear_hook_state_for_test() {
+    clear_hook_state();
 }
 
 #[cfg(test)]

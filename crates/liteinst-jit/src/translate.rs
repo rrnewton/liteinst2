@@ -21,11 +21,11 @@ use crate::pcmap::{
 use crate::refuse::Refuse;
 use crate::state::SCRATCH_LEN;
 use crate::state::{
-    OFF_BRANCH_COUNT, OFF_EXIT_KIND, OFF_EXIT_NEXT, OFF_EXIT_SRC, OFF_HOST_R12, OFF_HOST_R13,
-    OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP, OFF_HOST_RBX, OFF_HOST_RSP, OFF_INSTRUCTION_COUNT,
-    OFF_POLL, OFF_SCRATCH, OFF_SPILL_FLAGS, OFF_SPILL_RAX, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11,
-    ST_R12, ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS,
-    ST_RSI, ST_RSP, exit_kind,
+    OFF_BRANCH_COUNT, OFF_BUDGET, OFF_EXIT_KIND, OFF_EXIT_NEXT, OFF_EXIT_SRC, OFF_HOST_R12,
+    OFF_HOST_R13, OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP, OFF_HOST_RBX, OFF_HOST_RSP,
+    OFF_INSTRUCTION_COUNT, OFF_POLL, OFF_SCRATCH, OFF_SPILL_FLAGS, OFF_SPILL_RAX, OFF_STATE, ST_R8,
+    ST_R9, ST_R10, ST_R11, ST_R12, ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI,
+    ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
 use crate::types::{CountProfile, RegionFacts};
 
@@ -110,6 +110,9 @@ pub struct Translation {
     pub pcmap: PcMap,
     pub block_gen: BTreeMap<u64, u64>,
     pub blocks: BTreeMap<u64, Block>,
+    /// Whether every branch credit stub carries the remaining-RCB
+    /// budget check ([`TranslateOptions::rcb_budget`]).
+    pub rcb_budget: bool,
 }
 
 fn check_interior(decoded: &BTreeMap<u64, usize>, target: u64) -> Result<(), Refuse> {
@@ -124,15 +127,52 @@ fn check_interior(decoded: &BTreeMap<u64, usize>, target: u64) -> Result<(), Ref
 
 /// Discover all blocks reachable from `entry` over direct edges.
 pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>, Refuse> {
+    discover_roots(region, &BTreeSet::from([entry]))
+}
+
+/// Discover all blocks reachable over direct edges from every root
+/// in the sorted set `roots` (P1b.1 closure retranslation), with
+/// P1a's own rules: blocks split at every start so they never
+/// overlap, and two streams that disagree on instruction boundaries
+/// refuse `InteriorEntry`. The result is a function of the region
+/// bytes and the root set; for `{entry}` it is [`discover`]'s.
+pub fn discover_roots(
+    region: &RegionFacts,
+    roots: &BTreeSet<u64>,
+) -> Result<BTreeMap<u64, Block>, Refuse> {
+    discover_roots_excluding(region, roots, &[])
+}
+
+/// As [`discover_roots`], with `holes`: half-open ranges the caller
+/// reported unmapped (a [`crate::types::MappingEvent`] without a
+/// region). Nothing in a hole is decoded. Reaching one from a root,
+/// by straight-line flow or by a direct edge refuses
+/// [`Refuse::UnmappedCode`]; return, indirect, syscall and nondet
+/// successors in a hole are left to the dispatcher, which refuses
+/// them the same way when control gets there.
+pub fn discover_roots_excluding(
+    region: &RegionFacts,
+    roots: &BTreeSet<u64>,
+    holes: &[(u64, u64)],
+) -> Result<BTreeMap<u64, Block>, Refuse> {
+    let in_hole = |pc: u64| holes.iter().any(|&(s, e)| s <= pc && pc < e);
+    let unmapped = |pc: u64| Refuse::UnmappedCode {
+        src_pc: pc,
+        generation: region.generation.0,
+    };
     if !region.immutable_private {
         return Err(Refuse::SelfModifyingOrWritableCode { src: region.base });
     }
-    if !region.contains(entry) {
-        return Err(Refuse::InteriorEntry { target: entry });
+    if let Some(&r) = roots.iter().find(|r| in_hole(**r)) {
+        return Err(unmapped(r));
+    }
+    if let Some(&outside) = roots.iter().find(|r| !region.contains(**r)) {
+        return Err(Refuse::InteriorEntry { target: outside });
     }
     let mut blocks: BTreeMap<u64, Block> = BTreeMap::new();
-    let mut starts: BTreeSet<u64> = BTreeSet::from([entry]);
-    let mut work: Vec<u64> = vec![entry];
+    let mut starts: BTreeSet<u64> = roots.clone();
+    // Popped in ascending order; a single root is P1a's work list.
+    let mut work: Vec<u64> = roots.iter().rev().copied().collect();
     let mut decoded: BTreeMap<u64, usize> = BTreeMap::new();
     let mut decoder = SupportedDecoder::new(&region.bytes, region.base);
     while let Some(start) = work.pop() {
@@ -174,9 +214,17 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
             if pc != start && starts.contains(&pc) {
                 break (None, Terminator::Fallthrough { next: pc }, vec![pc]);
             }
+            if in_hole(pc) {
+                return Err(unmapped(pc));
+            }
             let d = decoder.next_supported()?;
             decoded.insert(pc, d.len);
             let next = pc.wrapping_add(d.len as u64);
+            // An instruction that runs into a hole is refused whole:
+            // its tail bytes are no longer admitted code.
+            if holes.iter().any(|&(s, _)| pc < s && s < next) {
+                return Err(unmapped(pc));
+            }
             // A queued or built block start strictly inside this
             // instruction means two reachable streams disagree on
             // instruction boundaries: refuse, never pick one.
@@ -243,7 +291,17 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
             },
         );
         for s in successors {
-            if region.contains(s) {
+            if in_hole(s) {
+                // A direct edge into a hole would chain into code that
+                // is no longer admitted: refuse at the branch. Other
+                // successors exit to the dispatcher, which refuses.
+                if matches!(
+                    terminator,
+                    Terminator::Jump { .. } | Terminator::Call { .. } | Terminator::Cond { .. }
+                ) {
+                    return Err(unmapped(term_pc.unwrap_or(start)));
+                }
+            } else if region.contains(s) {
                 check_interior(&decoded, s)?;
                 if starts.insert(s) {
                     work.push(s);
@@ -270,6 +328,7 @@ enum FixTarget {
     Block(u64),
     CountStub { branch: u64, successor: u64 },
     PollExit(u64),
+    BudgetExit(u64),
     CommonExit,
 }
 
@@ -287,6 +346,10 @@ struct Emitter {
     fixups: Vec<(usize, FixTarget)>,
     stubs: Vec<(u64, u64)>,
     poll_exits: Vec<u64>,
+    /// Emit the remaining-RCB budget check in branch credit stubs.
+    rcb_budget: bool,
+    /// Successors that need a `BUDGET` exit stub, in first-use order.
+    budget_exits: Vec<u64>,
 }
 
 impl Emitter {
@@ -435,6 +498,45 @@ impl Emitter {
             }
             Ok(())
         })?;
+        // Remaining-RCB budget (budgeted translations only). The
+        // credit above has retired the branch; count the budget
+        // down and, at zero, leave through the successor's BUDGET
+        // exit with guest flags and RAX restored. Flags are still
+        // spilled here, so `dec` may clobber them.
+        if let (true, StubKind::Branch { successor, .. }) = (self.rcb_budget, mk) {
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                let d = e.disp(OFF_BUDGET, 7)?;
+                e.buf.extend_from_slice(&[0x48, 0xff, 0x0d]); // dec qword [rip+d]
+                e.buf.extend_from_slice(&d.to_le_bytes());
+                Ok(())
+            })?;
+            // jnz over the budget path (restore-A 17 + jmp 5 = 22)
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.buf.extend_from_slice(&[0x75, 22]);
+                Ok(())
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.mov_rax_mem(OFF_SPILL_FLAGS)
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.buf.extend_from_slice(&[0x04, 0x7f]);
+                Ok(())
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+                e.buf.push(0x9e);
+                Ok(())
+            })?;
+            self.seg(src, Phase::CountStub, rec(AfterCreditFlagsRestored), |e| {
+                e.mov_rax_mem(OFF_SPILL_RAX)
+            })?;
+            if !self.budget_exits.contains(&successor) {
+                self.budget_exits.push(successor);
+            }
+            self.seg(src, Phase::CountStub, rec(Committed), |e| {
+                e.jmp_fix(FixTarget::BudgetExit(successor));
+                Ok(())
+            })?;
+        }
         self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
             e.mov_rax_mem(OFF_SPILL_FLAGS)
         })?;
@@ -773,7 +875,81 @@ pub fn translate_with_exit_style(
     data_addr: u64,
     exit_style: ExitStyle,
 ) -> Result<Translation, Refuse> {
-    let blocks = discover(region, entry)?;
+    translate_with_options(
+        region,
+        entry,
+        profile,
+        gen_base,
+        data_addr,
+        TranslateOptions {
+            exit_style,
+            rcb_budget: false,
+        },
+    )
+}
+
+/// Emission options beyond the count profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TranslateOptions {
+    pub exit_style: ExitStyle,
+    /// Add the remaining-RCB budget check to every branch credit
+    /// stub (`JitData::budget_remaining`, `exit_kind::BUDGET`).
+    /// Off, emission is byte-identical to [`translate_with_exit_style`].
+    pub rcb_budget: bool,
+}
+
+/// As [`translate_with_exit_style`], with every emission option.
+pub fn translate_with_options(
+    region: &RegionFacts,
+    entry: u64,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
+    translate_roots_with_options(
+        region,
+        entry,
+        &BTreeSet::from([entry]),
+        profile,
+        gen_base,
+        data_addr,
+        options,
+    )
+}
+
+/// As [`translate_with_options`], for every block reachable from the
+/// sorted root set `roots` (P1b.1 closure retranslation; `roots`
+/// holds `entry`). Blocks are emitted in source order exactly as
+/// for one root, so for `roots == {entry}` the emitted bytes are
+/// [`translate_with_options`]'s; a larger set re-emits the region
+/// and moves generated PCs.
+pub fn translate_roots_with_options(
+    region: &RegionFacts,
+    entry: u64,
+    roots: &BTreeSet<u64>,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
+    let blocks = discover_roots(region, roots)?;
+    translate_blocks(region, entry, blocks, profile, gen_base, data_addr, options)
+}
+
+/// Emit `blocks`, as discovered by [`discover_roots`] or
+/// [`discover_roots_excluding`] over `region`, exactly as
+/// [`translate_roots_with_options`] emits its own discovery.
+pub fn translate_blocks(
+    region: &RegionFacts,
+    entry: u64,
+    blocks: BTreeMap<u64, Block>,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    options: TranslateOptions,
+) -> Result<Translation, Refuse> {
+    let exit_style = options.exit_style;
     let mut e = Emitter {
         buf: Vec::new(),
         gen_base,
@@ -782,6 +958,8 @@ pub fn translate_with_exit_style(
         fixups: Vec::new(),
         stubs: Vec::new(),
         poll_exits: Vec::new(),
+        rcb_budget: options.rcb_budget,
+        budget_exits: Vec::new(),
     };
     let mut block_gen: BTreeMap<u64, u64> = BTreeMap::new();
     let mut stub_gen: HashMap<(u64, u64), u64> = HashMap::new();
@@ -985,6 +1163,12 @@ pub fn translate_with_exit_style(
         stub_gen.insert((branch, successor), e.pc());
         e.count_stub_body(branch, successor)?;
     }
+    let mut budget_gen: HashMap<u64, u64> = HashMap::new();
+    let pending_budget: Vec<u64> = e.budget_exits.clone();
+    for successor in pending_budget {
+        budget_gen.insert(successor, e.pc());
+        e.exit_stub(exit_kind::BUDGET, successor, successor)?;
+    }
     let mut poll_gen: HashMap<u64, u64> = HashMap::new();
     let pending_polls: Vec<u64> = e.poll_exits.clone();
     for block in pending_polls {
@@ -1003,6 +1187,9 @@ pub fn translate_with_exit_style(
             FixTarget::PollExit(block) => *poll_gen
                 .get(&block)
                 .ok_or(Refuse::InteriorEntry { target: block })?,
+            FixTarget::BudgetExit(successor) => *budget_gen
+                .get(&successor)
+                .ok_or(Refuse::InteriorEntry { target: successor })?,
             FixTarget::CommonExit => common_exit,
         };
         let next = gen_base.wrapping_add(at as u64).wrapping_add(4);
@@ -1020,6 +1207,7 @@ pub fn translate_with_exit_style(
         pcmap: e.pcmap,
         block_gen,
         blocks,
+        rcb_budget: options.rcb_budget,
     })
 }
 
@@ -1027,6 +1215,7 @@ pub fn translate_with_exit_style(
 mod tests {
     use super::*;
     use crate::types::Generation;
+    use liteinst_x86::{OpKind, Register};
 
     fn region(bytes: Vec<u8>) -> RegionFacts {
         RegionFacts {
@@ -1089,7 +1278,13 @@ mod tests {
             ("movaps-xmm", &[0x0f, 0x28, 0xc1, 0xc3]),
             ("popfq", &[0x9d, 0xc3]),
             ("swapgs", &[0x0f, 0x01, 0xf8, 0xc3]),
-            ("fs-load", &[0x64, 0x48, 0x8b, 0x04, 0x25, 0, 0, 0, 0, 0xc3]),
+            // FS/GS memory operands are admitted; these segment forms
+            // stay refused (decode.rs pins each reason).
+            ("mov-to-fs", &[0x8e, 0xe0, 0xc3]),
+            ("pop-gs", &[0x0f, 0xa9, 0xc3]),
+            ("fs-rip-load", &[0x64, 0x48, 0x8b, 0x05, 0, 0, 0, 0, 0xc3]),
+            ("fs-movsb", &[0x64, 0xa4, 0xc3]),
+            ("fs-nop", &[0x64, 0x90, 0xc3]),
             // R1 hidden-state families (decode-only; never executed).
             ("wrpkru", &[0x0f, 0x01, 0xef, 0xc3]),
             ("rdpkru", &[0x0f, 0x01, 0xee, 0xc3]),
@@ -1132,7 +1327,7 @@ mod tests {
 
     #[test]
     fn every_emitted_byte_is_mapped_contiguously() {
-        // The exact Astra F1 counterexample shape, both profiles.
+        // The exact external review F1 counterexample shape, both profiles.
         let bytes = vec![0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
         for profile in [
             CountProfile::Branches,
@@ -1168,6 +1363,135 @@ mod tests {
         );
     }
 
+    /// Segment overrides: a copied instruction keeps its segment prefix. Non-RIP
+    /// forms are copied byte for byte; a RIP-relative one is
+    /// re-encoded with its prefix and the same absolute target.
+    #[test]
+    fn segment_prefixed_copies_keep_their_prefix() {
+        let src: &[&[u8]] = &[
+            &[0x64, 0x48, 0x8b, 0x04, 0x25, 0x28, 0, 0, 0], // mov rax, fs:[0x28]
+            &[0x64, 0x48, 0x89, 0x0c, 0x25, 0x28, 0, 0, 0], // mov fs:[0x28], rcx
+            &[0x65, 0x48, 0x8b, 0x00],                      // mov rax, gs:[rax]
+            &[0x2e, 0x48, 0x8b, 0x03],                      // mov rax, cs:[rbx]
+            &[0x3e, 0x48, 0x8b, 0x05, 0x10, 0, 0, 0],       // mov rax, ds:[rip+0x10]
+            &[0xc3],
+        ];
+        let bytes: Vec<u8> = src.concat();
+        let r = region(bytes.clone());
+        for exit_style in [ExitStyle::ReturnToDispatcher, ExitStyle::TrapToDispatcher] {
+            let t = translate_with_exit_style(
+                &r,
+                0x10_0000,
+                CountProfile::BranchesAndInstructions,
+                0x80_0000,
+                0x81_0000,
+                exit_style,
+            )
+            .unwrap();
+            let mut pc = 0x10_0000u64;
+            for (i, s) in src[..src.len() - 1].iter().enumerate() {
+                let e = t
+                    .pcmap
+                    .entries()
+                    .iter()
+                    .find(|e| e.phase == Phase::Copied && e.src_pc == pc)
+                    .unwrap_or_else(|| panic!("insn {i}: no copied entry"));
+                let at = (e.gen_start - 0x80_0000) as usize;
+                let out = &t.code[at..(e.gen_end - 0x80_0000) as usize];
+                let orig = crate::decode::decode_one(s, pc).unwrap().instruction;
+                if orig.is_ip_rel_memory_operand() {
+                    assert_ne!(out, *s, "insn {i}: RIP-relative copy was re-encoded");
+                    let copy = crate::decode::decode_one(out, e.gen_start)
+                        .unwrap()
+                        .instruction;
+                    assert_eq!(copy.len(), s.len(), "insn {i}: re-encoded length");
+                    assert_eq!(
+                        copy.segment_prefix(),
+                        orig.segment_prefix(),
+                        "insn {i}: re-encode kept the segment prefix"
+                    );
+                    assert_eq!(
+                        copy.memory_displacement64(),
+                        orig.memory_displacement64(),
+                        "insn {i}: re-encode kept the absolute target"
+                    );
+                } else {
+                    assert_eq!(out, *s, "insn {i}: segment-prefixed copy is byte-exact");
+                }
+                pc += s.len() as u64;
+            }
+        }
+    }
+
+    /// Segment overrides: no emitted machinery (count, poll, budget, call, exit and
+    /// common-exit stubs, the copied-branch encodings) carries a
+    /// segment override or names a segment register, in either exit
+    /// style, with the budget option on or off: JitData and the
+    /// remote arena are addressed RIP-relatively and never through
+    /// FS or GS. Only guest copies (non-terminator block
+    /// instructions) are skipped.
+    #[test]
+    fn machinery_never_uses_a_segment_override() {
+        let mut checked = 0;
+        for f in crate::fixtures::all() {
+            let r = region(f.bytes.clone());
+            for exit_style in [ExitStyle::ReturnToDispatcher, ExitStyle::TrapToDispatcher] {
+                for rcb_budget in [false, true] {
+                    let Ok(t) = translate_with_options(
+                        &r,
+                        0x10_0000,
+                        CountProfile::BranchesAndInstructions,
+                        0x80_0000,
+                        0x81_0000,
+                        TranslateOptions {
+                            exit_style,
+                            rcb_budget,
+                        },
+                    ) else {
+                        continue;
+                    };
+                    let guest: BTreeMap<u64, usize> = t
+                        .blocks
+                        .values()
+                        .flat_map(|b| b.insns.iter().map(|d| (d.pc, d.len)))
+                        .collect();
+                    for e in t.pcmap.entries() {
+                        let len = (e.gen_end - e.gen_start) as usize;
+                        if e.phase == Phase::Copied && guest.get(&e.src_pc) == Some(&len) {
+                            continue;
+                        }
+                        let mut g = e.gen_start;
+                        while g < e.gen_end {
+                            let at = (g - 0x80_0000) as usize;
+                            let end = (e.gen_end - 0x80_0000) as usize;
+                            let d = crate::decode::decode_one(&t.code[at..end], g)
+                                .unwrap_or_else(|| panic!("{}: undecodable at {g:#x}", f.name));
+                            let ins = d.instruction;
+                            assert_eq!(
+                                ins.segment_prefix(),
+                                Register::None,
+                                "{}: machinery segment override at {g:#x} ({:?})",
+                                f.name,
+                                e.phase
+                            );
+                            for i in 0..ins.op_count() {
+                                assert!(
+                                    !(ins.op_kind(i) == OpKind::Register
+                                        && ins.op_register(i).is_segment_register()),
+                                    "{}: machinery segment register at {g:#x}",
+                                    f.name
+                                );
+                            }
+                            g += d.len as u64;
+                            checked += 1;
+                        }
+                    }
+                }
+            }
+        }
+        assert!(checked > 1000, "machinery instructions checked: {checked}");
+    }
+
     #[test]
     fn translation_maps_every_block() {
         let bytes = vec![0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
@@ -1176,6 +1500,74 @@ mod tests {
         assert_eq!(t.block_gen.len(), 3);
         for &g in t.block_gen.values() {
             assert!(t.pcmap.lookup(g).is_some(), "gen {g:#x} unmapped");
+        }
+    }
+
+    /// The budget option: off, emission equals the default path
+    /// (the pre-change bytes themselves are pinned by
+    /// tests/streaming_golden.rs); on, every branch stub grows by
+    /// exactly the budget sequence, one BUDGET exit stub exists per
+    /// distinct successor, and every emitted byte stays mapped.
+    #[test]
+    fn budget_option_emission() {
+        let bytes = vec![0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
+        for exit_style in [ExitStyle::ReturnToDispatcher, ExitStyle::TrapToDispatcher] {
+            let r = region(bytes.clone());
+            let opts = |rcb_budget: bool| TranslateOptions {
+                exit_style,
+                rcb_budget,
+            };
+            let base = translate_with_exit_style(
+                &r,
+                0x10_0000,
+                CountProfile::Branches,
+                0x80_0000,
+                0x81_0000,
+                exit_style,
+            )
+            .unwrap();
+            let off = translate_with_options(
+                &r,
+                0x10_0000,
+                CountProfile::Branches,
+                0x80_0000,
+                0x81_0000,
+                opts(false),
+            )
+            .unwrap();
+            let on = translate_with_options(
+                &r,
+                0x10_0000,
+                CountProfile::Branches,
+                0x80_0000,
+                0x81_0000,
+                opts(true),
+            )
+            .unwrap();
+            assert_eq!(
+                base.code, off.code,
+                "{exit_style:?}: option off moved bytes"
+            );
+            assert!(!off.rcb_budget && on.rcb_budget);
+            // One conditional branch with two successors: two branch
+            // stubs, each + dec(7) + jnz(2) + restore(17) + jmp(5) = 31,
+            // and two BUDGET exit stubs (spill 7, 3 x (imm 10 + store
+            // 7), reload 7, jmp 5 = 70 each).
+            assert_eq!(
+                on.code.len(),
+                off.code.len() + 2 * 31 + 2 * 70,
+                "{exit_style:?}: budget growth"
+            );
+            let unmapped = (0..on.code.len() as u64)
+                .filter(|&i| on.pcmap.lookup(0x80_0000 + i).is_none())
+                .count();
+            assert_eq!(unmapped, 0, "{exit_style:?}: unmapped budget bytes");
+            let mut expect = 0x80_0000u64;
+            for e in on.pcmap.entries() {
+                assert_eq!(e.gen_start, expect, "gap before {e:?}");
+                expect = e.gen_end;
+            }
+            assert_eq!(on.block_gen, off.block_gen, "{exit_style:?}: block entries");
         }
     }
 }

@@ -9,7 +9,7 @@ full A3 qualification.
 
 The host was recorded as **AMD EPYC Zen 5 dev host**, AMD EPYC 9D85 158-Core
 Processor, x86-64, 316 logical CPUs, glibc 2.34, kernel
-`7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf`. The caller records affinity `[0,1,2,3]`.
+7.1.3 (vendor build). The caller records affinity `[0,1,2,3]`.
 This is operational validation, not a performance measurement. The verifier
 attempts share this epoch context; no separate per-attempt hardware record is
 invented.

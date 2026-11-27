@@ -1,0 +1,29 @@
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -2976,13 +2976,7 @@
+         src: u64,
+         live_frames: usize,
+     ) -> Result<Translation, Refuse> {
+-        if live_frames > 0 {
+-            return Err(Refuse::CodeInstall {
+-                src_pc: src,
+-                reason: "live signal frame",
+-                errno: 0,
+-            });
+-        }
++        // MUTANT 17b: the live-frame check moves after the /proc write.
+         let Some(region) = self.region.as_ref() else {
+             return Err(Refuse::Arch {
+                 what: "remote executable not prepared",
+@@ -3005,4 +2999,11 @@
+         }
+         self.install_remote(&next.code, t.code.len(), src)?;
++        if live_frames > 0 {
++            return Err(Refuse::CodeInstall {
++                src_pc: src,
++                reason: "live signal frame",
++                errno: 0,
++            });
++        }
+         Ok(next)
+     }

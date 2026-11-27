@@ -192,7 +192,7 @@ fn input(boot: &BootstrapMm) -> ProfileInput<'_> {
 fn pagemap(envelope: &Range<u64>) -> PagemapObservation {
     let count = (((envelope.end - 1) / PAGE - envelope.start / PAGE + 1) * 8) as usize;
     let mut bytes = [0; 16];
-    for word in bytes[..count].chunks_exact_mut(8) {
+    for word in bytes[..count].as_chunks_mut::<8>().0 {
         word.copy_from_slice(&((1_u64 << 63) | (1 << 56)).to_le_bytes());
     }
     PagemapObservation {

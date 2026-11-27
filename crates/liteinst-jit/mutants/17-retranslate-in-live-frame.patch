@@ -1,0 +1,17 @@
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -2976,13 +2976,7 @@
+         src: u64,
+         live_frames: usize,
+     ) -> Result<Translation, Refuse> {
+-        if live_frames > 0 {
+-            return Err(Refuse::CodeInstall {
+-                src_pc: src,
+-                reason: "live signal frame",
+-                errno: 0,
+-            });
+-        }
++        // MUTANT 17: no live-frame check before a remote retranslation.
+         let Some(region) = self.region.as_ref() else {
+             return Err(Refuse::Arch {
+                 what: "remote executable not prepared",

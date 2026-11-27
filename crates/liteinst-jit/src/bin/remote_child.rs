@@ -80,6 +80,120 @@ fn query_action(sig: i32) -> KernelSigaction {
     old
 }
 
+/// Test-only setup arguments (H3k), acted on only in a `test-seams`
+/// build. They follow argv[2]'s block slot (`block:` with an empty
+/// list when nothing is blocked) and run here, after the block
+/// handling and before the handshake and `PTRACE_TRACEME`, in this
+/// order whatever their argv order:
+/// - `sigchld-helper`: fork one helper that dies with this process
+///   (`PR_SET_PDEATHSIG`), keeps only its pipe's read end, and exits
+///   0 after reading one byte (92 on EOF or error; 90 or 91 if its
+///   death signal cannot be set or its parent already changed). The
+///   write end is fd 200.
+/// - `fsetsig:<signo>`: a pipe whose read end (fd 202) is owned by
+///   this process with `F_SETSIG` = signo and `O_ASYNC|O_NONBLOCK`, so
+///   a write to its write end (fd 201) queues signo with `POLL_IN`.
+/// - `itimer-real-us:<us>`: a one-shot `ITIMER_REAL` (SIGALRM with
+///   `SI_KERNEL`). Use it with `block:14`, applied above, so the
+///   expiry stays pending instead of stopping the handshake.
+///
+/// Every call checks its result. A failure exits before the
+/// handshake with the step's status: 80 helper `pipe2`, 81 `fork`,
+/// 82 helper `dup2`, 83 `fsetsig` `pipe2`, 84 `F_SETOWN`, 85
+/// `F_SETSIG`, 86 `F_SETFL`, 87 `dup2` to fds 201/202, 88 `setitimer`,
+/// 89 malformed argument. Other arguments are left to `main`.
+#[cfg(feature = "test-seams")]
+fn test_setup() {
+    // libc has no F_SETSIG constant (Linux fcntl.h: 10).
+    const F_SETSIG: i32 = 10;
+    fn fail(status: i32) -> ! {
+        std::process::exit(status)
+    }
+    let extra: Vec<String> = std::env::args().skip(3).collect();
+    let helper = extra.iter().any(|a| a == "sigchld-helper");
+    let mut fsetsig = None;
+    let mut itimer_us = None;
+    for a in &extra {
+        if let Some(v) = a.strip_prefix("fsetsig:") {
+            fsetsig = Some(v.parse::<i32>().unwrap_or_else(|_| fail(89)));
+        } else if let Some(v) = a.strip_prefix("itimer-real-us:") {
+            itimer_us = Some(v.parse::<i64>().unwrap_or_else(|_| fail(89)));
+        }
+    }
+    // SAFETY: single-threaded setup of this process's own
+    // descriptors, timer and one child, before any guest code.
+    unsafe {
+        if helper {
+            let parent = libc::getpid();
+            let mut fds = [0i32; 2];
+            if libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) != 0 {
+                fail(80);
+            }
+            let pid = libc::fork();
+            if pid < 0 {
+                fail(81);
+            }
+            if pid == 0 {
+                if libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL, 0, 0, 0) != 0 {
+                    libc::_exit(90);
+                }
+                if libc::getppid() != parent {
+                    libc::_exit(91);
+                }
+                let keep = fds[0] as u32;
+                if keep > 0 {
+                    libc::close_range(0, keep - 1, 0);
+                }
+                libc::close_range(keep + 1, u32::MAX, 0);
+                let mut byte = 0u8;
+                let n = libc::read(fds[0], core::ptr::addr_of_mut!(byte).cast(), 1);
+                libc::_exit(if n == 1 { 0 } else { 92 });
+            }
+            libc::close(fds[0]);
+            if libc::dup2(fds[1], 200) != 200 {
+                fail(82);
+            }
+            libc::close(fds[1]);
+        }
+        if let Some(signo) = fsetsig {
+            let mut fds = [0i32; 2];
+            if libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) != 0 {
+                fail(83);
+            }
+            let (rfd, wfd) = (fds[0], fds[1]);
+            if libc::fcntl(rfd, libc::F_SETOWN, libc::getpid()) != 0 {
+                fail(84);
+            }
+            if libc::fcntl(rfd, F_SETSIG, signo) != 0 {
+                fail(85);
+            }
+            if libc::fcntl(rfd, libc::F_SETFL, libc::O_ASYNC | libc::O_NONBLOCK) != 0 {
+                fail(86);
+            }
+            if libc::dup2(wfd, 201) != 201 || libc::dup2(rfd, 202) != 202 {
+                fail(87);
+            }
+            libc::close(wfd);
+            libc::close(rfd);
+        }
+        if let Some(us) = itimer_us {
+            let it = libc::itimerval {
+                it_interval: libc::timeval {
+                    tv_sec: 0,
+                    tv_usec: 0,
+                },
+                it_value: libc::timeval {
+                    tv_sec: us / 1_000_000,
+                    tv_usec: us % 1_000_000,
+                },
+            };
+            if libc::setitimer(libc::ITIMER_REAL, &it, core::ptr::null_mut()) != 0 {
+                fail(88);
+            }
+        }
+    }
+}
+
 fn main() {
     // Normalize guest initial signal state with raw zeroed
     // kernel sigaction structs and verify each queried tuple
@@ -142,6 +256,8 @@ fn main() {
             libc::pthread_sigmask(libc::SIG_BLOCK, &set, core::ptr::null_mut());
         }
     }
+    #[cfg(feature = "test-seams")]
+    test_setup();
     let bytes: Vec<u8> = if let Some(hex) = arg.strip_prefix("hex:") {
         (0..hex.len())
             .step_by(2)

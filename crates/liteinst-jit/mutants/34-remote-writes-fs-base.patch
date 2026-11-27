@@ -1,0 +1,11 @@
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -841,6 +841,8 @@
+ }
+ 
+ fn apply_state(r: &mut libc::user_regs_struct, s: &GuestState) {
++    // MUTANT 34: the dispatcher writes the tracee's FS base.
++    r.fs_base = 0;
+     r.rax = s.rax;
+     r.rbx = s.rbx;
+     r.rcx = s.rcx;

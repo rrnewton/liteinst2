@@ -73,7 +73,7 @@ jobs:
         run: |
           count=$(cargo package --locked --list | wc -l)
           echo "packaged files: $count"
-          # Curated allowlist is 400 files; a swallowed `include` ships ~7700.
+          # Curated allowlist is 401 files; a swallowed `include` ships ~7700.
           # Headroom only for small deliberate allowlist growth.
           [ "$count" -lt 500 ]
       - name: Doctests

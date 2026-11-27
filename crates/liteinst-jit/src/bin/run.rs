@@ -22,16 +22,20 @@ fn main() -> std::process::ExitCode {
         };
         let region = guest.region(&fixture.bytes, Generation(1));
         guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
+        // P1b.1: in-region indirect transfers resolve (indirect_call
+        // and the ind_* corpus fixtures run OK); out-of-region,
+        // interior and faulting ones still stop by name.
         let expected = match fixture.name {
-            "indirect_jmp" | "indirect_call" | "jump_table" | "rdtsc_exit" | "int3_trap" => {
-                "REFUSED"
-            }
+            "indirect_jmp" | "jump_table" | "rdtsc_exit" | "int3_trap" => "REFUSED",
+            "ind_call_out" | "ind_interior" | "ind_jmp_out_budget" => "REFUSED",
             "fault_ret"
             | "call_store_fault"
             | "div_zero"
             | "rep_stosb_partial"
             | "rip_store_fault"
-            | "fault_before_branch" => "FAULT",
+            | "fault_before_branch"
+            | "ind_fault_mem"
+            | "seg_gs_fault" => "FAULT",
             _ => "OK",
         };
         let mut exec =

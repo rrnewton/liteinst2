@@ -1,0 +1,24 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1772,7 +1772,8 @@
+                                 signum: libc::SIGSEGV,
+                                 state,
+                                 branches: data.branch_count,
+-                                instructions: retired_before,
++                                // MUTANT 14: the faulted indirect is counted (in-process).
++                                instructions: data.instruction_count,
+                             })));
+                         }
+                     }
+--- a/crates/liteinst-jit/src/remote.rs
++++ b/crates/liteinst-jit/src/remote.rs
+@@ -4776,7 +4776,8 @@
+                                 signum: libc::SIGSEGV,
+                                 state,
+                                 branches: data.branch_count,
+-                                instructions: retired_before,
++                                // MUTANT 14: the faulted indirect is counted (remote).
++                                instructions: data.instruction_count,
+                             })));
+                         }
+                     }

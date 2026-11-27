@@ -259,7 +259,7 @@ fn fixture(scenario: Scenario, k: usize) -> (Ready, Ready, Vec<Snapshot>, Trace,
             .filter(|r| r[6] == 1 && r[7] == report[0])
             .collect();
         report[1] = rows.len() as u64;
-        for (r, obs) in rows.into_iter().zip(report[2..].chunks_exact_mut(22)) {
+        for (r, obs) in rows.into_iter().zip(report[2..].as_chunks_mut::<22>().0) {
             obs[..10].copy_from_slice(&[r[7], r[8], r[0], 10, 1, 1, r[8], 1, 0, 0]);
             obs[10..].copy_from_slice(&r[36..48]);
         }

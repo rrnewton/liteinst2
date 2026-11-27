@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/indirect.rs
++++ b/crates/liteinst-jit/src/indirect.rs
+@@ -136,7 +136,8 @@
+     };
+     Ok(Resolved {
+         kind,
+-        target,
++        // MUTANT 08: the shared resolver returns the target plus one.
++        target: target.wrapping_add(1),
+         next_ip,
+     })
+ }

@@ -605,7 +605,7 @@ fn read_auxv(pid: libc::pid_t) -> Result<Vec<(u64, u64)>, LaunchError> {
         return Err(LaunchError::Invalid("truncated auxiliary vector"));
     }
     let mut result = Vec::new();
-    for pair in bytes.chunks_exact(16) {
+    for pair in bytes.as_chunks::<16>().0 {
         let key = u64::from_ne_bytes(pair[..8].try_into().unwrap());
         let value = u64::from_ne_bytes(pair[8..].try_into().unwrap());
         if key == libc::AT_NULL {

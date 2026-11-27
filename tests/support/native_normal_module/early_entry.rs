@@ -232,8 +232,10 @@ impl Parent {
         let mut b = [0; 80];
         read_exact(self.ack.0, &mut b, deadline);
         let w: Vec<_> = b
-            .chunks_exact(8)
-            .map(|v| u64::from_le_bytes(v.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|v| u64::from_le_bytes(*v))
             .collect();
         let enabled = matches!(scenario, Scenario::LoadedFalseArm | Scenario::AdmittedRearm);
         let closed = matches!(scenario, Scenario::LoadedTrueDisarm);
@@ -577,8 +579,10 @@ impl Witness {
     fn read(&self, child: &Tracee) -> Vec<u64> {
         child
             .memory(self.extra.witness, WITNESS_WORDS * 8)
-            .chunks_exact(8)
-            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|b| u64::from_le_bytes(*b))
             .collect()
     }
     fn command(

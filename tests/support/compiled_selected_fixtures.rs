@@ -48,7 +48,7 @@ pub fn fixture(input: &[u8], selected: usize) -> (Vec<u8>, Vec<usize>) {
     let mut heads = Vec::new();
     let mut data = [0xa5; 64];
     data[..input.len()].copy_from_slice(input);
-    for (i, chunk) in data.chunks_exact(4).enumerate() {
+    for (i, chunk) in data.as_chunks::<4>().0.iter().enumerate() {
         heads.push(bytes.len());
         bytes.extend_from_slice(&[0xc7, 0x47, (i * 4) as u8]); // MOV dword [RDI+disp8],imm32.
         bytes.extend_from_slice(chunk);

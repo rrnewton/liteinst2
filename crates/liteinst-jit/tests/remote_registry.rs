@@ -4,8 +4,12 @@
 //! equal those answers exactly. One sequential test: ptrace
 //! children and process-global signal state must not overlap.
 
+#[path = "common/corpus.rs"]
+mod corpus;
+#[path = "common/deadline.rs"]
+mod deadline;
+
 use liteinst_jit::Refuse;
-use liteinst_jit::exec::{FaultKind, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::remote::{GuestAction, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
@@ -59,9 +63,18 @@ fn guest_bytes(main: &[&[u8]]) -> Vec<u8> {
     v
 }
 
-fn prepare_bytes(bytes: &[u8]) -> (RemoteExecutable, liteinst_jit::remote::RemoteChildInfo) {
-    let mut remote =
-        RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
+/// `id`: the fixture's SIGNAL-CORPUS.md ID, checked first. The
+/// caller holds the returned deadline across its run.
+fn prepare_bytes(
+    id: &str,
+    bytes: &[u8],
+) -> (
+    RemoteExecutable,
+    liteinst_jit::remote::RemoteChildInfo,
+    deadline::Deadline,
+) {
+    corpus::check(id, bytes);
+    let (mut remote, deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn");
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -76,7 +89,7 @@ fn prepare_bytes(bytes: &[u8]) -> (RemoteExecutable, liteinst_jit::remote::Remot
             CountProfile::BranchesAndInstructions,
         )
         .expect("prepare");
-    (remote, info)
+    (remote, info, deadline)
 }
 
 fn guest_state(
@@ -99,13 +112,14 @@ fn word(data: &[u8], off: usize) -> u64 {
 }
 
 fn run_registry_bytes(
+    id: &str,
     bytes: &[u8],
 ) -> (
     RemoteExecutable,
     liteinst_jit::remote::RemoteChildInfo,
     Vec<u8>,
 ) {
-    let (mut remote, info) = prepare_bytes(bytes);
+    let (mut remote, info, _deadline) = prepare_bytes(id, bytes);
     remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("registry guest run");
@@ -169,7 +183,7 @@ fn check_registry_round_trip() {
         failed_install_and_requery,
         sigpending,
     ]);
-    let (mut remote, info) = prepare_bytes(&bytes);
+    let (mut remote, info, _deadline) = prepare_bytes("C1 registry round trip", &bytes);
     let out = remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("registry round trip run");
@@ -227,58 +241,76 @@ fn check_registry_round_trip() {
 }
 
 fn check_poll_with_handler_installed() {
-    let loop_tail: &[u8] = &[
-        0x48, 0xff, 0xc9, 0x75, 0xfb, 0xc3, // dec rcx; jne loop; ret
+    // I1-H W4: with a handler installed and both signals BLOCKED
+    // and pending, poll exits do not stop the run (a blocked
+    // pending signal is not an event natively), the handler does
+    // not run, and the signals stay pending. The guest sends both
+    // to itself after blocking them (deterministic; `kill` passes
+    // through gated to the child's own pid), then loops 40000
+    // times: the counter is loaded AFTER the guest's syscalls,
+    // which clobber rcx. (Until W4 the first poll exit stopped
+    // this run, which is also the only reason the old version's
+    // rcx-preset loop, clobbered to a return address by those
+    // syscalls, ever ended.)
+    let self_send: &[u8] = &[
+        0xb8, 0x27, 0x00, 0x00, 0x00, // mov eax, 39 (getpid)
+        0x0f, 0x05, // syscall
+        0x49, 0x89, 0xc6, // mov r14, rax
+        0x4c, 0x89, 0xf7, // mov rdi, r14
+        0xbe, 0x0c, 0x00, 0x00, 0x00, // mov esi, 12 (SIGUSR2)
+        0xb8, 0x3e, 0x00, 0x00, 0x00, // mov eax, 62 (kill)
+        0x0f, 0x05, // syscall
+        0x4c, 0x89, 0xf7, // mov rdi, r14
+        0xbe, 0x0a, 0x00, 0x00, 0x00, // mov esi, 10 (SIGUSR1)
+        0xb8, 0x3e, 0x00, 0x00, 0x00, // mov eax, 62 (kill)
+        0x0f, 0x05, // syscall
     ];
     // Causal counter control: main flow increments the same
     // owned counter word the handler would, exactly once,
-    // before the loop. After the poll stop the word must read
-    // exactly 1 — a delivered handler would make it 2, and an
-    // unowned/unwritable word could not read back 1.
+    // before the loop. Afterwards the word must read exactly 1:
+    // a delivered handler would make it 2, and an unowned or
+    // unwritable word could not read back 1.
     let inc_counter: &[u8] = &[0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00];
-    let bytes = guest_bytes(&[BUILD_ACT, INSTALL, MASK_BLOCK, inc_counter, loop_tail]);
-    let (mut remote, info) = prepare_bytes(&bytes);
+    let loop_tail: &[u8] = &[
+        0xb9, 0x40, 0x9c, 0x00, 0x00, // mov ecx, 40000
+        0x48, 0xff, 0xc9, 0x75, 0xfb, 0xc3, // dec rcx; jne loop; ret
+    ];
+    let bytes = guest_bytes(&[
+        BUILD_ACT,
+        INSTALL,
+        MASK_BLOCK,
+        self_send,
+        inc_counter,
+        loop_tail,
+    ]);
+    let (mut remote, info, _deadline) = prepare_bytes("C2 poll with handler", &bytes);
     let pid = remote.child_pid_for_test();
-    // The guest itself blocks both signals via a stepped
-    // rt_sigprocmask early in main; queue them from the host
-    // after a fill delay so they are pending (not delivered)
-    // well before the first poll boundary.
-    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let done2 = done.clone();
-    let killer = std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        for _ in 0..40 {
-            if done2.load(std::sync::atomic::Ordering::SeqCst) {
-                break;
-            }
-            // SAFETY: signalling the test's traced child.
-            unsafe {
-                libc::kill(pid, libc::SIGUSR2);
-                libc::kill(pid, libc::SIGUSR1);
-            }
-            std::thread::sleep(std::time::Duration::from_millis(25));
-        }
-    });
-    let mut state = guest_state(&remote, info);
-    state.rcx = 5_000_000;
-    let r = remote.run(state, RETURN_SENTINEL);
-    done.store(true, std::sync::atomic::Ordering::SeqCst);
-    killer.join().expect("killer thread");
-    let f = match r {
-        Err(RunError::Fault(f)) => f,
-        other => panic!("poll with handler: expected fault, got {other:?}"),
-    };
-    assert_eq!(f.kind, FaultKind::AsyncSignal);
-    assert_eq!(f.signum, libc::SIGUSR1);
-    assert_eq!(f.also_pending, vec![libc::SIGUSR2]);
-    assert!(f.branches >= 1_000, "poll progress: {}", f.branches);
+    let out = remote
+        .run(guest_state(&remote, info), RETURN_SENTINEL)
+        .unwrap_or_else(|e| panic!("blocked pending signals with a handler installed: {e:?}"));
+    assert!(
+        out.branches > 2 * liteinst_jit::exec::POLL_BUDGET,
+        "crossed poll exits: {} branches",
+        out.branches
+    );
     let mut counter = [0u8; 8];
     assert!(remote.read_mem(info.dst + 512, &mut counter));
     assert_eq!(
         u64::from_le_bytes(counter),
         1,
-        "only main's own increment landed; handler must not run in I1-C"
+        "only main's own increment landed; the blocked signals were not delivered"
     );
+    let both = (1u64 << (libc::SIGUSR1 - 1)) | (1u64 << (libc::SIGUSR2 - 1));
+    let status = std::fs::read_to_string(format!("/proc/{pid}/status")).expect("child status");
+    let pending = status
+        .lines()
+        .filter_map(|l| {
+            l.strip_prefix("SigPnd:")
+                .or_else(|| l.strip_prefix("ShdPnd:"))
+        })
+        .map(|v| u64::from_str_radix(v.trim(), 16).expect("pending hex"))
+        .fold(0, |acc, v| acc | v);
+    assert_eq!(pending & both, both, "both still pending in the kernel");
     assert_eq!(
         remote.registry().action(libc::SIGUSR1),
         GuestAction {
@@ -287,9 +319,10 @@ fn check_poll_with_handler_installed() {
             restorer: info.base + 8,
             sa_mask: 0x800,
         },
-        "exact installed handler tuple still mirrored after poll stop"
+        "exact installed handler tuple still mirrored after the polls"
     );
     assert!(remote.registry().is_blocked(libc::SIGUSR1));
+    assert!(remote.registry().is_blocked(libc::SIGUSR2));
 }
 
 fn check_oldfault_mutations() {
@@ -353,7 +386,7 @@ fn check_oldfault_mutations() {
 
     // Action: run ends at the copy-out EFAULT; mirror already B.
     let bytes = guest_bytes(&[BUILD_ACT, INSTALL, build_b, action_old1_end, &[0xc3]]);
-    let (remote, info, data) = run_registry_bytes(&bytes);
+    let (remote, info, data) = run_registry_bytes("C3 oldact EFAULT action", &bytes);
     assert_eq!(
         word(&data, 288) as i64,
         -14,
@@ -373,12 +406,12 @@ fn check_oldfault_mutations() {
         action_query_320,
         &[0xc3],
     ]);
-    let (_remote, info2, data) = run_registry_bytes(&bytes);
+    let (_remote, info2, data) = run_registry_bytes("C3 oldact EFAULT action control", &bytes);
     assert_eq!(word(&data, 320), info2.base + 8, "kernel has handler B");
 
     // Mask: run ends at the copy-out EFAULT; mirror already set.
     let bytes = guest_bytes(&[mask_old1_end, &[0xc3]]);
-    let (remote, _info, data) = run_registry_bytes(&bytes);
+    let (remote, _info, data) = run_registry_bytes("C3 oldmask EFAULT", &bytes);
     assert_eq!(
         word(&data, 296) as i64,
         -14,
@@ -390,12 +423,12 @@ fn check_oldfault_mutations() {
     );
     // Mask control: + guest mask query.
     let bytes = guest_bytes(&[mask_old1_end, mask_query_304, &[0xc3]]);
-    let (_remote, _info, data) = run_registry_bytes(&bytes);
+    let (_remote, _info, data) = run_registry_bytes("C3 oldmask EFAULT control", &bytes);
     assert_eq!(word(&data, 304), 0x200, "kernel mask has SIGUSR1");
 
     // Altstack: run ends at the copy-out EFAULT; mirror set.
     let bytes = guest_bytes(&[alt_old1_end, &[0xc3]]);
-    let (remote, info, data) = run_registry_bytes(&bytes);
+    let (remote, info, data) = run_registry_bytes("C3 oldalt EFAULT", &bytes);
     assert_eq!(
         word(&data, 312) as i64,
         -14,
@@ -408,7 +441,7 @@ fn check_oldfault_mutations() {
     );
     // Altstack control: + guest query.
     let bytes = guest_bytes(&[alt_old1_end, alt_query_352, &[0xc3]]);
-    let (_remote, info2, data) = run_registry_bytes(&bytes);
+    let (_remote, info2, data) = run_registry_bytes("C3 oldalt EFAULT control", &bytes);
     assert_eq!(word(&data, 352), info2.src, "kernel altstack sp");
 }
 
@@ -439,7 +472,7 @@ fn check_normalization_and_bad_inputs() {
         0xb8, 0x83, 0x00, 0x00, 0x00, 0x0f, 0x05,
     ];
     let bytes = guest_bytes(&[build_dirty, INSTALL, query_act_272, alt_onstack, &[0xc3]]);
-    let (mut remote, info) = prepare_bytes(&bytes);
+    let (mut remote, info, _deadline) = prepare_bytes("C4 normalization", &bytes);
     remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("normalization run");
@@ -495,8 +528,9 @@ fn check_normalization_and_bad_inputs() {
             INSTALL,
             &[0xc3],
         ]);
-        let mut remote = RemoteExecutable::spawn_bytes_guarded(std::path::Path::new(CHILD), &bytes)
-            .expect("spawn guarded");
+        corpus::check(&format!("C5 partial act {label}"), &bytes);
+        let (mut remote, _deadline) =
+            deadline::remote_bytes_guarded(CHILD, &bytes).expect("spawn guarded");
         let info = remote.info();
         let region = RegionFacts {
             base: info.base,
@@ -544,11 +578,7 @@ fn check_normalization_and_bad_inputs() {
 fn check_seed_controls() {
     // Reserved 32/33 cannot be honored by libc mask APIs: the
     // request is refused by name instead of mirrored as set.
-    let refused = RemoteExecutable::spawn_named_with_blocked(
-        std::path::Path::new(CHILD),
-        "sum_loop",
-        &[32, 33],
-    );
+    let refused = deadline::remote_named_with_blocked(CHILD, "sum_loop", &[32, 33]);
     match refused {
         Err(Refuse::RemoteSubstrate { operation, .. }) => {
             assert_eq!(operation, "initial blocked mask not honored");
@@ -559,12 +589,9 @@ fn check_seed_controls() {
     // Positive controls: normalization reset the inherited
     // ignored SIGPIPE, and an ordinary requested mask seeds
     // exactly from the child's actual SigBlk.
-    let remote = RemoteExecutable::spawn_named_with_blocked(
-        std::path::Path::new(CHILD),
-        "sum_loop",
-        &[libc::SIGUSR1],
-    )
-    .expect("spawn with USR1 blocked");
+    let (remote, _deadline) =
+        deadline::remote_named_with_blocked(CHILD, "sum_loop", &[libc::SIGUSR1])
+            .expect("spawn with USR1 blocked");
     assert!(
         remote.registry().action(libc::SIGPIPE).is_default(),
         "SIGPIPE reset to default"
@@ -594,9 +621,30 @@ fn check_seed_controls() {
 /// signal state must not overlap.
 #[test]
 fn remote_registry_all() {
+    let _bound = deadline::TestBound::arm();
+    // Every fixture this test builds is pinned (see `corpus`).
+    let _corpus = corpus::guard();
     check_registry_round_trip();
     check_poll_with_handler_installed();
     check_oldfault_mutations();
     check_normalization_and_bad_inputs();
     check_seed_controls();
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("remote_registry.rs"), "remote_registry.rs");
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("remote_registry.rs"),
+        "remote_registry.rs",
+        &["spawn_census", "bound_census"],
+    );
 }

@@ -1,0 +1,58 @@
+--- a/crates/liteinst-jit/src/translate.rs
++++ b/crates/liteinst-jit/src/translate.rs
+@@ -422,27 +422,6 @@
+         self.seg(src, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+             e.mov_mem_rax(OFF_SPILL_FLAGS)
+         })?;
+-        self.seg(src, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+-            if amount == 1 {
+-                let d = e.disp(counter_off, 7)?;
+-                e.buf.extend_from_slice(&[0x48, 0xff, 0x05]);
+-                e.buf.extend_from_slice(&d.to_le_bytes());
+-            } else if let Ok(v) = i8::try_from(i64::try_from(amount).unwrap_or(i64::MAX)) {
+-                let d = e.disp(counter_off, 8)?;
+-                e.buf.extend_from_slice(&[0x48, 0x83, 0x05]);
+-                e.buf.extend_from_slice(&d.to_le_bytes());
+-                e.buf.push(v as u8);
+-            } else {
+-                let v = i32::try_from(amount).map_err(|_| Refuse::BudgetExceeded {
+-                    what: "block instruction count",
+-                })?;
+-                let d = e.disp(counter_off, 11)?;
+-                e.buf.extend_from_slice(&[0x48, 0x81, 0x05]);
+-                e.buf.extend_from_slice(&d.to_le_bytes());
+-                e.buf.extend_from_slice(&v.to_le_bytes());
+-            }
+-            Ok(())
+-        })?;
+         // Remaining-RCB budget (budgeted translations only). The
+         // credit above has retired the branch; count the budget
+         // down and, at zero, leave through the successor's BUDGET
+@@ -482,6 +461,27 @@
+                 Ok(())
+             })?;
+         }
++        self.seg(src, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
++            if amount == 1 {
++                let d = e.disp(counter_off, 7)?;
++                e.buf.extend_from_slice(&[0x48, 0xff, 0x05]);
++                e.buf.extend_from_slice(&d.to_le_bytes());
++            } else if let Ok(v) = i8::try_from(i64::try_from(amount).unwrap_or(i64::MAX)) {
++                let d = e.disp(counter_off, 8)?;
++                e.buf.extend_from_slice(&[0x48, 0x83, 0x05]);
++                e.buf.extend_from_slice(&d.to_le_bytes());
++                e.buf.push(v as u8);
++            } else {
++                let v = i32::try_from(amount).map_err(|_| Refuse::BudgetExceeded {
++                    what: "block instruction count",
++                })?;
++                let d = e.disp(counter_off, 11)?;
++                e.buf.extend_from_slice(&[0x48, 0x81, 0x05]);
++                e.buf.extend_from_slice(&d.to_le_bytes());
++                e.buf.extend_from_slice(&v.to_le_bytes());
++            }
++            Ok(())
++        })?;
+         self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+             e.mov_rax_mem(OFF_SPILL_FLAGS)
+         })?;

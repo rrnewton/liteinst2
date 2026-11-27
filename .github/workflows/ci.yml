@@ -23,16 +23,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.94.1
+      - uses: dtolnay/rust-toolchain@1.99.1
         with:
           components: clippy,rustfmt
       - name: Check formatting
         run: cargo fmt --all -- --check
       # Scoped to the six published crates: the rapid-profiler test target
       # does not compile today (separate fix), so a workspace clippy can
-      # never report on the published surface. NOTE: even scoped, clippy
-      # at 1.94.1 currently reports pre-existing new-lint errors in this
-      # set (best-effort signal until the lint-cleanup task lands).
+      # never report on the published surface.
       - name: Lint published crates
         run: >
           cargo clippy --locked
@@ -55,12 +53,17 @@ jobs:
           - name: liteinst-launch
             packages: "-p liteinst-launch"
             timeout: 30
+          # The mini-JIT (x86-64 only; unpublished): its unit tests and
+          # integration suites. Its dev-dependency enables test-seams.
+          - name: liteinst-jit
+            packages: "-p liteinst-jit"
+            timeout: 30
           - name: small-crates
             packages: "-p liteinst-x86 -p liteinst-aarch64 -p liteinst-aarch64-patch -p liteinst-artifact -p liteinst-admission -p liteinst-inprocess"
             timeout: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.94.1
+      - uses: dtolnay/rust-toolchain@1.99.1
       # Build artifacts only (registry + target); never test outcomes.
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -93,6 +96,10 @@ jobs:
         if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: |
           package_root="$(mktemp -d)"
+          # cargo copies the new crate into an existing target/package crate
+          # without truncating it; a longer cache-restored crate would leave
+          # a stale tail after the new gzip stream.
+          rm -f target/package/liteinst-*.crate
           cargo package --locked
           package_archive="$(find target/package -maxdepth 1 -name 'liteinst-*.crate' -print -quit)"
           tar -xf "$package_archive" -C "$package_root"

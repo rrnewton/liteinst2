@@ -289,7 +289,7 @@ always creates a fresh namespace.
 ## Joint boundary and validation gates
 
 Li2core owns shared facts/CFG/plans/encoding and the versioned offline coverage
-record. Li2adm owns pre-entry binding, mapping generations, mutation mediation,
+record. The admission layer owns pre-entry binding, mapping generations, mutation mediation,
 gate exclusion, invalidation and dependent-runtime lifetimes. The consumer should
 accept a verified, load-bound page group, not a caller boolean named “scanned”.
 A parsed certificate is inert; only the actual execution owner can mint a live

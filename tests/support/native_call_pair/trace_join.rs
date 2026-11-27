@@ -233,7 +233,13 @@ fn reports(ready: &Ready, w: &Witness) {
             .filter(|r| r[6] == 1 && r[7] == generation)
             .collect();
         assert_eq!(report[1] as usize, expected.len());
-        for (slot, (record, row)) in report[2..].chunks_exact(22).zip(expected).enumerate() {
+        for (slot, (record, row)) in report[2..]
+            .as_chunks::<22>()
+            .0
+            .iter()
+            .zip(expected)
+            .enumerate()
+        {
             assert_eq!(row[8], slot as u64);
             assert_eq!(&record[..4], &row[25..29]);
             assert_eq!(&record[4..10], &[1, 1, slot as u64, 1, 0, 0]);

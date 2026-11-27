@@ -1,0 +1,15 @@
+--- a/crates/liteinst-jit/src/decode.rs
++++ b/crates/liteinst-jit/src/decode.rs
+@@ -297,9 +297,9 @@
+ /// `swapgs`), this keeps every write to a segment register or a
+ /// segment base outside the envelope.
+ fn refused_segment_register_operand(ins: &Instruction) -> Option<&'static str> {
+-    (0..ins.op_count())
+-        .any(|i| ins.op_kind(i) == OpKind::Register && ins.op_register(i).is_segment_register())
+-        .then_some(SEGMENT_REGISTER_OPERAND)
++    // MUTANT 23: segment-register operands are no longer refused.
++    let _ = (ins, SEGMENT_REGISTER_OPERAND);
++    None
+ }
+ 
+ /// Segment-override admission (P1a). Returns the admitted FS or

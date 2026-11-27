@@ -17,20 +17,35 @@ use liteinst_aarch64::emit::page_span;
 /// executable by default).
 const L_MFD_EXEC: libc::c_uint = 0x0010;
 
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+/// `MAP_FIXED_NOREPLACE` (kernel 4.17+), defined locally for the same
+/// reason. An older kernel ignores the unknown flag and treats the
+/// address as a plain hint, so [`Island::reserve_at`] always compares
+/// the returned address with the one it asked for.
+const L_MAP_FIXED_NOREPLACE: libc::c_int = 0x10_0000;
+
+#[cfg(all(test, target_arch = "aarch64", target_os = "linux"))]
+std::thread_local! {
+    /// Test-only: map the RX alias without `MAP_FIXED_NOREPLACE`, as a
+    /// kernel older than 4.17 effectively does, to exercise the
+    /// returned-address refusal on any kernel.
+    static SIMULATE_NO_NOREPLACE: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+}
+
 /// An owned island mapping. While any flipped site branches here, the
 /// owning `Site` custody holds this value; `Drop` unmaps both aliases,
-/// so slice-1 retirement rules (deferred until no executor can enter,
-/// permanent retention on uncertainty) are the caller's protocol duty
-/// until the flip slice binds lifetimes in the type.
+/// so retirement rules (deferred until no executor can enter, permanent
+/// retention on uncertainty) are the caller's protocol duty; the flip
+/// protocol binds lifetimes in the Site type.
 pub struct Island {
-    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
-    fd: libc::c_int,
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rw: *mut u8,
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rx: *mut u8,
     len: usize,
     words: usize,
+    capacity_words: usize,
+    published: bool,
 }
 
 impl core::fmt::Debug for Island {
@@ -46,29 +61,42 @@ impl core::fmt::Debug for Island {
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 fn memfd_exec() -> Result<libc::c_int, PatchError> {
     let name = c"liteinst-island";
-    let base = libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING;
-    let fd = unsafe { libc::memfd_create(name.as_ptr(), base | L_MFD_EXEC) };
+    let base = (libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING) as u64;
+    // SAFETY: name is a valid C string; flags are the kernel's.
+    let fd = unsafe {
+        crate::gate::gate6(
+            libc::SYS_memfd_create,
+            [name.as_ptr() as u64, base | L_MFD_EXEC as u64, 0, 0, 0, 0],
+        )
+    };
     if fd >= 0 {
-        return Ok(fd);
+        return Ok(fd as libc::c_int);
     }
-    let first_err = std::io::Error::last_os_error();
-    if first_err.raw_os_error() == Some(libc::EINVAL) {
-        let fd = unsafe { libc::memfd_create(name.as_ptr(), base) };
+    if fd == -(libc::EINVAL as i64) {
+        // SAFETY: same name; retry without the post-6.3 flag.
+        let fd = unsafe {
+            crate::gate::gate6(
+                libc::SYS_memfd_create,
+                [name.as_ptr() as u64, base, 0, 0, 0, 0],
+            )
+        };
         if fd >= 0 {
-            return Ok(fd);
+            return Ok(fd as libc::c_int);
         }
         // Report the retry's errno: it, not the flag rejection, is why
         // creation ultimately failed.
-        let retry_err = std::io::Error::last_os_error();
-        return Err(PatchError::Os {
-            op: "memfd_create (no MFD_EXEC retry)",
-            errno: retry_err.raw_os_error().unwrap_or(0),
-        });
+        return crate::gate::check(fd, "memfd_create (no MFD_EXEC retry)")
+            .map(|v| v as libc::c_int);
     }
-    Err(PatchError::Os {
-        op: "memfd_create",
-        errno: first_err.raw_os_error().unwrap_or(0),
-    })
+    crate::gate::check(fd, "memfd_create").map(|v| v as libc::c_int)
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+fn gate_close(fd: libc::c_int) {
+    // SAFETY: fd was just created above and is closed exactly once.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fd as u64, 0, 0, 0, 0, 0]);
+    }
 }
 
 impl Island {
@@ -82,47 +110,202 @@ impl Island {
         if words.is_empty() {
             return Err(PatchError::EmptyIsland);
         }
+        let mut island = Self::reserve(words.len())?;
+        island.fill(words)?;
+        Ok(island)
+    }
+
+    /// Map a fresh island with room for `capacity_words` words and no
+    /// payload yet, so entry-dependent words (branches back to a site)
+    /// can be computed from the real entry address and then filled
+    /// with [`fill`](Self::fill) before publication.
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    pub fn reserve(capacity_words: usize) -> Result<Self, PatchError> {
+        Self::reserve_mapped(capacity_words, None)
+    }
+
+    /// Like [`reserve`](Self::reserve), with the RX alias at exactly
+    /// `rx_hint`, for a caller that must place the island within branch
+    /// range of a site. Choosing the hint (a free gap in range) is the
+    /// caller's job; the RW alias goes anywhere.
+    ///
+    /// The RX alias is mapped with `MAP_FIXED_NOREPLACE`, so an occupied
+    /// range is refused by the kernel (`PatchError::Os` for
+    /// `"mmap rx at hint"` with `EEXIST`) and nothing there is replaced.
+    /// The returned address is then compared with the hint: a kernel
+    /// older than 4.17 ignores the flag and may map elsewhere, and such
+    /// a mapping is removed again and refused as
+    /// [`PatchError::IslandHintRefused`]. It is never retried with
+    /// `MAP_FIXED`. A hint that is zero or not page-aligned is refused
+    /// the same way before anything is created.
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    pub fn reserve_at(capacity_words: usize, rx_hint: u64) -> Result<Self, PatchError> {
+        Self::reserve_mapped(capacity_words, Some(rx_hint))
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    fn reserve_mapped(capacity_words: usize, rx_hint: Option<u64>) -> Result<Self, PatchError> {
+        if capacity_words == 0 {
+            return Err(PatchError::EmptyIsland);
+        }
         let page = crate::page_size()?;
-        let payload = (words.len() as u64)
+        let payload = (capacity_words as u64)
             .checked_mul(4)
             .ok_or(PatchError::RangeOverflow)?;
         let len = page_span(page, payload).ok_or(PatchError::RangeOverflow)? as usize;
+        if let Some(hint) = rx_hint {
+            if hint == 0 || !hint.is_multiple_of(page) {
+                return Err(PatchError::IslandHintRefused {
+                    hint,
+                    mapped_at: None,
+                });
+            }
+            hint.checked_add(len as u64)
+                .ok_or(PatchError::RangeOverflow)?;
+        }
         let fd = memfd_exec()?;
-        let rc = unsafe { libc::ftruncate(fd, len as libc::off_t) };
+        // SAFETY: fd is the memfd just created; len is its size.
+        let rc =
+            unsafe { crate::gate::gate6(libc::SYS_ftruncate, [fd as u64, len as u64, 0, 0, 0, 0]) };
         if rc != 0 {
-            let e = PatchError::os("ftruncate");
-            unsafe { libc::close(fd) };
+            let e = crate::gate::check(rc, "ftruncate").unwrap_err();
+            gate_close(fd);
             return Err(e);
         }
+        // SAFETY: fresh sized memfd; the two shared mappings are the
+        // island's dual aliases for `len` bytes.
         let map = |prot: libc::c_int| unsafe {
-            libc::mmap(std::ptr::null_mut(), len, prot, libc::MAP_SHARED, fd, 0)
+            crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    len as u64,
+                    prot as u64,
+                    libc::MAP_SHARED as u64,
+                    fd as u64,
+                    0,
+                ],
+            )
         };
         let rw = map(libc::PROT_READ | libc::PROT_WRITE);
-        if rw == libc::MAP_FAILED {
-            let e = PatchError::os("mmap rw");
-            unsafe { libc::close(fd) };
+        if (-4095..0).contains(&rw) {
+            let e = crate::gate::check(rw, "mmap rw").unwrap_err();
+            gate_close(fd);
             return Err(e);
         }
-        let rx = map(libc::PROT_READ | libc::PROT_EXEC);
-        if rx == libc::MAP_FAILED {
-            let e = PatchError::os("mmap rx");
-            unsafe {
-                libc::munmap(rw, len);
-                libc::close(fd);
+        let rx = match rx_hint {
+            None => map(libc::PROT_READ | libc::PROT_EXEC),
+            Some(hint) => {
+                #[cfg(test)]
+                let noreplace = if SIMULATE_NO_NOREPLACE.with(|s| s.get()) {
+                    0
+                } else {
+                    L_MAP_FIXED_NOREPLACE
+                };
+                #[cfg(not(test))]
+                let noreplace = L_MAP_FIXED_NOREPLACE;
+                // SAFETY: as `map`, at a caller-chosen address; with
+                // MAP_FIXED_NOREPLACE the kernel never replaces an
+                // existing mapping, and without it (before 4.17) the
+                // address is only a hint, checked below.
+                unsafe {
+                    crate::gate::gate6(
+                        libc::SYS_mmap,
+                        [
+                            hint,
+                            len as u64,
+                            (libc::PROT_READ | libc::PROT_EXEC) as u64,
+                            (libc::MAP_SHARED | noreplace) as u64,
+                            fd as u64,
+                            0,
+                        ],
+                    )
+                }
             }
+        };
+        if (-4095..0).contains(&rx) {
+            let op = if rx_hint.is_some() {
+                "mmap rx at hint"
+            } else {
+                "mmap rx"
+            };
+            let e = crate::gate::check(rx, op).unwrap_err();
+            // SAFETY: rw is the live mapping just created above.
+            unsafe {
+                crate::gate::gate6(libc::SYS_munmap, [rw as u64, len as u64, 0, 0, 0, 0]);
+            }
+            gate_close(fd);
             return Err(e);
         }
-        let island = Self {
-            fd,
+        if let Some(hint) = rx_hint
+            && rx as u64 != hint
+        {
+            // A kernel without MAP_FIXED_NOREPLACE placed it elsewhere:
+            // remove both aliases and refuse by name.
+            // SAFETY: rw and rx are the live mappings just created.
+            unsafe {
+                crate::gate::gate6(libc::SYS_munmap, [rx as u64, len as u64, 0, 0, 0, 0]);
+                crate::gate::gate6(libc::SYS_munmap, [rw as u64, len as u64, 0, 0, 0, 0]);
+            }
+            gate_close(fd);
+            return Err(PatchError::IslandHintRefused {
+                hint,
+                mapped_at: Some(rx as u64),
+            });
+        }
+        // The mappings keep the memfd alive; close the fd now so a
+        // published island (retained for process lifetime) never
+        // leaks a guest-visible fd number per flipped site.
+        gate_close(fd);
+        Ok(Self {
             rw: rw as *mut u8,
             rx: rx as *mut u8,
             len,
-            words: words.len(),
-        };
-        for (i, word) in words.iter().enumerate() {
-            island.write_word(i * 4, *word);
+            words: 0,
+            capacity_words,
+            published: false,
+        })
+    }
+
+    /// Reserve a fresh island (see the Linux form).
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+    pub fn reserve(_capacity_words: usize) -> Result<Self, PatchError> {
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
+    }
+
+    /// Reserve a fresh island at a hint (see the Linux form).
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+    pub fn reserve_at(_capacity_words: usize, _rx_hint: u64) -> Result<Self, PatchError> {
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
+    }
+
+    /// Write the payload words of a reserved island (may be called
+    /// repeatedly before publication to revise them). After
+    /// [`publish`](Self::publish) this returns
+    /// `PatchError::AlreadyPublished`: published text is immutable.
+    pub fn fill(&mut self, words: &[u32]) -> Result<(), PatchError> {
+        if self.published {
+            return Err(PatchError::AlreadyPublished);
         }
-        Ok(island)
+        if words.is_empty() {
+            return Err(PatchError::EmptyIsland);
+        }
+        if words.len() > self.capacity_words {
+            return Err(PatchError::CapacityExceeded {
+                capacity_words: self.capacity_words,
+                offered: words.len(),
+            });
+        }
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        {
+            for (i, word) in words.iter().enumerate() {
+                self.write_word(i * 4, *word);
+            }
+            self.words = words.len();
+            Ok(())
+        }
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 
     /// Map a fresh island (see the Linux form).
@@ -142,14 +325,51 @@ impl Island {
     /// Publish the written words for execution: dual-alias cache sync
     /// over the whole mapping. Requires the construction-time cache
     /// attestation token (environment established before any store).
-    pub fn publish(&self, _attested: CacheAttested) -> Result<(), PatchError> {
-        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
-        // SAFETY: both aliases name this island's full shared range.
-        unsafe {
-            sync_icache(self.rw, self.rx, self.len)
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    pub fn publish(&mut self, _attested: CacheAttested) -> Result<(), PatchError> {
+        if self.published {
+            return Err(PatchError::AlreadyPublished);
         }
-        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        // SAFETY: both aliases name this island's full shared range.
+        unsafe { sync_icache(self.rw, self.rx, self.len)? };
+        self.published = true;
+        // Published text is immutable (fill now refuses), so the
+        // RW alias has no remaining purpose: unmap it so a live
+        // island is never writable through any VA. The RX alias
+        // keeps the backing alive. The munmap result is CHECKED:
+        // on failure the alias address is retained (Drop retries
+        // the unmap) and the error surfaces — publishing must not
+        // claim immutability it did not achieve.
+        // SAFETY: rw is this island's own mapping.
+        let ret = unsafe {
+            crate::gate::gate6(
+                libc::SYS_munmap,
+                [self.rw as u64, self.len as u64, 0, 0, 0, 0],
+            )
+        };
+        crate::gate::check(ret, "munmap island rw alias")?;
+        self.rw = core::ptr::null_mut();
+        Ok(())
+    }
+
+    /// Publish the written words (see the AArch64 Linux form).
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+    pub fn publish(&mut self, _attested: CacheAttested) -> Result<(), PatchError> {
         Err(PatchError::Unsupported("islands require AArch64 Linux"))
+    }
+
+    /// Deliberately leak this island's mappings forever (its fd was
+    /// already closed at reserve time)
+    /// (bounded by the session). Used by `Site` custody when a live
+    /// branch may still target the island: unmapping would be a
+    /// correctness defect, leaking is the documented safe outcome.
+    pub(crate) fn disarm(self) {
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        core::mem::forget(self);
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        {
+            // No mappings exist off-target; consuming self is enough.
+        }
     }
 
     /// Executable (RX) address of the island entry (offset 0).
@@ -174,6 +394,14 @@ impl Island {
         self.words
     }
 
+    /// Payload extent in bytes (`words * 4`), distinct from the
+    /// page-rounded [`mapped_len`](Self::mapped_len): return-reach
+    /// validation must use the actual last payload word as the return
+    /// branch location, never the padded mapping end.
+    pub fn payload_len(&self) -> u64 {
+        self.words as u64 * 4
+    }
+
     /// Read one word back through the RX alias (contents check; never
     /// used to decide publication by itself).
     pub fn read_rx_word(&self, index: usize) -> Option<u32> {
@@ -194,10 +422,18 @@ impl Island {
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 impl Drop for Island {
     fn drop(&mut self) {
+        // SAFETY: both aliases are this island's own live mappings.
         unsafe {
-            libc::munmap(self.rw as *mut libc::c_void, self.len);
-            libc::munmap(self.rx as *mut libc::c_void, self.len);
-            libc::close(self.fd);
+            if !self.rw.is_null() {
+                crate::gate::gate6(
+                    libc::SYS_munmap,
+                    [self.rw as u64, self.len as u64, 0, 0, 0, 0],
+                );
+            }
+            crate::gate::gate6(
+                libc::SYS_munmap,
+                [self.rx as u64, self.len as u64, 0, 0, 0, 0],
+            );
         }
     }
 }
@@ -220,11 +456,285 @@ mod tests {
         assert_eq!(Island::build(&[]).unwrap_err(), PatchError::EmptyIsland);
     }
 
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn reserve_closes_the_memfd() {
+        // Census in a forked child: even a name-filtered count
+        // races sibling tests constructing islands in parallel.
+        // The child has the table to itself, so its exact counts
+        // are deterministic; it reports by exit code. Every
+        // observation must SUCCEED: a failed census exits 7 and
+        // is never a comparable count.
+        // SAFETY: fork with an immediately-exiting child that only
+        // reserves/drops one island and counts its own fds.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            let count = || -> Result<usize, ()> {
+                let dir = std::fs::read_dir("/proc/self/fd").map_err(|_| ())?;
+                let mut n = 0;
+                for entry in dir {
+                    let entry = entry.map_err(|_| ())?;
+                    let target = std::fs::read_link(entry.path()).map_err(|_| ())?;
+                    if target.to_string_lossy().contains("memfd:liteinst-island") {
+                        n += 1;
+                    }
+                }
+                Ok(n)
+            };
+            let code = (|| -> i32 {
+                let Ok(before) = count() else { return 7 };
+                let island = Island::reserve(2);
+                let reserved = island.is_ok();
+                let Ok(during) = count() else { return 7 };
+                drop(island);
+                let Ok(after) = count() else { return 7 };
+                if reserved && during == before && after == before {
+                    0
+                } else {
+                    3
+                }
+            })();
+            unsafe { libc::_exit(code) };
+        }
+        let mut status: libc::c_int = 0;
+        assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
+        assert!(
+            libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
+            "fd census child status={status:#x} (7=census unavailable)"
+        );
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn fill_after_publish_is_already_published() {
+        let token = crate::cache::CacheAttested::for_test();
+        let mut island = Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
+        island.publish(token).unwrap();
+        assert_eq!(
+            island.fill(&[0xd503_201f]),
+            Err(PatchError::AlreadyPublished)
+        );
+        assert_eq!(
+            Island::reserve(1).unwrap().fill(&[1, 2]),
+            Err(PatchError::CapacityExceeded {
+                capacity_words: 1,
+                offered: 2
+            })
+        );
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn second_publish_is_already_published_not_a_null_sync() {
+        let token = crate::cache::CacheAttested::for_test();
+        let mut island = Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
+        island.publish(token).unwrap();
+        // Regression: the second publish must refuse by name, not
+        // sync through the cleared (null) RW pointer.
+        assert_eq!(island.publish(token), Err(PatchError::AlreadyPublished));
+    }
+
+    /// One anonymous page with a marker word, for the occupied-hint
+    /// tests; returns its address. The page is MAP_SHARED: Linux gives
+    /// each shared anonymous mapping its own backing object, so it never
+    /// merges with a neighbouring mapping and stays one /proc/self/maps
+    /// line that starts at its address. A private anonymous page can
+    /// merge into an adjacent read-write anonymous range (another test's
+    /// page, a malloc arena), and then no line starts at it.
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    fn marker_page(page: usize, marker: u64) -> u64 {
+        // SAFETY: a fresh shared anonymous mapping owned by the test.
+        let p = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                page,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED | libc::MAP_ANONYMOUS,
+                -1,
+                0,
+            )
+        };
+        assert_ne!(p, libc::MAP_FAILED);
+        // SAFETY: p is the page just mapped, writable.
+        unsafe { (p as *mut u64).write_volatile(marker) };
+        p as u64
+    }
+
+    /// The /proc/self/maps line whose range starts at `addr`, if any.
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    fn maps_line_at(addr: u64) -> Option<String> {
+        let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
+        maps.lines()
+            .find(|line| {
+                line.split('-')
+                    .next()
+                    .and_then(|start| u64::from_str_radix(start, 16).ok())
+                    == Some(addr)
+            })
+            .map(str::to_owned)
+    }
+
+    /// The /proc/self/maps line whose range contains `addr`, if any (for
+    /// failure messages).
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    fn maps_line_containing(addr: u64) -> Option<String> {
+        let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
+        maps.lines()
+            .find(|line| {
+                let range = line.split(' ').next().unwrap_or("");
+                let mut ends = range
+                    .split('-')
+                    .map(|x| u64::from_str_radix(x, 16).unwrap_or(0));
+                let (start, end) = (ends.next().unwrap_or(0), ends.next().unwrap_or(0));
+                (start..end).contains(&addr)
+            })
+            .map(str::to_owned)
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn reserve_at_places_the_rx_alias_at_the_hint() {
+        let page = crate::page_size().unwrap() as usize;
+        // A hint the kernel just released. A sibling test may take the
+        // range in between (EEXIST); retry with a fresh one, a bounded
+        // number of times.
+        for _ in 0..16 {
+            let hint = marker_page(page, 0);
+            // SAFETY: the test's own page, released to become the hint.
+            assert_eq!(unsafe { libc::munmap(hint as *mut _, page) }, 0);
+            match Island::reserve_at(2, hint) {
+                Ok(mut island) => {
+                    assert_eq!(island.entry_addr(), hint);
+                    let line = maps_line_at(hint).expect("the RX alias is mapped at the hint");
+                    assert!(line.contains(" r-xs "), "{line}");
+                    assert!(line.contains("liteinst-island"), "{line}");
+                    island.fill(&[0xd400_0001, 0xd65f_03c0]).unwrap();
+                    assert_eq!(island.read_rx_word(0), Some(0xd400_0001));
+                    assert_eq!(island.read_rx_word(1), Some(0xd65f_03c0));
+                    return;
+                }
+                Err(PatchError::Os { op, errno }) if errno == libc::EEXIST => {
+                    assert_eq!(op, "mmap rx at hint");
+                }
+                Err(e) => panic!("reserve_at at a free hint: {e}"),
+            }
+        }
+        panic!("no free hint stayed free for 16 attempts");
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn reserve_at_refuses_an_occupied_hint_without_clobbering_it() {
+        let page = crate::page_size().unwrap() as usize;
+        let marker = 0x5a5a_a5a5_0123_4567;
+        let hint = marker_page(page, marker);
+        let before = maps_line_at(hint).unwrap_or_else(|| {
+            panic!(
+                "the marker page {hint:#x} is its own mapping; the line containing it: {:?}",
+                maps_line_containing(hint)
+            )
+        });
+        assert_eq!(
+            Island::reserve_at(2, hint).unwrap_err(),
+            PatchError::Os {
+                op: "mmap rx at hint",
+                errno: libc::EEXIST
+            }
+        );
+        // SAFETY: the marker page is still the test's own mapping.
+        assert_eq!(unsafe { (hint as *const u64).read_volatile() }, marker);
+        assert_eq!(maps_line_at(hint).as_deref(), Some(before.as_str()));
+        // SAFETY: the test's own page.
+        assert_eq!(unsafe { libc::munmap(hint as *mut _, page) }, 0);
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn reserve_at_refuses_where_noreplace_is_unsupported() {
+        // Simulate a kernel older than 4.17, which ignores
+        // MAP_FIXED_NOREPLACE and treats the address as a plain hint: at
+        // an occupied hint the kernel then maps elsewhere. The refusal
+        // must name both addresses, leave no island mapping behind, and
+        // never clobber the occupied range. The mapping census runs in a
+        // forked child, which has the address space to itself (sibling
+        // tests create islands in parallel); it reports by exit code.
+        // SAFETY: fork with a child that only maps, reads and exits.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            let code = (|| -> i32 {
+                let Ok(page) = crate::page_size() else {
+                    return 7;
+                };
+                let page = page as usize;
+                let islands = || -> Result<usize, ()> {
+                    let maps = std::fs::read_to_string("/proc/self/maps").map_err(|_| ())?;
+                    Ok(maps
+                        .lines()
+                        .filter(|l| l.contains("liteinst-island"))
+                        .count())
+                };
+                let marker = 0x0bad_c0de_dead_beef;
+                let hint = marker_page(page, marker);
+                let Ok(before) = islands() else { return 7 };
+                SIMULATE_NO_NOREPLACE.with(|s| s.set(true));
+                let result = Island::reserve_at(2, hint);
+                SIMULATE_NO_NOREPLACE.with(|s| s.set(false));
+                let Ok(after) = islands() else { return 7 };
+                let refused = matches!(
+                    result,
+                    Err(PatchError::IslandHintRefused { hint: h, mapped_at: Some(at) })
+                        if h == hint && at != hint
+                );
+                // SAFETY: the marker page is still this child's mapping.
+                let intact = unsafe { (hint as *const u64).read_volatile() } == marker;
+                match (refused, after == before, intact) {
+                    (true, true, true) => 0,
+                    (false, _, _) => 3,
+                    (_, false, _) => 4,
+                    (_, _, false) => 5,
+                }
+            })();
+            unsafe { libc::_exit(code) };
+        }
+        let mut status: libc::c_int = 0;
+        assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
+        assert!(
+            libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
+            "child status={status:#x} (3=not refused by name, 4=an island mapping \
+             remained, 5=the occupied page changed, 7=census unavailable)"
+        );
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn reserve_at_refuses_a_zero_or_misaligned_hint_before_mapping() {
+        let page = crate::page_size().unwrap();
+        for hint in [0, page + 4] {
+            assert_eq!(
+                Island::reserve_at(2, hint).unwrap_err(),
+                PatchError::IslandHintRefused {
+                    hint,
+                    mapped_at: None
+                }
+            );
+        }
+        assert_eq!(
+            Island::reserve_at(0, page).unwrap_err(),
+            PatchError::EmptyIsland
+        );
+    }
+
     #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
     #[test]
     fn island_refuses_off_linux() {
         assert!(matches!(
             Island::build(&[0]),
+            Err(PatchError::Unsupported(_))
+        ));
+        assert!(matches!(
+            Island::reserve_at(2, 0x1000),
             Err(PatchError::Unsupported(_))
         ));
     }

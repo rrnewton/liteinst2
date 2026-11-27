@@ -1,0 +1,13 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -1751,6 +1751,10 @@
+                     match self.resolve_indirect(&state, mem, src) {
+                         Ok(next) => {
+                             state = next;
++                            // MUTANT 13a: a resolved indirect costs one budget unit (in-process).
++                            if let Some(run) = self.budget_run.as_mut() {
++                                run.remaining = run.remaining.saturating_sub(1);
++                            }
+                         }
+                         Err(IndirectStop::Refuse(refusal)) => {
+                             if self.budget_run.is_some() {

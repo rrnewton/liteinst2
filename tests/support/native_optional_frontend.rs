@@ -79,7 +79,9 @@ impl Ready {
         assert!(count <= 5);
         assert_eq!(bytes.len(), 16 + n + count * 16);
         let observers = bytes[16 + n..]
-            .chunks_exact(16)
+            .as_chunks::<16>()
+            .0
+            .iter()
             .map(|b| {
                 (
                     u64::from_le_bytes(b[..8].try_into().unwrap()),
@@ -160,8 +162,10 @@ fn observer_sequence(ready: &Ready, actual: &[u64], slow: bool, ret: u64) {
 fn frame(child: &Tracee, address: u64) -> Vec<u64> {
     child
         .memory(address, FRAME_WORDS * 8)
-        .chunks_exact(8)
-        .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| u64::from_le_bytes(*b))
         .collect()
 }
 

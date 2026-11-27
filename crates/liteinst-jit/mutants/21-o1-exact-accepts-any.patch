@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/o1.rs
++++ b/crates/liteinst-jit/src/o1.rs
+@@ -340,7 +340,8 @@
+ /// any disagreement between the decode and the trap.
+ fn check_next_rip(ins: &Instruction, pc: u64, predicted: NextRip, after: u64) {
+     let ok = match predicted {
+-        NextRip::Exact(x) => after == x,
++        // MUTANT 21: an exact prediction accepts any successor.
++        NextRip::Exact(_) => true,
+         NextRip::FallOrTaken { fall, taken } => after == fall || after == taken,
+         NextRip::Unverifiable | NextRip::Unreadable => false,
+     };

@@ -71,15 +71,67 @@ census escapes in-place patching by construction. That gap is one
 reason the roadmap keeps an out-of-place translation path — see
 [Interception mechanisms compared](mechanisms.md).
 
-> 🚧 **Under construction — gate listings.** TODO: runnable listings
-> for `native_probe`/`selected_probe` (in-process) and the
-> `checkpoint` example (launch), each separating publication,
-> first-touch, and steady-state costs as their own probes report
-> them. <!-- UC: gates-listings -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`gates-listings`).
+## The three probes, run
+
+Both gate crates ship probes that report their own costs as JSON;
+run them before believing any number in this chapter. The
+in-process probes demand their measurement preconditions loudly:
+release build, one thread, pinned to a single reserved CPU (hence
+`taskset`), and no seccomp filter. A run that cannot meet them
+refuses instead of timing something else.
+
+```console
+$ cargo build --release -p liteinst-inprocess --examples -p liteinst-launch --example checkpoint
+$ taskset -c 3 target/release/examples/native_probe cpuid 1000
+$ taskset -c 3 target/release/examples/selected_probe masked_rdrand 1000
+$ target/release/examples/checkpoint /bin/true
+checkpoint_only=true resumed=false startup_ns=2461771 first_image=Interpreter initial_pc=0x7f45072eb010 executable_entry=0x562ca40478c0 mappings=13
+```
+
+The costs separate exactly as the probes report them — nothing here
+is a benchmark claim beyond this host and run (batch medians over
+17×1000 iterations):
+
+* **Publication** (`publication_ns`, `gate_preparation_ns`,
+  `arm_ns`): one-time, before any guest instruction — 55 µs + 5 µs +
+  203 µs for the `cpuid` gate, 22 µs + 5 µs + 158 µs for the selected
+  `rdrand` replacement. Arming dominates; it is also amortized by
+  never recurring.
+* **First touch** (`handler_first_touch_ns`, `faults`,
+  `admitted_pages`): one fault, one admitted page, ≈7 µs (native) /
+  ≈5 µs (selected) for the handler that verifies final bytes and
+  opens RX. This is the lazy-admission bill, paid once per page.
+* **Steady state** (`native_steady_ns` vs `gated_`/`patched_`):
+  ≈47 ns/iteration native against ≈287 ns gated for `cpuid`, and
+  ≈30 ns against ≈256 ns for the patched `rdrand` — the per-call
+  price that remains after admission, which is the number your
+  workload actually multiplies.
+
+The launch probe makes the opposite trade visible: `checkpoint`
+stops `/bin/true` before its interpreter's first instruction
+(`first_image=Interpreter`, 13 mappings recorded, `resumed=false`)
+and terminates it unexecuted. There is no steady state to price —
+the checkpoint *is* the product.
 >
-> 🚧 **Under construction — lifecycle coverage.** TODO: document
-> fork/thread/signal behaviour per gate as that support lands; today
-> both gates refuse most lifecycle operations, and this chapter must
-> not outrun the code. <!-- UC: gates-lifecycle -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`gates-lifecycle`).
+## Lifecycle, per gate
+
+Lifecycle support is where the two gates differ most, and mostly by
+refusing. This matrix is the current code's behaviour, not a
+roadmap: where a cell says *refuses*, the operation is rejected by
+name or contract before it can run unobserved.
+
+| Operation | In-process gate | Launch gate (single-thread) | Launch gate (concurrent) |
+|---|---|---|---|
+| Threads | Singleton only: `arm()` verifies the kernel task registry holds exactly this main thread; creating threads while armed breaks the contract | One task only; `clone` is outside the syscall policy and refuses | Bounded registration only: a factory page creates 2–8 native threads under one exact clone-flags set, each captured before its first instruction; the leader stays held at its declared `INT3` |
+| `fork`/`vfork` | Prohibited while armed (the armed contract excludes fork) | Refuses before kernel execution | Refuses after registration |
+| `exec` successor | Not followed: the gate owns this process's source image; disarm before exec | The *initial* exec is the checkpoint itself; a successor `execve` is outside the policy and refuses | Refuses after registration |
+| Signals | The gate owns `SIGSEGV`, the signal mask, and a guarded altstack while armed; disarm/Drop restores the exact prior disposition, mask, and altstack. Foreign or nested faults poison and terminate | An unowned application signal is reported at its original PC and closes the loop — the session ends rather than delivering it | Signal syscalls after registration refuse; workers may call only `getpid`, `gettid`, and individual `exit` |
+| Mapping churn (`dlopen`, remap) | Prohibited while armed: no mapping, byte, or executable-owner changes | Unsupported: the census is the initial mappings; churn has no admission path | Refuses after registration |
+| Exit | `disarm()` (or Drop) restores RX and signal state; leaking an armed gate does not discharge its obligations | `exit`/`exit_group` are inside the tiny policy and run; `checkpoint.terminate()` ends a checkpointed child unexecuted | Individual worker `exit` is the one lifecycle call registration permits |
+
+Adjacent finite profiles exist outside the gates' own lifecycle —
+a one-queued-real-time-signal admission profile and a bounded
+singleton mapping-lifecycle profile in `liteinst-launch` — each with
+its own validation protocol. They do not widen any row above:
+general thread, signal, fork/exec, and mapping-churn support
+remains refused until a gate claims it with evidence.

@@ -32,8 +32,11 @@ pub struct RegionFacts {
     pub bytes: Vec<u8>,
     /// Generation of the source mapping when the snapshot was taken.
     pub generation: Generation,
-    /// True only when the caller proves the mapping is private and
-    /// non-writable for the cache lifetime. Anything else refuses.
+    /// The caller's assertion that the mapping is private and
+    /// non-writable for the cache lifetime; `false` refuses. Admission
+    /// checks only this flag: this crate does not verify it against
+    /// the mapping's protections
+    /// (<https://github.com/rrnewton/liteinst2/issues/107>).
     pub immutable_private: bool,
 }
 
@@ -51,6 +54,30 @@ impl RegionFacts {
     }
 }
 
+/// A change to guest memory reported by the caller, who owns the
+/// system call semantics; this crate never classifies the call itself.
+/// Every event advances the executable's generation, and the live
+/// translation is rebuilt on the next transfer into the cache (one
+/// global generation, flushed on any mapping event).
+///
+/// Events reported together are applied all or none. If any region
+/// event in the batch is not strictly newer than the one before it
+/// (a hole event counts as one step), no snapshot in the batch is
+/// admitted, every range the batch names becomes a hole, and the batch
+/// refuses `Refuse::StaleGeneration`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MappingEvent {
+    /// Start of the changed range.
+    pub start: u64,
+    /// End of the changed range (exclusive).
+    pub end: u64,
+    /// `Some`: the admitted region is now this fresh snapshot, whose
+    /// generation must be strictly newer than the executable's.
+    /// `None`: `[start, end)` no longer holds admitted code; control
+    /// that reaches it refuses `Refuse::UnmappedCode`.
+    pub region: Option<RegionFacts>,
+}
+
 /// FNV-1a over source bytes. This is an identity check against the
 /// snapshot the block was translated from, not a security hash.
 pub fn byte_hash(bytes: &[u8]) -> u64 {
@@ -62,9 +89,11 @@ pub fn byte_hash(bytes: &[u8]) -> u64 {
     h
 }
 
-/// Identity of one cached translation. Address equality alone never
-/// validates an entry: bytes, generation, and count profile must all
-/// match the translation inputs.
+/// Identity of one cached translation: source PC, byte hash,
+/// generation and count profile. `CacheIndex::lookup` compares the
+/// whole key, but neither dispatcher calls it: both enter blocks by
+/// address, so at dispatch today address equality alone selects an
+/// entry (<https://github.com/rrnewton/liteinst2/issues/104>).
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct CacheKey {
     pub src_pc: u64,

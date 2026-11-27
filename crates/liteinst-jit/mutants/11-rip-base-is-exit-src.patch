@@ -1,0 +1,12 @@
+--- a/crates/liteinst-jit/src/indirect.rs
++++ b/crates/liteinst-jit/src/indirect.rs
+@@ -85,7 +85,8 @@
+         // iced reports a RIP-relative operand's displacement as the
+         // absolute address it decoded; the encoded displacement is
+         // that address minus the decoder's next IP.
+-        Register::RIP => (next_ip, disp.wrapping_sub(insn.next_ip())),
++        // MUTANT 11: the RIP-relative base is the instruction's own address.
++        Register::RIP => (insn.ip(), disp.wrapping_sub(insn.next_ip())),
+         Register::None => (0, disp),
+         r => (gpr64(s, r)?, disp),
+     };

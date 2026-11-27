@@ -1,0 +1,16 @@
+--- a/crates/liteinst-jit/src/indirect.rs
++++ b/crates/liteinst-jit/src/indirect.rs
+@@ -138,12 +138,7 @@
+             // 64-bit [disp32] reports size 8), so effective_address
+             // would compute it; this resolver claims 64-bit addressing
+             // only. Every other 67h form already fails in gpr64.
+-            if insn.memory_base() == Register::None
+-                && insn.memory_index() == Register::None
+-                && insn.memory_displ_size() == 4
+-            {
+-                return Err(ResolveError::AddressSize32);
+-            }
++            // MUTANT 35: a 32-bit absolute address is no longer refused.
+             let Some(ea) = effective_address(insn, s, next_ip) else {
+                 return Err(ResolveError::Unsupported);
+             };
