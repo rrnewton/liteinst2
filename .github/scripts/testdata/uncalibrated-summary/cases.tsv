@@ -1,0 +1,31 @@
+# name	file	outcome	verdict	exit	text
+missing	-	failure	UNCLASSIFIED	1	no readable test log
+log-is-directory	a-directory.log	failure	UNCLASSIFIED	1	the classifier itself failed
+cancelled	clean.log	cancelled	UNCLASSIFIED	1	test step outcome is 'cancelled'
+empty	empty.log	failure	UNCLASSIFIED	1	no cargo final failed-target list
+build-failed	build-failed.log	failure	UNCLASSIFIED	1	no cargo final failed-target list
+truncated	truncated.log	failure	UNCLASSIFIED	1	no cargo final failed-target list
+success-with-failures	success-with-failures.log	success	UNCLASSIFIED	1	the test step succeeded but the log shows failures
+orphan-section	orphan-section.log	failure	UNCLASSIFIED	1	a section has failure lines but no cargo failure line
+pre-section-failure	pre-section-failure.log	failure	UNCLASSIFIED	1	appear before the first test target
+duplicate-target	duplicate-target.log	failure	UNCLASSIFIED	1	twice
+missing-from-list	missing-from-list.log	failure	UNCLASSIFIED	1	missing from cargo final list
+list-mismatch	list-mismatch.log	failure	UNCLASSIFIED	1	but no section reports it
+list-count-mismatch	list-count-mismatch.log	failure	UNCLASSIFIED	1	target(s) failed but lists
+interleaved-failed	interleaved-failed.log	failure	UNCLASSIFIED	1	libtest reports 3 failed but 2 FAILED lines
+result-ok-but-failed	result-ok-but-failed.log	failure	UNCLASSIFIED	1	libtest reports no failed test
+libtest-unclosed	libtest-unclosed.log	failure	UNCLASSIFIED	1	libtest section has no result line
+failed-lines-no-result	failed-lines-no-result.log	failure	UNCLASSIFIED	1	FAILED lines without a libtest result
+spawn-failure	spawn-failure.log	failure	UNCLASSIFIED	1	no result line, gate line or exit note
+nonzero-exit	nonzero-exit.log	failure	OUTSIDE(1)	0	abnormal exit (exit status: 1)
+signal-kill	signal-kill.log	failure	OUTSIDE(1)	0	abnormal exit (signal: 6
+harness-false-gate-and-other-panic	harness-false-gate-and-other-panic.log	failure	OUTSIDE(1)	0	a panic outside the gate
+unnamed-failed	unnamed-failed.log	failure	OUTSIDE(1)	0	1 of 1 failed tests have no gate line
+cross-binary-same-name	cross-binary-same-name.log	failure	OUTSIDE(1)	0	have no gate line
+doctest-unnamed	doctest-unnamed.log	failure	OUTSIDE(1)	0	have no gate line
+gated-libtest-only	gated-libtest-only.log	failure	ONLY-NAMED	0	5 failed, each named by its gate line
+harness-false-gate-only	harness-false-gate-only.log	failure	ONLY-NAMED	0	ended at the gate panic (exit 101)
+failed-run-with-passing-panic-section	failed-run-with-passing-panic-section.log	failure	ONLY-NAMED	0	5 failed, each named by its gate line
+clean	clean.log	success	NO-FAILED-TARGETS	0	the log shows no failure
+clean-with-passing-panics	clean-with-passing-panics.log	success	NO-FAILED-TARGETS	0	the log shows no failure
+gate-text-mid-line	gate-text-mid-line.log	failure	OUTSIDE(1)	0	1 of 1 failed tests have no gate line

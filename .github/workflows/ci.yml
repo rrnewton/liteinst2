@@ -37,6 +37,10 @@ jobs:
           -p liteinst -p liteinst-x86 -p liteinst-aarch64 -p liteinst-aarch64-patch -p liteinst-artifact
           -p liteinst-admission -p liteinst-inprocess -p liteinst-launch
           --all-targets --all-features -- -D warnings
+      # Planted controls for the test job's summary script: each special
+      # path must give its own verdict, exit status and summary text.
+      - name: Summary script self-test
+        run: bash .github/scripts/uncalibrated-host-summary-selftest.sh
 
   test:
     name: Linux x86_64 tests (${{ matrix.group.name }}, ${{ matrix.profile }})
@@ -82,6 +86,7 @@ jobs:
       # at the just-built driver binaries; without them those cohorts
       # fail closed instead of running.
       - name: Tests (${{ matrix.group.name }}, ${{ matrix.profile }})
+        id: tests
         env:
           LITEINST_BOUNDARY_SIGNAL_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/boundary-signal-oracle-driver
           LITEINST_CHAIN_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/eviction-chain-oracle-driver
@@ -96,13 +101,6 @@ jobs:
           cargo test --locked ${{ matrix.profile == 'release' && '--release' || '' }} \
             ${{ matrix.group.packages }} \
             --all-targets --all-features --no-fail-fast 2>&1 | tee "$RUNNER_TEMP/tests.log"
-      # Native-CPUID tests FAIL by name ("UNCALIBRATED HOST: ...") on a host
-      # that loses the single-step trap after CPUID (issues 112, 115). This
-      # step only counts them apart from other failures; it always exits 0
-      # and cannot turn the job green.
-      - name: Uncalibrated-host summary (${{ matrix.group.name }}, ${{ matrix.profile }})
-        if: always()
-        run: bash .github/scripts/uncalibrated-host-summary.sh "$RUNNER_TEMP/tests.log"
       - name: Verify published package consumer
         if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: |
@@ -129,3 +127,11 @@ jobs:
         run: >-
           cargo test --locked --release --test stress probe_overhead_benchmark
           -- --ignored --exact --nocapture
+      # Native-CPUID tests FAIL by name ("UNCALIBRATED HOST: ...") on a host
+      # that loses the single-step trap after CPUID (issues 112, 115). This
+      # step classifies each failed target apart from other failures; it
+      # exits 1 only when the log cannot be classified. It runs last, so it
+      # can only add red: it never skips another step or turns the job green.
+      - name: Uncalibrated-host summary (${{ matrix.group.name }}, ${{ matrix.profile }})
+        if: always()
+        run: bash .github/scripts/uncalibrated-host-summary.sh "$RUNNER_TEMP/tests.log" "${{ steps.tests.outcome }}"

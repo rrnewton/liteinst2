@@ -1,0 +1,17 @@
+[1m[92m     Running[0m tests/dynamic_control.rs (target/debug/deps/dynamic_control-7c8d16b9c983066a)
+
+running 8 tests
+test active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens ... ok
+test independent_sessions_never_reap_each_other_or_an_unrelated_host_child ... ok
+test lifecycle_and_non_native_syscall_encodings_refuse_before_execution ... ok
+test interpreter_exec_event_preserves_both_selected_first_instructions ... ok
+test native_terminal_general_flags_xstate_and_memory_equal_raw_ptrace_oracle ... ok
+test pie_exec_event_authenticates_relocated_original_entry ... ok
+test running_wait_deadline_closes_session_and_explicit_cleanup_reaps ... ok
+test static_exec_stop_and_exact_kernel_exec_return_preserve_original_entry ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test dynamic_control`
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test dynamic_control`

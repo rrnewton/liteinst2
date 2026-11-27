@@ -1,0 +1,108 @@
+[1m[92m     Running[0m tests/page_gate.rs (target/debug/deps/page_gate-6e2df29ed764671b)
+
+running 17 tests
+test core_pun_cache_line_constraint_refuses_without_source_changes_or_execution ... ok
+test core_native_cpuid_replacement_matches_independent_native_complete_state ... ok
+test core_bundle_budget_is_checked_before_planning_site_sixty_five ... ok
+test call_records_return_into_never_executed_nx_page_and_plain_return_completes ... FAILED
+test core_pun_consumed_jump_fetch_admits_both_pages_once ... ok
+test cpuid_at_the_first_instruction_is_observed_before_execution_then_exits ... FAILED
+test custom_interpreter_and_main_are_both_observed_at_instruction_one ... FAILED
+test native_trace_retires_identity_before_unexpected_exit_assertion ... ok
+test no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory ... FAILED
+test core_pun_observes_first_cpuid_before_native_child_replacement_and_exits ... ok
+test selected_destination_with_saved_call_return_is_refused_while_still_nx ... FAILED
+test selected_instruction_split_across_pages_admits_both_pages_once ... FAILED
+test core_pun_observes_custom_interpreter_and_main_first_instructions_once_each ... ok
+test selected_syscall_remains_selected_and_is_refused_before_any_original_instruction ... ok
+test core_selected_destination_refuses_a_saved_call_return_while_still_nx ... ok
+test unselected_mmap_and_clone_syscalls_are_refused_before_kernel_execution ... ok
+test repeated_allowed_syscall_stops_do_not_restart_the_whole_event_deadline ... ok
+
+failures:
+
+---- call_records_return_into_never_executed_nx_page_and_plain_return_completes stdout ----
+
+thread 'call_records_return_into_never_executed_nx_page_and_plain_return_completes' (6206) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: page_gate::call_records_return_into_never_executed_nx_page_and_plain_return_completes: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- cpuid_at_the_first_instruction_is_observed_before_execution_then_exits stdout ----
+
+thread 'cpuid_at_the_first_instruction_is_observed_before_execution_then_exits' (6233) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: page_gate::cpuid_at_the_first_instruction_is_observed_before_execution_then_exits: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- custom_interpreter_and_main_are_both_observed_at_instruction_one stdout ----
+
+thread 'custom_interpreter_and_main_are_both_observed_at_instruction_one' (6234) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: page_gate::custom_interpreter_and_main_are_both_observed_at_instruction_one: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory stdout ----
+
+thread 'no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory' (6237) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: page_gate::no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- selected_destination_with_saved_call_return_is_refused_while_still_nx stdout ----
+
+thread 'selected_destination_with_saved_call_return_is_refused_while_still_nx' (6242) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: page_gate::selected_destination_with_saved_call_return_is_refused_while_still_nx: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- selected_instruction_split_across_pages_admits_both_pages_once stdout ----
+
+thread 'selected_instruction_split_across_pages_admits_both_pages_once' (6243) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: page_gate::selected_instruction_split_across_pages_admits_both_pages_once: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    call_records_return_into_never_executed_nx_page_and_plain_return_completes
+    cpuid_at_the_first_instruction_is_observed_before_execution_then_exits
+    custom_interpreter_and_main_are_both_observed_at_instruction_one
+    no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory
+    selected_destination_with_saved_call_return_is_refused_while_still_nx
+    selected_instruction_split_across_pages_admits_both_pages_once
+
+test result: FAILED. 11 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+[1m[92m     Running[0m tests/checkpoint.rs (target/debug/deps/checkpoint-71db8545e706f779)
+
+running 23 tests
+test application_jump_to_private_syscall_island_is_refused ... ok
+test checked_writes_and_island_guards_refuse_without_mutating_source ... ok
+test custom_interpreter_and_main_both_retain_their_selected_first_instruction ... ok
+test core_lease_borrows_real_stop_and_preserves_state_on_success ... ok
+test exact_code_allocation_initializes_offsets_and_refuses_collisions ... ok
+test exact_store_from_resume_flag_state_restores_every_register_and_neighbor ... ok
+test actual_nx_gate_requires_owned_fault_before_restoring_permissions ... FAILED
+test core_lease_error_poison_and_panic_kill_and_reap ... ok
+test exact_stores_reject_stale_rx_readonly_island_and_unmapped_ranges ... ok
+test invalid_commands_and_exec_failures_are_reported ... ok
+test memory_and_timeout_bounds_refuse_without_resuming ... ok
+test native_entry_oracle_forgets_reaped_child_before_early_exit_assertion ... ok
+test first_user_instruction_observes_natural_successful_exec_result ... ok
+test first_execution_xstate_matches_independent_native_entry_trap ... ok
+test pie_without_interpreter_uses_relocated_executable_entry ... ok
+test poisoned_core_lease_result_destructor_panic_kills_and_reaps ... ok
+test raw_getpid_and_exit_single_steps_report_exact_kernel_events ... ok
+test static_executable_is_stopped_at_its_selected_first_instruction ... ok
+test resumed_loop_timeout_kills_and_reaps_the_owned_child ... ok
+test syscall_island_bootstrap_preserves_original_code_gprs_and_xstate ... ok
+test unapproved_syscall_is_refused_before_kernel_execution_and_reaped ... ok
+test unknown_signal_cannot_be_suppressed_as_an_owned_fault ... ok
+test exact_native_stores_cover_all_widths_alignments_and_page_splits ... ok
+
+failures:
+
+---- actual_nx_gate_requires_owned_fault_before_restoring_permissions stdout ----
+
+thread 'actual_nx_gate_requires_owned_fault_before_restoring_permissions' (4989) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: checkpoint::actual_nx_gate_requires_owned_fault_before_restoring_permissions: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    actual_nx_gate_requires_owned_fault_before_restoring_permissions
+
+test result: FAILED. 22 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test checkpoint`
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test checkpoint`

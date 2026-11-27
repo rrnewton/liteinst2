@@ -1,0 +1,168 @@
+[1m[92m     Running[0m tests/b3_signal_admission.rs (target/debug/deps/b3_signal_admission-605a6bf9b8636c4b)
+
+running 5 tests
+test ordinary_stack_frame_matches_pristine_original ... FAILED
+test configured_altstack_frame_matches_pristine_original ... FAILED
+test inherited_nonzero_exception_metadata_matches_pristine_original ... FAILED
+test edited_frame_returns_to_untouched_nx_landing ... FAILED
+test pristine_comparator_rejects_metadata_and_unrelated_state_corruption ... FAILED
+
+failures:
+
+---- ordinary_stack_frame_matches_pristine_original stdout ----
+
+thread 'ordinary_stack_frame_matches_pristine_original' (4985) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::ordinary_stack_frame_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- configured_altstack_frame_matches_pristine_original stdout ----
+
+thread 'configured_altstack_frame_matches_pristine_original' (4981) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::configured_altstack_frame_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- inherited_nonzero_exception_metadata_matches_pristine_original stdout ----
+
+thread 'inherited_nonzero_exception_metadata_matches_pristine_original' (4983) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::inherited_nonzero_exception_metadata_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- edited_frame_returns_to_untouched_nx_landing stdout ----
+
+thread 'edited_frame_returns_to_untouched_nx_landing' (4982) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::edited_frame_returns_to_untouched_nx_landing: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- pristine_comparator_rejects_metadata_and_unrelated_state_corruption stdout ----
+
+thread 'pristine_comparator_rejects_metadata_and_unrelated_state_corruption' (4986) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::pristine_comparator_rejects_metadata_and_unrelated_state_corruption: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    configured_altstack_frame_matches_pristine_original
+    edited_frame_returns_to_untouched_nx_landing
+    inherited_nonzero_exception_metadata_matches_pristine_original
+    ordinary_stack_frame_matches_pristine_original
+    pristine_comparator_rejects_metadata_and_unrelated_state_corruption
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test b3_signal_admission`
+[1m[92m     Running[0m tests/compiled_selected_state_oracle.rs (target/debug/deps/compiled_selected_state_oracle-09146a25f0b3b3c7)
+
+running 54 tests
+test distinct_managed_roles_reject_duplicate_owner_wrong_pc_and_event ... ok
+
+thread 'first_equal_mask_0' (7901) panicked at tests/support/compiled_selected_state.rs:55:9:
+assertion `left == right` failed: independent scalar answer
+  left: 3
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'first_equal_mask_0' (7901) panicked at tests/support/compiled_selected_state.rs:18:9:
+assertion `left == right` failed: independent complete itinerary
+  left: [139678449930496, 139678449930503, 139678449930510, 139678449930517, 139678449930524, 139678449930531, 139678449930538, 139678449930545, 139678449930552, 139678449930559, 139678449930566, 139678449930573, 139678449930580, 139678449930587, 139678449930594, 139678449930601, 139678449930608, 139678449930613, 139678449930240, 139678449930243, 139678449930246, 139678449930248, 139678449930250, 139678449930265, 139678449930269, 139678449930256, 139678449930260, 139678449930263, 139678449930265, 139678449930269, 139678449930256, 139678449930260, 139678449930263, 139678449930265, 139678449930269, 139678449930256, 139678449930260, 139678449930263, 139678449930265, 139678449930269, 139678449930271, 139678449930274, 139678449932288]
+ right: [139678449930503, 139678449930510, 139678449930517, 139678449930524, 139678449930531, 139678449930538, 139678449930545, 139678449930552, 139678449930559, 139678449930566, 139678449930573, 139678449930580, 139678449930587, 139678449930594, 139678449930601, 139678449930608, 139678449930613, 139678449930240, 139678449930243, 139678449930246, 139678449930248, 139678449930250, 139678449930265, 139678449930269, 139678449930256, 139678449930260, 139678449930263, 139678449930265, 139678449930269, 139678449930256, 139678449930260, 139678449930263, 139678449930265, 139678449930269, 139678449930256, 139678449930260, 139678449930263, 139678449930265, 139678449930269, 139678449930271, 139678449930274, 139678449932288]
+
+thread 'first_equal_mask_0' (7901) panicked at tests/support/compiled_selected_state.rs:41:9:
+assertion `left == right` failed
+  left: [65, 66, 67, 61, 100, 101, 102]
+ right: [64, 66, 67, 61, 100, 101, 102]
+
+thread 'first_equal_mask_0' (7901) panicked at tests/support/compiled_selected_state.rs:54:9:
+assertion `left == right` failed: exact chosen RET
+  left: 0
+ right: 1
+COMPILED selected=0 mask=0: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_0 ... ok
+COMPILED selected=0 mask=2: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_2 ... ok
+COMPILED selected=0 mask=4: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_4 ... ok
+COMPILED selected=0 mask=1: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_1 ... ok
+COMPILED selected=0 mask=3: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_3 ... ok
+test fixture::literal_answers_and_complete_reachable_population_are_frozen ... ok
+test mapping_roles_reject_swapped_sharing_writes_and_missing_execute ... ok
+test oracle::calibration::rejects_application_memory_corruption - should panic ... ok
+test oracle::calibration::rejects_defined_flag_corruption - should panic ... ok
+test oracle::calibration::rejects_fault_address_corruption - should panic ... ok
+test oracle::calibration::rejects_gpr_corruption - should panic ... ok
+test oracle::calibration::rejects_redzone_corruption - should panic ... ok
+test oracle::calibration::rejects_simd_corruption - should panic ... ok
+test oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact ... ok
+test oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags ... ok
+test oracle::elf_exec_oracle::common_image::core_pair::planning_profile::tests::exact_caller_profile_and_whole_marker_must_agree ... ok
+test oracle::elf_exec_oracle::common_image::core_pair::router_contract::tests::exact_legacy_and_invalid_evex_markers ... ok
+test oracle::elf_exec_oracle::common_image::core_pair::router_contract::tests::route_identity_and_explicit_opt_in ... ok
+test oracle::elf_exec_oracle::common_image::recording::tests::clean_call_stack_words_have_independent_offsets_and_full_tail ... ok
+test oracle::elf_exec_oracle::common_image::recording::tests::complete_hook_symbol_extent_and_load_bytes_are_exact ... ok
+test oracle::elf_exec_oracle::common_image::recording::tests::entire_journal_append_and_unselected_state_are_exact ... ok
+test oracle::elf_exec_oracle::common_image::recording::tests::exact_clean_template_encodes_logical_argument_call_and_return ... ok
+test oracle::elf_exec_oracle::common_image::recording::tests::exact_trailing_profile_preserves_legacy_arguments_and_rejects_aliases ... ok
+test oracle::elf_exec_oracle::common_image::recording::tests::journal_owner_header_tail_and_existing_record_mutations_refuse ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic ... ok
+
+thread 'uppercase_count_mask_0' (8447) panicked at tests/support/compiled_selected_state.rs:55:9:
+assertion `left == right` failed: independent scalar answer
+  left: 3
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'uppercase_count_mask_0' (8447) panicked at tests/support/compiled_selected_state.rs:18:9:
+assertion `left == right` failed: independent complete itinerary
+  left: [140078552850688, 140078552850695, 140078552850702, 140078552850709, 140078552850716, 140078552850723, 140078552850730, 140078552850737, 140078552850744, 140078552850751, 140078552850758, 140078552850765, 140078552850772, 140078552850779, 140078552850786, 140078552850793, 140078552850800, 140078552850805, 140078552850480, 140078552850483, 140078552850485, 140078552850488, 140078552850491, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850517, 140078552850520, 140078552852480]
+ right: [140078552850695, 140078552850702, 140078552850709, 140078552850716, 140078552850723, 140078552850730, 140078552850737, 140078552850744, 140078552850751, 140078552850758, 140078552850765, 140078552850772, 140078552850779, 140078552850786, 140078552850793, 140078552850800, 140078552850805, 140078552850480, 140078552850483, 140078552850485, 140078552850488, 140078552850491, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850496, 140078552850499, 140078552850502, 140078552850504, 140078552850508, 140078552850512, 140078552850515, 140078552850517, 140078552850520, 140078552852480]
+
+thread 'uppercase_count_mask_0' (8447) panicked at tests/support/compiled_selected_state.rs:41:9:
+assertion `left == right` failed
+  left: [65, 66, 67, 61, 100, 101, 102]
+ right: [64, 66, 67, 61, 100, 101, 102]
+
+thread 'uppercase_count_mask_0' (8447) panicked at tests/support/compiled_selected_state.rs:54:9:
+assertion `left == right` failed: exact chosen RET
+  left: 0
+ right: 1
+COMPILED selected=1 mask=0: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_0 ... ok
+COMPILED selected=0 mask=6: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_6 ... ok
+COMPILED selected=0 mask=5: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_5 ... ok
+COMPILED selected=0 mask=7: 24 required native state comparisons, 2712 ordered boundary comparisons, zero mismatches
+test first_equal_mask_7 ... ok
+COMPILED selected=1 mask=1: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_1 ... ok
+COMPILED selected=1 mask=2: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_2 ... ok
+COMPILED selected=1 mask=4: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_4 ... ok
+COMPILED selected=1 mask=3: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_3 ... ok
+COMPILED selected=1 mask=6: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_6 ... ok
+COMPILED selected=1 mask=5: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_5 ... ok
+COMPILED selected=1 mask=7: 24 required native state comparisons, 4610 ordered boundary comparisons, zero mismatches
+test uppercase_count_mask_7 ... ok
+
+test result: ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 35.78s
+
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test b3_signal_admission`

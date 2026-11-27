@@ -1,0 +1,22 @@
+   Doc-tests liteinst_x86
+
+running 1 test
+test crates/liteinst-x86/src/lib.rs - decode (line 12) ... FAILED
+
+failures:
+
+---- crates/liteinst-x86/src/lib.rs - decode (line 12) stdout ----
+Test executable failed (exit status: 101).
+
+stderr:
+thread 'main' (7) panicked at crates/liteinst-x86/src/lib.rs:5:1:
+synthetic doctest failure
+
+failures:
+    crates/liteinst-x86/src/lib.rs - decode (line 12)
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+[1m[91merror[0m: doctest failed, to rerun pass `-p liteinst-x86 --doc`
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-x86 --doc`

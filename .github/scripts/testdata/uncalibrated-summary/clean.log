@@ -1,0 +1,27 @@
+[1m[92m     Running[0m tests/dynamic_control.rs (target/debug/deps/dynamic_control-7c8d16b9c983066a)
+
+running 8 tests
+test active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens ... ok
+test independent_sessions_never_reap_each_other_or_an_unrelated_host_child ... ok
+test lifecycle_and_non_native_syscall_encodings_refuse_before_execution ... ok
+test interpreter_exec_event_preserves_both_selected_first_instructions ... ok
+test native_terminal_general_flags_xstate_and_memory_equal_raw_ptrace_oracle ... ok
+test pie_exec_event_authenticates_relocated_original_entry ... ok
+test running_wait_deadline_closes_session_and_explicit_cleanup_reaps ... ok
+test static_exec_stop_and_exact_kernel_exec_return_preserve_original_entry ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+[1m[92m     Running[0m tests/dynamic_fork.rs (target/debug/deps/dynamic_fork-e42a104027940ea0)
+
+running 7 tests
+test failed_native_fork_retries_do_not_invent_child_records ... ok
+test fork_options_keep_default_and_other_lifecycle_refusals_before_execution ... ok
+test child_first_original_ud2_matches_independent_native_full_state ... ok
+test fork_returns_cow_wait_and_terminal_match_independent_native_state ... ok
+test per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations ... ok
+test retired_child_does_not_replenish_lifetime_creation_budget ... ok
+test running_fork_pair_deadline_closes_and_physically_reaps_both ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+

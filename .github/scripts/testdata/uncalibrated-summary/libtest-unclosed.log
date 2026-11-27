@@ -1,0 +1,37 @@
+[1m[92m     Running[0m tests/b3_mapping_admission.rs (target/debug/deps/b3_mapping_admission-1311f8c7df8bbf7c)
+
+running 5 tests
+test full_native_mapping_comparator_rejects_each_state_source_and_map_corruption ... FAILED
+test original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources ... FAILED
+test stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history ... FAILED
+test resolver_panic_after_real_rx_keeps_failure_and_original_physical_cleanup ... ok
+test blocked_resolver_expires_original_deadline_before_callback_is_released ... ok
+
+failures:
+
+---- full_native_mapping_comparator_rejects_each_state_source_and_map_corruption stdout ----
+
+thread 'full_native_mapping_comparator_rejects_each_state_source_and_map_corruption' (4964) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_mapping_admission::full_native_mapping_comparator_rejects_each_state_source_and_map_corruption: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources stdout ----
+
+thread 'original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources' (4965) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_mapping_admission::original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history stdout ----
+
+thread 'stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history' (4972) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_mapping_admission::stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    full_native_mapping_comparator_rejects_each_state_source_and_map_corruption
+    original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources
+    stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history
+
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test b3_mapping_admission`
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test b3_mapping_admission`

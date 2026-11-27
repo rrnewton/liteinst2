@@ -1,0 +1,98 @@
+[1m[92m     Running[0m tests/b3_signal_admission.rs (target/debug/deps/b3_signal_admission-605a6bf9b8636c4b)
+
+running 5 tests
+test ordinary_stack_frame_matches_pristine_original ... FAILED
+test configured_altstack_frame_matches_pristine_original ... FAILED
+test inherited_nonzero_exception_metadata_matches_pristine_original ... FAILED
+test edited_frame_returns_to_untouched_nx_landing ... FAILED
+test pristine_comparator_rejects_metadata_and_unrelated_state_corruption ... FAILED
+
+failures:
+
+---- ordinary_stack_frame_matches_pristine_original stdout ----
+
+thread 'ordinary_stack_frame_matches_pristine_original' (4985) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::ordinary_stack_frame_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- configured_altstack_frame_matches_pristine_original stdout ----
+
+thread 'configured_altstack_frame_matches_pristine_original' (4981) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::configured_altstack_frame_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- inherited_nonzero_exception_metadata_matches_pristine_original stdout ----
+
+thread 'inherited_nonzero_exception_metadata_matches_pristine_original' (4983) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::inherited_nonzero_exception_metadata_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- edited_frame_returns_to_untouched_nx_landing stdout ----
+
+thread 'edited_frame_returns_to_untouched_nx_landing' (4982) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::edited_frame_returns_to_untouched_nx_landing: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- pristine_comparator_rejects_metadata_and_unrelated_state_corruption stdout ----
+
+thread 'pristine_comparator_rejects_metadata_and_unrelated_state_corruption' (4986) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::pristine_comparator_rejects_metadata_and_unrelated_state_corruption: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    configured_altstack_frame_matches_pristine_original
+    edited_frame_returns_to_untouched_nx_landing
+    inherited_nonzero_exception_metadata_matches_pristine_original
+    ordinary_stack_frame_matches_pristine_original
+    pristine_comparator_rejects_metadata_and_unrelated_state_corruption
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test b3_signal_admission`
+[1m[92m     Running[0m tests/b3_signal_admission.rs (target/debug/deps/b3_signal_admission-605a6bf9b8636c4b)
+
+running 5 tests
+test ordinary_stack_frame_matches_pristine_original ... FAILED
+test configured_altstack_frame_matches_pristine_original ... FAILED
+test inherited_nonzero_exception_metadata_matches_pristine_original ... FAILED
+test edited_frame_returns_to_untouched_nx_landing ... FAILED
+test pristine_comparator_rejects_metadata_and_unrelated_state_corruption ... FAILED
+
+failures:
+
+---- ordinary_stack_frame_matches_pristine_original stdout ----
+
+thread 'ordinary_stack_frame_matches_pristine_original' (4985) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::ordinary_stack_frame_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- configured_altstack_frame_matches_pristine_original stdout ----
+
+thread 'configured_altstack_frame_matches_pristine_original' (4981) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::configured_altstack_frame_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- inherited_nonzero_exception_metadata_matches_pristine_original stdout ----
+
+thread 'inherited_nonzero_exception_metadata_matches_pristine_original' (4983) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::inherited_nonzero_exception_metadata_matches_pristine_original: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- edited_frame_returns_to_untouched_nx_landing stdout ----
+
+thread 'edited_frame_returns_to_untouched_nx_landing' (4982) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::edited_frame_returns_to_untouched_nx_landing: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- pristine_comparator_rejects_metadata_and_unrelated_state_corruption stdout ----
+
+thread 'pristine_comparator_rejects_metadata_and_unrelated_state_corruption' (4986) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_signal_admission::pristine_comparator_rejects_metadata_and_unrelated_state_corruption: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    configured_altstack_frame_matches_pristine_original
+    edited_frame_returns_to_untouched_nx_landing
+    inherited_nonzero_exception_metadata_matches_pristine_original
+    ordinary_stack_frame_matches_pristine_original
+    pristine_comparator_rejects_metadata_and_unrelated_state_corruption
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test b3_signal_admission`
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test b3_signal_admission`

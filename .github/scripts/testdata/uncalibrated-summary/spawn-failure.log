@@ -1,0 +1,10 @@
+[1m[92m     Running[0m tests/phantom.rs (target/debug/deps/phantom-0000000000000000)
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test phantom`
+
+Caused by:
+  could not execute process `/home/runner/work/liteinst2/liteinst2/target/debug/deps/phantom-0000000000000000` (never executed)
+
+Caused by:
+  No such file or directory (os error 2)
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test phantom`
