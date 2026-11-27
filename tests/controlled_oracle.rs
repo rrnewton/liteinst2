@@ -556,7 +556,9 @@ fn published_controls(grouped: bool) {
         generation: 1,
     };
     let snapshots: Vec<_> = code
-        .chunks_exact(16)
+        .as_chunks::<16>()
+        .0
+        .iter()
         .enumerate()
         .map(|(index, bytes)| ExpectedBytes {
             address: base + index as u64 * 16,

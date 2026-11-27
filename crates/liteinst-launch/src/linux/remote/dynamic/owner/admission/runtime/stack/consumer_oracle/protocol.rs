@@ -20,7 +20,7 @@ impl Digest {
             return Err(OracleError::Invalid("oracle digest length differs"));
         }
         let mut result = [0_u8; 32];
-        for (index, pair) in value.chunks_exact(2).enumerate() {
+        for (index, pair) in value.as_chunks::<2>().0.iter().enumerate() {
             let nibble = |byte| match byte {
                 b'0'..=b'9' => Ok(byte - b'0'),
                 b'a'..=b'f' => Ok(byte - b'a' + 10),

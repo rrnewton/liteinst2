@@ -573,6 +573,10 @@ impl LifecycleRegistry {
         if leader_tid <= 0 {
             return Err(LifecycleError::InvalidTid);
         }
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         let registry = NEXT_REGISTRY
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
             .map_err(|_| LifecycleError::Exhausted)?;

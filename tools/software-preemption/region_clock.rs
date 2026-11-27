@@ -512,7 +512,7 @@ unsafe extern "C" fn hook(context: *mut HookContext, identity: ControlIdentity<'
             words[12..].copy_from_slice(&before);
             let mut record = [0u8; REJECTION_BYTES];
             record[..8].copy_from_slice(REJECTION_MAGIC);
-            for (destination, word) in record[8..].chunks_exact_mut(8).zip(words) {
+            for (destination, word) in record[8..].as_chunks_mut::<8>().0.iter_mut().zip(words) {
                 destination.copy_from_slice(&word.to_le_bytes());
             }
             // Fixed PIPE_BUF-sized nonblocking write, once, before any refill.

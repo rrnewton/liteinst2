@@ -131,7 +131,7 @@ pub(super) fn inspect(raw: &[u8]) -> Result<ArtifactPlan, OracleError> {
     }
     let sections = bytes(raw, shoff, shnum.checked_mul(64).ok_or_else(bad)?)?;
     let mut symtab = None;
-    for (i, row) in sections.chunks_exact(64).enumerate() {
+    for (i, row) in sections.as_chunks::<64>().0.iter().enumerate() {
         let kind = u32_at(row, 4)?;
         let flags = u64_at(row, 8)?;
         let size = u64_at(row, 32)?;
@@ -168,7 +168,7 @@ pub(super) fn inspect(raw: &[u8]) -> Result<ArtifactPlan, OracleError> {
     let symbols = bytes(raw, index(u64_at(sym, 24)?)?, index(u64_at(sym, 32)?)?)?;
     let mut start = None;
     let mut helper = None;
-    for symbol in symbols.chunks_exact(24) {
+    for symbol in symbols.as_chunks::<24>().0 {
         if symbol[4] & 15 != 2 {
             continue;
         }

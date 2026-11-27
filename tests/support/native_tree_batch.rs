@@ -31,8 +31,10 @@ fn sequence(round: usize) -> u64 {
 fn words(child: &Tracee, address: u64) -> Vec<u64> {
     child
         .memory(address, 112)
-        .chunks_exact(8)
-        .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| u64::from_le_bytes(*b))
         .collect()
 }
 fn check_armed(

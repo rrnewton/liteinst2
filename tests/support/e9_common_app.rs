@@ -762,8 +762,10 @@ fn boundary(
     let bytes = child.memory(l.run, 88);
     write_new(&dir.join(format!("{phase}.run")), &bytes);
     let r: Vec<_> = bytes
-        .chunks_exact(8)
-        .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| u64::from_le_bytes(*b))
         .collect();
     let r: [u64; 11] = r.try_into().unwrap();
     assert_eq!(

@@ -23,16 +23,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.94.1
+      - uses: dtolnay/rust-toolchain@1.99.1
         with:
           components: clippy,rustfmt
       - name: Check formatting
         run: cargo fmt --all -- --check
       # Scoped to the six published crates: the rapid-profiler test target
       # does not compile today (separate fix), so a workspace clippy can
-      # never report on the published surface. NOTE: even scoped, clippy
-      # at 1.94.1 currently reports pre-existing new-lint errors in this
-      # set (best-effort signal until the lint-cleanup task lands).
+      # never report on the published surface.
       - name: Lint published crates
         run: >
           cargo clippy --locked
@@ -65,7 +63,7 @@ jobs:
             timeout: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.94.1
+      - uses: dtolnay/rust-toolchain@1.99.1
       # Build artifacts only (registry + target); never test outcomes.
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:

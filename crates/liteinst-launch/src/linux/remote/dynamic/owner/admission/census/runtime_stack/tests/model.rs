@@ -191,7 +191,7 @@ fn pagemap(geometry: &OperandGeometry) -> PagemapObservation {
     let range = &geometry.envelope;
     let count = (((range.end - 1) / 4096 - range.start / 4096 + 1) * 8) as usize;
     let mut bytes = [0; 16];
-    for part in bytes[..count].chunks_exact_mut(8) {
+    for part in bytes[..count].as_chunks_mut::<8>().0 {
         part.copy_from_slice(&((1_u64 << 63) | (1 << 56)).to_le_bytes());
     }
     PagemapObservation {
