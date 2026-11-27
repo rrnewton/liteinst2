@@ -29,6 +29,8 @@ pub use selected::*;
 
 mod coverage;
 pub(crate) mod domain;
+#[cfg(test)]
+mod fallthrough_wiring_tests;
 
 use domain::{
     AdmissionBundle, GateOracle, Image, PAGE, prepare_admission, qualify_collateral, remaining,
@@ -263,6 +265,8 @@ pub struct SingleThreadPageGate {
     covered_guards: BTreeMap<u64, crate::trap_coverage::TrapGuard>,
     #[cfg(test)]
     coverage_failure: Option<coverage::failure::Injection>,
+    #[cfg(test)]
+    cpu_step_rip_fault: Option<u64>,
 }
 
 impl SingleThreadPageGate {
@@ -320,6 +324,8 @@ impl SingleThreadPageGate {
             covered_guards: BTreeMap::new(),
             #[cfg(test)]
             coverage_failure: None,
+            #[cfg(test)]
+            cpu_step_rip_fault: None,
         })
     }
 
@@ -442,6 +448,11 @@ impl SingleThreadPageGate {
         result
     }
 
+    #[cfg(test)]
+    pub(crate) fn inject_cpu_step_rip_fault(&mut self, delta: u64) {
+        self.cpu_step_rip_fault = Some(delta);
+    }
+
     fn advance(&mut self) -> Result<GateEvent, GateError> {
         let deadline = Instant::now() + self.timeout;
         if let Some(site) = self.pending.take() {
@@ -456,7 +467,10 @@ impl SingleThreadPageGate {
                 {
                     let mut stop = self.process.hold()?;
                     stop.acknowledge_owned_signal(&signal)?;
-                    require_cpu_fallthrough(&site, stop.read_registers()?.rip)?;
+                    let rip = stop.read_registers()?.rip;
+                    #[cfg(test)]
+                    let rip = rip.wrapping_add(self.cpu_step_rip_fault.take().unwrap_or(0));
+                    require_cpu_fallthrough(&site, rip)?;
                     stop.write_memory_checked(site.address, &[original], &[0xcc])?;
                     stop.sync_core(remaining(deadline)?)?;
                 }
