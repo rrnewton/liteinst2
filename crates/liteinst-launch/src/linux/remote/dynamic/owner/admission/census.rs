@@ -893,6 +893,10 @@ impl ResumeCensus {
         if session == 0 {
             return Err(CensusError::IdentityMismatch);
         }
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         let identity = NEXT_CENSUS
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
                 value.checked_add(1)

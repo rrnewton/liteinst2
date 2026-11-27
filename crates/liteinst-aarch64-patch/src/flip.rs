@@ -960,7 +960,10 @@ mod tests {
             unsafe { self.word.write_volatile(word) };
             Ok(())
         }
-        #[allow(deprecated)]
+        #[expect(
+            deprecated,
+            reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+        )]
         fn finish_write(&mut self) -> Result<(), PatchError> {
             use core::sync::atomic::Ordering;
             self.counts.finishes.fetch_add(1, Ordering::SeqCst);

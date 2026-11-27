@@ -266,6 +266,10 @@ impl CallSink {
             if result <= 0 || result > i64::from(i32::MAX) || errno != 0 {
                 return Err(SinkError::ThreadId);
             }
+            #[expect(
+                deprecated,
+                reason = "fetch_update is deprecated in 1.99 but try_update is unstable at MSRV 1.94; switch when MSRV >= 1.97"
+            )]
             let id = NEXT_ID
                 .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
                 .map_err(|_| SinkError::Capacity)?;

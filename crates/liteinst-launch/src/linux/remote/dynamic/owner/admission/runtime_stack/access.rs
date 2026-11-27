@@ -148,8 +148,8 @@ impl PagemapObservation {
         {
             return Err(StackError::Request);
         }
-        for bytes in self.bytes[..requested].chunks_exact(8) {
-            let value = u64::from_le_bytes(bytes.try_into().map_err(|_| StackError::Pagemap)?);
+        for bytes in self.bytes[..requested].as_chunks::<8>().0 {
+            let value = u64::from_le_bytes(*bytes);
             const PRESENT: u64 = 1 << 63;
             const EXCLUSIVE: u64 = 1 << 56;
             const PFN: u64 = (1 << 55) - 1;

@@ -279,7 +279,7 @@ unsafe extern "C" fn hook(context: *mut HookContext, identity: ControlIdentity<'
                 words.remaining,
             ]);
             values[12..].copy_from_slice(&before);
-            for (destination, word) in record[8..].chunks_exact_mut(8).zip(values) {
+            for (destination, word) in record[8..].as_chunks_mut::<8>().0.iter_mut().zip(values) {
                 destination.copy_from_slice(&word.to_le_bytes());
             }
             // One bounded witness before refill; any short write cannot pass.
@@ -767,7 +767,7 @@ fn rejected_fork_entry(output: &Path) {
         ];
         let mut witness = [0u8; 48];
         witness[..8].copy_from_slice(b"LI2BFORK");
-        for (dest, word) in witness[8..].chunks_exact_mut(8).zip(values) {
+        for (dest, word) in witness[8..].as_chunks_mut::<8>().0.iter_mut().zip(values) {
             dest.copy_from_slice(&word.to_le_bytes());
         }
         let written =

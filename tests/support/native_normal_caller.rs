@@ -799,8 +799,10 @@ impl ControlParent {
         let mut bytes = [0; ACK_WORDS * 8];
         read_exact(self.ack.0, &mut bytes, deadline);
         let words: Vec<_> = bytes
-            .chunks_exact(8)
-            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|b| u64::from_le_bytes(*b))
             .collect();
         check(&words);
         self.next += 1;
@@ -1403,9 +1405,9 @@ fn journal_words(
 }
 fn check_journal(actual: &[u8], expected: &[u64; 512]) {
     assert_eq!(actual.len(), PAGE);
-    for (word, expected) in actual.chunks_exact(8).zip(expected) {
+    for (word, expected) in actual.as_chunks::<8>().0.iter().zip(expected) {
         assert_eq!(
-            u64::from_le_bytes(word.try_into().unwrap()),
+            u64::from_le_bytes(*word),
             *expected,
             "whole pending normal journal"
         );

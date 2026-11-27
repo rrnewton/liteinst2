@@ -357,8 +357,10 @@ impl ParkedPublication {
     fn record(&self, child: &Tracee) -> Vec<u64> {
         child
             .memory(self.record.address(), RECORD_WORDS * 8)
-            .chunks_exact(8)
-            .map(|bytes| u64::from_ne_bytes(bytes.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|bytes| u64::from_ne_bytes(*bytes))
             .collect()
     }
 

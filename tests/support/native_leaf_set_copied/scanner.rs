@@ -48,7 +48,7 @@ impl Case {
             5 => bytes.fill(b'9'),
             6 => bytes.fill(b' '),
             7 => {
-                for pair in bytes.chunks_exact_mut(2) {
+                for pair in bytes.as_chunks_mut::<2>().0 {
                     pair.copy_from_slice(b"0 ");
                 }
             }
