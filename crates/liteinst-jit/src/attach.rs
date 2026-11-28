@@ -337,3 +337,142 @@ impl AttachedExecutable {
         self.inner.registry()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! Refusing cases for the attach driver's own guards: each
+    //! `ArenaPlacement::check` refusal by its exact name and the exact
+    //! layout accepted, `syscall_errno` at its boundaries, and the two
+    //! refusals `AttachedExecutable::new` makes before any ptrace
+    //! request. No host is spawned or traced.
+
+    use super::*;
+
+    use crate::tracee::PtraceTracee;
+    use crate::types::Generation;
+
+    /// A pid no process can have (Linux caps pid_max at 2^22). If a
+    /// guard in `AttachedExecutable::new` is removed, the call reaches
+    /// `inject_syscall`, whose first act, opening
+    /// `/proc/2147483647/mem`, fails with ENOENT and touches no
+    /// process.
+    const NO_PID: i32 = i32::MAX;
+
+    const CODE: u64 = 0x7000_0000_0000;
+    const DATA: u64 = CODE + CODE_CAP as u64;
+    const JD: usize = core::mem::size_of::<JitData>();
+
+    const SHORT_CODE: Refuse = Refuse::Arch {
+        what: "attach arena: code region shorter than CODE_CAP",
+    };
+    const NOT_AT_CAP: Refuse = Refuse::Arch {
+        what: "attach arena: data region does not follow the code at CODE_CAP",
+    };
+    const SHORT_DATA: Refuse = Refuse::Arch {
+        what: "attach arena: data region shorter than JitData",
+    };
+
+    fn placement(code_len: usize, data_addr: u64, data_len: usize) -> ArenaPlacement {
+        ArenaPlacement {
+            code_base: CODE,
+            code_len,
+            data_addr,
+            data_len,
+        }
+    }
+
+    #[test]
+    fn check_accepts_the_exact_placement() {
+        assert_eq!(placement(CODE_CAP, DATA, JD).check(), Ok(()));
+    }
+
+    #[test]
+    fn check_refuses_short_code() {
+        assert_eq!(placement(CODE_CAP - 1, DATA, JD).check(), Err(SHORT_CODE));
+    }
+
+    #[test]
+    fn check_refuses_data_not_at_code_cap() {
+        assert_eq!(placement(CODE_CAP, DATA - 1, JD).check(), Err(NOT_AT_CAP));
+        assert_eq!(placement(CODE_CAP, DATA + 1, JD).check(), Err(NOT_AT_CAP));
+    }
+
+    #[test]
+    fn check_refuses_short_data() {
+        assert_eq!(placement(CODE_CAP, DATA, JD - 1).check(), Err(SHORT_DATA));
+    }
+
+    #[test]
+    fn errno_zero_is_success() {
+        assert_eq!(syscall_errno(0), None);
+    }
+
+    #[test]
+    fn errno_minus_one_is_eperm() {
+        assert_eq!(syscall_errno(-1_i64 as u64), Some(1));
+    }
+
+    #[test]
+    fn errno_minus_4095_is_the_last_errno() {
+        assert_eq!(syscall_errno(-4095_i64 as u64), Some(4095));
+    }
+
+    #[test]
+    fn errno_minus_4096_is_not_an_errno() {
+        assert_eq!(syscall_errno(-4096_i64 as u64), None);
+    }
+
+    #[test]
+    fn errno_large_pointer_is_not_an_errno() {
+        assert_eq!(syscall_errno(0x7fff_ffff_f000), None);
+        assert_eq!(syscall_errno(0x7f12_3456_7000), None);
+    }
+
+    fn site() -> PatchSite {
+        PatchSite {
+            rip: 0,
+            orig: [0; 3],
+            // SAFETY: user_regs_struct holds only integers, so all-zero is valid.
+            regs: unsafe { core::mem::zeroed() },
+        }
+    }
+
+    fn new_with(arena: ArenaPlacement, region_base: u64) -> Option<Refuse> {
+        let host = ChildInfo {
+            base: 0x0010_0000,
+            ..ChildInfo::default()
+        };
+        let region = RegionFacts {
+            base: region_base,
+            bytes: vec![0x90],
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        AttachedExecutable::new(
+            AttachTracee(PtraceTracee::new(NO_PID)),
+            &site(),
+            arena,
+            &host,
+            region,
+            region_base,
+            CountProfile::Branches,
+        )
+        .err()
+    }
+
+    #[test]
+    fn new_refuses_a_bad_arena_before_any_ptrace() {
+        let bad = placement(CODE_CAP - 1, DATA, JD);
+        assert_eq!(new_with(bad, 0x0010_0000), Some(SHORT_CODE));
+    }
+
+    #[test]
+    fn new_refuses_a_region_base_mismatch_before_any_ptrace() {
+        let mismatch = Refuse::Unrelocatable {
+            src_pc: 0x0020_0000,
+            reason: "attach region base does not match the host's fixture mapping",
+        };
+        let exact = placement(CODE_CAP, DATA, JD);
+        assert_eq!(new_with(exact, 0x0020_0000), Some(mismatch));
+    }
+}
