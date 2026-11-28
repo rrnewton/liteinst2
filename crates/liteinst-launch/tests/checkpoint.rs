@@ -27,6 +27,9 @@ static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
 // writable-file lifetime, never later ptrace operations or publication leases.
 static FILE_FORK: RwLock<()> = RwLock::new(());
 
+#[path = "support/host_cpuid_step.rs"]
+mod host_cpuid_step;
+
 struct Fixtures(PathBuf);
 
 impl Fixtures {
@@ -614,6 +617,12 @@ fn syscall_island_bootstrap_preserves_original_code_gprs_and_xstate() {
 
 #[test]
 fn actual_nx_gate_requires_owned_fault_before_restoring_permissions() {
+    // This test single-steps FIRST_BYTES' native CPUID directly; a lost trap
+    // would run the following UD2 and fail it as an unnamed SIGILL.
+    host_cpuid_step::require_calibrated(
+        &FILE_FORK,
+        "checkpoint::actual_nx_gate_requires_owned_fault_before_restoring_permissions",
+    );
     let fixtures = Fixtures::new();
     let path = fixtures.elf("remote-nx", false, None);
     let mut stopped = process(&path);

@@ -31,6 +31,9 @@ static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
 // Hold this only across file writes/close and child launch, never execution.
 static FIXTURE_FORK_LOCK: Mutex<()> = Mutex::new(());
 
+#[path = "support/host_cpuid_step.rs"]
+mod host_cpuid_step;
+
 struct FixtureDirectory(PathBuf);
 
 impl FixtureDirectory {
@@ -290,6 +293,10 @@ fn assert_kernel_nx(pid: libc::pid_t, address: u64) {
 
 #[test]
 fn cpuid_at_the_first_instruction_is_observed_before_execution_then_exits() {
+    host_cpuid_step::require_calibrated(
+        &FIXTURE_FORK_LOCK,
+        "page_gate::cpuid_at_the_first_instruction_is_observed_before_execution_then_exits",
+    );
     let directory = FixtureDirectory::new();
     let mut builder = ElfBuilder::new(2, PAGE, false);
     builder.push_instruction(CPUID);
@@ -321,6 +328,10 @@ fn cpuid_at_the_first_instruction_is_observed_before_execution_then_exits() {
 
 #[test]
 fn custom_interpreter_and_main_are_both_observed_at_instruction_one() {
+    host_cpuid_step::require_calibrated(
+        &FIXTURE_FORK_LOCK,
+        "page_gate::custom_interpreter_and_main_are_both_observed_at_instruction_one",
+    );
     let directory = FixtureDirectory::new();
     let mut interpreter = ElfBuilder::new(2, PAGE, true);
     interpreter.push_instruction(CPUID);
@@ -353,6 +364,10 @@ fn custom_interpreter_and_main_are_both_observed_at_instruction_one() {
 
 #[test]
 fn selected_instruction_split_across_pages_admits_both_pages_once() {
+    host_cpuid_step::require_calibrated(
+        &FIXTURE_FORK_LOCK,
+        "page_gate::selected_instruction_split_across_pages_admits_both_pages_once",
+    );
     let directory = FixtureDirectory::new();
     let start = 2 * PAGE - 1;
     let mut builder = ElfBuilder::new(3, start, false);
@@ -424,6 +439,10 @@ fn check_live_return(gate: &mut SingleThreadPageGate, call: u64, callee: u64) {
 
 #[test]
 fn call_records_return_into_never_executed_nx_page_and_plain_return_completes() {
+    host_cpuid_step::require_calibrated(
+        &FIXTURE_FORK_LOCK,
+        "page_gate::call_records_return_into_never_executed_nx_page_and_plain_return_completes",
+    );
     let directory = FixtureDirectory::new();
     let (image, call, callee) = call_boundary_fixture(&directory, false);
     let mut gate = gate(checkpoint(&image), vec![image.facts(BASE)]);
@@ -435,6 +454,10 @@ fn call_records_return_into_never_executed_nx_page_and_plain_return_completes() 
 
 #[test]
 fn selected_destination_with_saved_call_return_is_refused_while_still_nx() {
+    host_cpuid_step::require_calibrated(
+        &FIXTURE_FORK_LOCK,
+        "page_gate::selected_destination_with_saved_call_return_is_refused_while_still_nx",
+    );
     let directory = FixtureDirectory::new();
     let (image, call, callee) = call_boundary_fixture(&directory, true);
     let mut gate = gate(checkpoint(&image), vec![image.facts(BASE)]);
@@ -642,6 +665,10 @@ impl TerminalEvidence {
 
 #[test]
 fn no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory() {
+    host_cpuid_step::require_calibrated(
+        &FIXTURE_FORK_LOCK,
+        "page_gate::no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory",
+    );
     let directory = FixtureDirectory::new();
     let mut builder = ElfBuilder::new(2, PAGE, false);
     builder.push_instruction(&[0x48, 0x83, 0xec, 0x20]); // sub rsp, 32

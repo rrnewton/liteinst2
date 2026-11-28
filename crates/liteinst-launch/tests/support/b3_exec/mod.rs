@@ -37,7 +37,8 @@ pub const APP_MASK: u64 = (1 << (libc::SIGUSR1 - 1)) | (1 << (libc::SIGUSR2 - 1)
 const TRACER_MASK: u64 = !((1_u64 << (libc::SIGKILL - 1)) | (1_u64 << (libc::SIGSTOP - 1)));
 pub const TIMEOUT: Duration = Duration::from_secs(3);
 static NEXT: AtomicUsize = AtomicUsize::new(0);
-static FILE_FORK: RwLock<()> = RwLock::new(());
+/// Fixture writers hold this exclusively; launches and the host probe hold it shared.
+pub(crate) static FILE_FORK: RwLock<()> = RwLock::new(());
 pub fn sp(base: u64) -> u64 {
     base + DATA_LEN as u64 - 128
 }

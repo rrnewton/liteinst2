@@ -409,6 +409,10 @@ fn selected_restoration_failure_keeps_all_original_bytes_held() {
 
 #[test]
 fn selected_completion_failure_cannot_resume_without_rearming() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::gate::coverage::failure_tests::selected_completion_failure_cannot_resume_without_rearming",
+    );
     exercise(Phase::SelectedCompleted);
 }
 

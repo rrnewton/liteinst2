@@ -155,6 +155,10 @@ struct CallStage {
 
 #[test]
 fn native_call_return_into_never_executed_nx_page_keeps_old_generation_obligation() {
+    super::host_cpuid_step::require_calibrated(
+        &super::FILE_FORK,
+        "dynamic_admission::call_boundary::native_call_return_into_never_executed_nx_page_keeps_old_generation_obligation",
+    );
     let directory = Directory::new();
     let mut image = Image::new(BASE, 3);
     for register in 0..16 {

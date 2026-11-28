@@ -17,7 +17,7 @@ use liteinst_admission::oracle_chain::{
     CacheCorruption, CacheLimits, CacheUsage, Inspection, InspectionSource, OracleMiss,
 };
 use liteinst_admission::returns::CallReturnLedger;
-use liteinst_admission::scan::{AdmissionOracle, Candidate, Policy, Verdict};
+use liteinst_admission::scan::{AdmissionOracle, Candidate, Policy, SiteClass, Verdict};
 
 use crate::core_remote::CpuidPublisher;
 
@@ -29,6 +29,8 @@ pub use selected::*;
 
 mod coverage;
 pub(crate) mod domain;
+#[cfg(test)]
+mod fallthrough_wiring_tests;
 
 use domain::{
     AdmissionBundle, GateOracle, Image, PAGE, prepare_admission, qualify_collateral, remaining,
@@ -263,6 +265,8 @@ pub struct SingleThreadPageGate {
     covered_guards: BTreeMap<u64, crate::trap_coverage::TrapGuard>,
     #[cfg(test)]
     coverage_failure: Option<coverage::failure::Injection>,
+    #[cfg(test)]
+    cpu_step_rip_fault: Option<u64>,
 }
 
 impl SingleThreadPageGate {
@@ -320,6 +324,8 @@ impl SingleThreadPageGate {
             covered_guards: BTreeMap::new(),
             #[cfg(test)]
             coverage_failure: None,
+            #[cfg(test)]
+            cpu_step_rip_fault: None,
         })
     }
 
@@ -442,6 +448,11 @@ impl SingleThreadPageGate {
         result
     }
 
+    #[cfg(test)]
+    pub(crate) fn inject_cpu_step_rip_fault(&mut self, delta: u64) {
+        self.cpu_step_rip_fault = Some(delta);
+    }
+
     fn advance(&mut self) -> Result<GateEvent, GateError> {
         let deadline = Instant::now() + self.timeout;
         if let Some(site) = self.pending.take() {
@@ -456,6 +467,10 @@ impl SingleThreadPageGate {
                 {
                     let mut stop = self.process.hold()?;
                     stop.acknowledge_owned_signal(&signal)?;
+                    let rip = stop.read_registers()?.rip;
+                    #[cfg(test)]
+                    let rip = rip.wrapping_add(self.cpu_step_rip_fault.take().unwrap_or(0));
+                    require_cpu_fallthrough(&site, rip)?;
                     stop.write_memory_checked(site.address, &[original], &[0xcc])?;
                     stop.sync_core(remaining(deadline)?)?;
                 }
@@ -681,4 +696,66 @@ fn control_remaining(deadline: Instant) -> Result<Duration, LaunchError> {
         .checked_duration_since(Instant::now())
         .filter(|duration| !duration.is_zero())
         .ok_or(LaunchError::Timeout("whole-event deadline"))
+}
+
+/// A selected CPU instruction always falls through, so the trace stop after
+/// its native single-step must be exactly at its end. A stop elsewhere is
+/// refused; the refusal names the stop, not its cause. Syscall classes may
+/// legitimately move rip and are not checked.
+fn require_cpu_fallthrough(site: &Candidate, rip: u64) -> Result<(), GateError> {
+    match site.class {
+        SiteClass::Cpuid
+        | SiteClass::Rdrand
+        | SiteClass::Rdseed
+        | SiteClass::Rdpid
+        | SiteClass::Rdtsc
+        | SiteClass::Rdtscp => {
+            if site.address.checked_add(u64::from(site.len)) != Some(rip) {
+                return Err(GateError::Refused(
+                    "single-step stopped off the selected instruction's fallthrough",
+                ));
+            }
+            Ok(())
+        }
+        SiteClass::Syscall | SiteClass::Sysenter | SiteClass::Int80 => Ok(()),
+    }
+}
+
+#[cfg(test)]
+mod cpu_fallthrough_tests {
+    use super::*;
+    use liteinst_admission::scan::CandidateKind;
+
+    fn site(class: SiteClass) -> Candidate {
+        Candidate {
+            address: 0x40_1000,
+            len: 2,
+            class,
+            kind: CandidateKind::KnownInstruction,
+        }
+    }
+
+    #[test]
+    fn cpu_step_at_the_fallthrough_is_accepted() {
+        assert!(require_cpu_fallthrough(&site(SiteClass::Cpuid), 0x40_1002).is_ok());
+    }
+
+    #[test]
+    fn cpu_step_off_the_fallthrough_is_refused() {
+        for rip in [0x40_1003, 0x40_100c, 0x40_1000] {
+            assert!(matches!(
+                require_cpu_fallthrough(&site(SiteClass::Cpuid), rip),
+                Err(GateError::Refused(
+                    "single-step stopped off the selected instruction's fallthrough"
+                ))
+            ));
+        }
+    }
+
+    #[test]
+    fn syscall_class_steps_are_not_checked() {
+        for class in [SiteClass::Syscall, SiteClass::Sysenter, SiteClass::Int80] {
+            assert!(require_cpu_fallthrough(&site(class), 0x7f00_0000).is_ok());
+        }
+    }
 }

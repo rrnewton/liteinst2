@@ -9,7 +9,7 @@ use super::kernel_journal::{
 use super::trusted::{AdmissionPhase, AdmissionStop, TaskStateSnapshot, TrustedIsland};
 use super::*;
 use crate::lifecycle::TaskId;
-use crate::selected::{Operation, SelectedInput, SyscallAbi, SyscallAliases};
+use crate::selected::{Operation, SelectedInput, SemanticsError, SyscallAbi, SyscallAliases};
 use crate::trap_coverage::{TrapGuard, TrapGuardRole};
 use iced_x86::Register;
 
@@ -360,11 +360,9 @@ fn execute_inner(
         } else {
             run_cpu(owner, native, &current, &saved, until, |after| {
                 input
-                    .validate_native_completion(after)
+                    .validate_native_single_step_completion(after)
                     .map(|_| ())
-                    .map_err(|_| {
-                        LaunchError::Invalid("native selected full register completion differs")
-                    })
+                    .map_err(native_cpu_completion_refusal)
             })?
         };
         verify_siblings(owner, native, &siblings)?;
@@ -616,6 +614,17 @@ fn verify_siblings(
         }
     }
     Ok(())
+}
+
+/// A single-step that stopped off the fallthrough is named apart from a
+/// completion that differs; both remain refusals.
+fn native_cpu_completion_refusal(error: SemanticsError) -> LaunchError {
+    match error {
+        SemanticsError::SingleStepStoppedOffFallthrough { .. } => {
+            LaunchError::Invalid("native selected single-step stopped off the fallthrough")
+        }
+        _ => LaunchError::Invalid("native selected full register completion differs"),
+    }
 }
 
 fn run_cpu(
@@ -1003,4 +1012,28 @@ fn retained_event(
         state,
         events,
     })))
+}
+
+#[cfg(test)]
+mod native_cpu_completion_refusal_tests {
+    use super::*;
+
+    #[test]
+    fn off_fallthrough_step_keeps_its_own_refusal_text() {
+        assert!(matches!(
+            native_cpu_completion_refusal(SemanticsError::SingleStepStoppedOffFallthrough {
+                expected: 0x1002,
+                observed: 0x1003,
+            }),
+            LaunchError::Invalid("native selected single-step stopped off the fallthrough")
+        ));
+    }
+
+    #[test]
+    fn other_completion_refusals_keep_the_full_register_text() {
+        assert!(matches!(
+            native_cpu_completion_refusal(SemanticsError::NativeStateMismatch),
+            LaunchError::Invalid("native selected full register completion differs")
+        ));
+    }
 }

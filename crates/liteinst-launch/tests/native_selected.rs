@@ -35,6 +35,9 @@ static NEXT: AtomicUsize = AtomicUsize::new(0);
 // A fork must not inherit another test's writable executable-file descriptor.
 static FORK_LOCK: Mutex<()> = Mutex::new(());
 
+#[path = "support/host_cpuid_step.rs"]
+mod host_cpuid_step;
+
 #[derive(Clone, Copy, Debug)]
 struct Case {
     class: SiteClass,
@@ -1082,6 +1085,7 @@ native_cases! {
 
 #[test]
 fn cpuid_basic_vendor_leaf() {
+    host_cpuid_step::require_calibrated(&FORK_LOCK, "native_selected::cpuid_basic_vendor_leaf");
     exercise(Case {
         class: SiteClass::Cpuid,
         destination: 0,
@@ -1094,6 +1098,10 @@ fn cpuid_basic_vendor_leaf() {
 
 #[test]
 fn cpuid_processor_features_leaf() {
+    host_cpuid_step::require_calibrated(
+        &FORK_LOCK,
+        "native_selected::cpuid_processor_features_leaf",
+    );
     exercise(Case {
         class: SiteClass::Cpuid,
         destination: 0,
@@ -1106,6 +1114,10 @@ fn cpuid_processor_features_leaf() {
 
 #[test]
 fn cpuid_structured_features_leaf() {
+    host_cpuid_step::require_calibrated(
+        &FORK_LOCK,
+        "native_selected::cpuid_structured_features_leaf",
+    );
     exercise(Case {
         class: SiteClass::Cpuid,
         destination: 0,

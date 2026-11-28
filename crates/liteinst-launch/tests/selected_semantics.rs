@@ -735,6 +735,88 @@ fn input_for_random_validation() -> SelectedInput {
     input(&[0x0f, 0xc7, 0xf0])
 }
 
+fn cpuid_single_step_completion() -> (SelectedInput, RegisterSnapshot) {
+    let input = input(&[0x0f, 0xa2]);
+    let completed = input
+        .complete(SelectedResult::Cpuid {
+            eax: 1,
+            ebx: 2,
+            ecx: 3,
+            edx: 4,
+        })
+        .unwrap();
+    (input, completed.after)
+}
+
+#[test]
+fn native_single_step_past_the_fallthrough_is_refused_by_name() {
+    // For example, a stop after the next instruction too (a 10-byte
+    // `mov r64, imm64`) lands past the fallthrough.
+    let (input, exact) = cpuid_single_step_completion();
+    let mut after = exact;
+    after.rip = PC + 2 + 10;
+    let error = input
+        .validate_native_single_step_completion(&after)
+        .unwrap_err();
+    assert_eq!(
+        error,
+        SemanticsError::SingleStepStoppedOffFallthrough {
+            expected: PC + 2,
+            observed: PC + 12,
+        }
+    );
+    assert_eq!(
+        error.to_string(),
+        format!(
+            "single-step stopped off the selected instruction's fallthrough: \
+             stopped at {:#x}, expected {:#x}",
+            PC + 12,
+            PC + 2
+        )
+    );
+    // The complete comparison alone refuses the same snapshot, unnamed.
+    assert_eq!(
+        input.validate_native_completion(&after),
+        Err(SemanticsError::NativeStateMismatch)
+    );
+}
+
+#[test]
+fn native_single_step_at_the_fallthrough_keeps_the_complete_comparison() {
+    let (input, exact) = cpuid_single_step_completion();
+    for altered in 0..5 {
+        let mut after = exact;
+        match altered {
+            0 => after.rsp += 8,
+            1 => after.r15 ^= 1,
+            2 => after.eflags ^= 1,
+            3 => after.rax |= 1 << 32,
+            _ => after.orig_rax ^= 1,
+        }
+        assert_eq!(after.rip, PC + 2);
+        assert_eq!(
+            input.validate_native_single_step_completion(&after),
+            Err(SemanticsError::NativeStateMismatch)
+        );
+    }
+}
+
+#[test]
+fn native_single_step_exact_completion_still_completes() {
+    let (input, exact) = cpuid_single_step_completion();
+    assert_eq!(
+        input.validate_native_single_step_completion(&exact),
+        input.validate_native_completion(&exact)
+    );
+    assert_eq!(
+        input
+            .validate_native_single_step_completion(&exact)
+            .unwrap()
+            .after,
+        exact
+    );
+}
+
 #[test]
 fn faults_do_not_complete_or_normalize_rf_outputs_pc_or_metadata() {
     for bytes in [

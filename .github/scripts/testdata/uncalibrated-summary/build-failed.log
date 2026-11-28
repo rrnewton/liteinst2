@@ -1,0 +1,12 @@
+[1m[92m   Compiling[0m liteinst-x86 v0.2.0 (/home/runner/work/liteinst2/liteinst2/crates/liteinst-x86)
+[1m[92m   Compiling[0m liteinst v0.2.0 (/home/runner/work/liteinst2/liteinst2)
+[1m[92m   Compiling[0m liteinst-admission v0.2.1 (/home/runner/work/liteinst2/liteinst2/crates/liteinst-admission)
+[1m[92m   Compiling[0m liteinst-launch v0.2.1 (/home/runner/work/liteinst2/liteinst2/crates/liteinst-launch)
+error[E0425]: cannot find value `x` in this scope
+ --> crates/liteinst-launch/tests/exec_backing_cleanup.rs:9:5
+  |
+9 |     x
+  |     ^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `liteinst-launch` (test "exec_backing_cleanup") due to 1 previous error

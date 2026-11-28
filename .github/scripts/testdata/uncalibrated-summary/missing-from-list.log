@@ -1,0 +1,79 @@
+[1m[92m     Running[0m tests/checkpoint.rs (target/debug/deps/checkpoint-71db8545e706f779)
+
+running 23 tests
+test application_jump_to_private_syscall_island_is_refused ... ok
+test checked_writes_and_island_guards_refuse_without_mutating_source ... ok
+test custom_interpreter_and_main_both_retain_their_selected_first_instruction ... ok
+test core_lease_borrows_real_stop_and_preserves_state_on_success ... ok
+test exact_code_allocation_initializes_offsets_and_refuses_collisions ... ok
+test exact_store_from_resume_flag_state_restores_every_register_and_neighbor ... ok
+test actual_nx_gate_requires_owned_fault_before_restoring_permissions ... FAILED
+test core_lease_error_poison_and_panic_kill_and_reap ... ok
+test exact_stores_reject_stale_rx_readonly_island_and_unmapped_ranges ... ok
+test invalid_commands_and_exec_failures_are_reported ... ok
+test memory_and_timeout_bounds_refuse_without_resuming ... ok
+test native_entry_oracle_forgets_reaped_child_before_early_exit_assertion ... ok
+test first_user_instruction_observes_natural_successful_exec_result ... ok
+test first_execution_xstate_matches_independent_native_entry_trap ... ok
+test pie_without_interpreter_uses_relocated_executable_entry ... ok
+test poisoned_core_lease_result_destructor_panic_kills_and_reaps ... ok
+test raw_getpid_and_exit_single_steps_report_exact_kernel_events ... ok
+test static_executable_is_stopped_at_its_selected_first_instruction ... ok
+test resumed_loop_timeout_kills_and_reaps_the_owned_child ... ok
+test syscall_island_bootstrap_preserves_original_code_gprs_and_xstate ... ok
+test unapproved_syscall_is_refused_before_kernel_execution_and_reaped ... ok
+test unknown_signal_cannot_be_suppressed_as_an_owned_fault ... ok
+test exact_native_stores_cover_all_widths_alignments_and_page_splits ... ok
+
+failures:
+
+---- actual_nx_gate_requires_owned_fault_before_restoring_permissions stdout ----
+
+thread 'actual_nx_gate_requires_owned_fault_before_restoring_permissions' (4989) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: checkpoint::actual_nx_gate_requires_owned_fault_before_restoring_permissions: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    actual_nx_gate_requires_owned_fault_before_restoring_permissions
+
+test result: FAILED. 22 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test checkpoint`
+[1m[92m     Running[0m tests/b3_mapping_admission.rs (target/debug/deps/b3_mapping_admission-1311f8c7df8bbf7c)
+
+running 5 tests
+test full_native_mapping_comparator_rejects_each_state_source_and_map_corruption ... FAILED
+test original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources ... FAILED
+test stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history ... FAILED
+test resolver_panic_after_real_rx_keeps_failure_and_original_physical_cleanup ... ok
+test blocked_resolver_expires_original_deadline_before_callback_is_released ... ok
+
+failures:
+
+---- full_native_mapping_comparator_rejects_each_state_source_and_map_corruption stdout ----
+
+thread 'full_native_mapping_comparator_rejects_each_state_source_and_map_corruption' (4964) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_mapping_admission::full_native_mapping_comparator_rejects_each_state_source_and_map_corruption: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources stdout ----
+
+thread 'original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources' (4965) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_mapping_admission::original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history stdout ----
+
+thread 'stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history' (4972) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: b3_mapping_admission::stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    full_native_mapping_comparator_rejects_each_state_source_and_map_corruption
+    original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources
+    stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history
+
+test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.27s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test b3_mapping_admission`
+[1m[91merror[0m: 1 target failed:
+    `-p liteinst-launch --test checkpoint`

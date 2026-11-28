@@ -29,6 +29,11 @@ pub mod lifecycle;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod native_capability;
 
+// Unit tests that single-step a native CPUID first require a calibrated host.
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+#[path = "../tests/support/host_cpuid_step.rs"]
+mod host_cpuid_step;
+
 // Unit fixtures exclude writable executable FDs from concurrent fork inheritance.
 #[cfg(all(
     any(test, feature = "dev-exec-backing-cleanup"),

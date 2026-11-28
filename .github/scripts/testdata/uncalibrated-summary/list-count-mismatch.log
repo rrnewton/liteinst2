@@ -1,0 +1,83 @@
+[1m[92m     Running[0m tests/native_selected.rs (target/debug/deps/native_selected-5eb0dce3950d816a)
+
+running 50 tests
+test covered_rdpid_rax ... ok
+test covered_rdpid_r15 ... ok
+test covered_rdrand_ax ... ok
+test covered_rdpid_rsp ... ok
+test covered_rdrand_r15 ... ok
+test covered_rdrand_r15w ... ok
+test covered_rdrand_r8d ... ok
+test covered_rdrand_rax ... ok
+test covered_rdrand_rsp ... ok
+test covered_rdrand_sp ... ok
+test covered_rdseed_ax ... ok
+test covered_rdseed_r15 ... ok
+test covered_rdseed_r15w ... ok
+test covered_rdseed_r8d ... ok
+test covered_rdseed_rax ... ok
+test covered_rdseed_rsp ... ok
+test covered_rdseed_sp ... ok
+test cpuid_basic_vendor_leaf ... FAILED
+test cpuid_processor_features_leaf ... FAILED
+test cpuid_structured_features_leaf ... FAILED
+test rdpid_rax ... ok
+test rdpid_rbp ... ok
+test rdpid_rbx ... ok
+test rdpid_rcx ... ok
+test rdpid_rdi ... ok
+test rdpid_rdx ... ok
+test rdpid_rsi ... ok
+test rdpid_rsp ... ok
+test rdrand_eax ... ok
+test rdrand_ebp ... ok
+test rdrand_ebx ... ok
+test rdrand_ecx ... ok
+test rdrand_edi ... ok
+test rdrand_edx ... ok
+test rdrand_esi ... ok
+test rdrand_esp ... ok
+test rdseed_eax ... ok
+test rdseed_ebp ... ok
+test rdseed_ebx ... ok
+test rdseed_ecx ... ok
+test rdseed_edi ... ok
+test rdseed_edx ... ok
+test rdseed_esi ... ok
+test rdseed_esp ... ok
+test rdtsc_all_flags ... ok
+test rdtsc_clear_flags ... ok
+test rdtsc_zero_parity ... ok
+test rdtscp_all_flags ... ok
+test rdtscp_clear_flags ... ok
+test rdtscp_zero_parity ... ok
+
+failures:
+
+---- cpuid_basic_vendor_leaf stdout ----
+
+thread 'cpuid_basic_vendor_leaf' (5956) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: native_selected::cpuid_basic_vendor_leaf: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- cpuid_processor_features_leaf stdout ----
+
+thread 'cpuid_processor_features_leaf' (5958) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: native_selected::cpuid_processor_features_leaf: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+---- cpuid_structured_features_leaf stdout ----
+
+thread 'cpuid_structured_features_leaf' (5959) panicked at crates/liteinst-launch/tests/support/host_cpuid_step.rs:180:9:
+UNCALIBRATED HOST: native_selected::cpuid_structured_features_leaf: single-step trap lost after CPUID in 64/64 probe steps (first stop at +3, expected +2); native CPUID completion cannot be verified on this host (issues 112, 115). Not a liteinst result.
+
+
+failures:
+    cpuid_basic_vendor_leaf
+    cpuid_processor_features_leaf
+    cpuid_structured_features_leaf
+
+test result: FAILED. 47 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+[1m[91merror[0m: test failed, to rerun pass `-p liteinst-launch --test native_selected`
+[1m[91merror[0m: 2 targets failed:
+    `-p liteinst-launch --test native_selected`

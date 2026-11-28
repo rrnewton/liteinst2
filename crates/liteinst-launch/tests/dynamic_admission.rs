@@ -279,6 +279,10 @@ impl InstructionProvider for Script {
 
 #[test]
 fn literal_first_cpuid_preserves_complete_state_and_native_memory() {
+    host_cpuid_step::require_calibrated(
+        &FILE_FORK,
+        "dynamic_admission::literal_first_cpuid_preserves_complete_state_and_native_memory",
+    );
     let directory = Directory::new();
     let mut image = Image::new(BASE, 2);
     image.emit(&[0x0f, 0xa2]);
@@ -742,3 +746,6 @@ mod matrix;
 
 #[path = "support/dynamic_admission_call.rs"]
 mod call_boundary;
+
+#[path = "support/host_cpuid_step.rs"]
+mod host_cpuid_step;
