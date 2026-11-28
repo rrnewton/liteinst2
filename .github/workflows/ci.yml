@@ -91,7 +91,7 @@ jobs:
         run: >
           cargo test --locked ${{ matrix.profile == 'release' && '--release' || '' }}
           ${{ matrix.group.packages }}
-          --all-targets --all-features
+          --all-targets --all-features --no-fail-fast
       - name: Verify published package consumer
         if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: |
