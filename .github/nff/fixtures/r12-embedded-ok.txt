@@ -1,0 +1,4 @@
+runtime isolated case "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_single_step_stops_before_same_page_marker" failed: isolated result or completed-body receipt disagrees
+isolated stdout prefix: "\nrunning 1 test\ntest linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_single_step_stops_before_same_page_marker ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s\n\n"
+isolated stderr prefix: "unexpected child stderr\n"
+runtime isolation failed closed; direct child reaped=true

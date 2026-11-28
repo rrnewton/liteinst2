@@ -1,0 +1,1 @@
+test selected_interpreter_and_executable_instruction_one_complete_exactly_once ... ok

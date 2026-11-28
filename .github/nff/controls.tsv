@@ -1,0 +1,10 @@
+# fixture rc row expected-verdict (r12-site and r13-site are real captured records)
+r12-site.txt 101 12 fail-at-site
+r12-embedded-ok.txt 101 12 different
+r12-ok.txt 0 12 ok
+r12-ok.txt 101 12 absent
+r13-site.txt 101 13 fail-at-site
+r13-ok.txt 0 13 ok
+r13-ok.txt 0 12 absent
+r12-ok.txt 124 12 timeout
+r12-iso-sameline.txt 101 12 fail-at-site

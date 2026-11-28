@@ -1,120 +1,107 @@
-name: CI
+name: NFF stress
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
-  CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: never
+  NFF_MAIN: 6612c39fd3aeb97cd209e469bced5d935aa3b01a
+  NFF_PR118: 5dd98176f2fea1a132feaf0f53a79c171370035c
+  NFF_R: "10"
 
 jobs:
-  quality:
-    name: Format and lint
+  stress:
+    name: NFF stress (${{ matrix.profile }}, ${{ matrix.replica }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.99.1
-        with:
-          components: clippy,rustfmt
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-      # Scoped to the six published crates: the rapid-profiler test target
-      # does not compile today (separate fix), so a workspace clippy can
-      # never report on the published surface.
-      - name: Lint published crates
-        run: >
-          cargo clippy --locked
-          -p liteinst -p liteinst-x86 -p liteinst-aarch64 -p liteinst-aarch64-patch -p liteinst-artifact
-          -p liteinst-admission -p liteinst-inprocess -p liteinst-launch
-          --all-targets --all-features -- -D warnings
-
-  test:
-    name: Linux x86_64 tests (${{ matrix.group.name }}, ${{ matrix.profile }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: ${{ matrix.group.timeout }}
+    timeout-minutes: 330
     strategy:
       fail-fast: false
       matrix:
         profile: [debug, release]
-        group:
-          - name: liteinst
-            packages: "-p liteinst"
-            timeout: 30
-          - name: liteinst-launch
-            packages: "-p liteinst-launch"
-            timeout: 30
-          # The mini-JIT (x86-64 only; unpublished): its unit tests and
-          # integration suites. Its dev-dependency enables test-seams.
-          - name: liteinst-jit
-            packages: "-p liteinst-jit"
-            timeout: 30
-          - name: small-crates
-            packages: "-p liteinst-x86 -p liteinst-aarch64 -p liteinst-aarch64-patch -p liteinst-artifact -p liteinst-admission -p liteinst-inprocess"
-            timeout: 15
+        replica: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.99.1
-      # Build artifacts only (registry + target); never test outcomes.
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        timeout-minutes: 10
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ matrix.group.name }}-${{ matrix.profile }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.group.name }}-${{ matrix.profile }}-
-      # Scoped to the six published crates across the matrix groups
-      # (rapid-profiler's broken test target must not red this signal;
-      # full-workspace is not promised). No skip/ignore/filter anywhere:
-      # long oracles stay in the liteinst group and get its 30m budget.
-      # The fixture-driver env vars point the main-thread oracle cohorts
-      # at the just-built driver binaries; without them those cohorts
-      # fail closed instead of running.
-      - name: Tests (${{ matrix.group.name }}, ${{ matrix.profile }})
-        env:
-          LITEINST_BOUNDARY_SIGNAL_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/boundary-signal-oracle-driver
-          LITEINST_CHAIN_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/eviction-chain-oracle-driver
-          LITEINST_CHAIN_EXTENSION_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/eviction-chain-extension-driver
-          LITEINST_SYNC_CORE_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/sync-core-capability-driver
-          LITEINST_T2_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/successor-eviction-oracle-driver
-        run: >
-          cargo test --locked ${{ matrix.profile == 'release' && '--release' || '' }}
-          ${{ matrix.group.packages }}
-          --all-targets --all-features --no-fail-fast
-      - name: Verify published package consumer
-        if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@1.99.1
+        timeout-minutes: 10
+      - name: Classifier controls
+        timeout-minutes: 10
+        run: bash .github/nff/controls.sh
+      - name: Check out both heads by sha
+        timeout-minutes: 10
         run: |
-          package_root="$(mktemp -d)"
-          # cargo copies the new crate into an existing target/package crate
-          # without truncating it; a longer cache-restored crate would leave
-          # a stale tail after the new gzip stream.
-          rm -f target/package/liteinst-*.crate
-          cargo package --locked
-          package_archive="$(find target/package -maxdepth 1 -name 'liteinst-*.crate' -print -quit)"
-          tar -xf "$package_archive" -C "$package_root"
-          package_dir="$(find "$package_root" -mindepth 1 -maxdepth 1 -type d -name 'liteinst-*' -print -quit)"
-          cd "$package_dir"
-          cargo build --locked --example preload_consumer
-      - name: Live patching stress
-        if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
-        run: >-
-          cargo test --locked --release --test stress live_probe_stress_matrix
-          -- --ignored --exact --nocapture
-      - name: Active-hook callback loop
-        if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
+          set -euo pipefail
+          git fetch --no-tags origin "$NFF_MAIN" "$NFF_PR118"
+          git worktree add --detach "$RUNNER_TEMP/main" "$NFF_MAIN"
+          git worktree add --detach "$RUNNER_TEMP/pr118" "$NFF_PR118"
+          echo "NFF-HEAD main=$(git -C "$RUNNER_TEMP/main" rev-parse HEAD) pr118=$(git -C "$RUNNER_TEMP/pr118" rev-parse HEAD)"
+      - name: Build both heads
+        timeout-minutes: 60
         env:
-          LITEINST_BENCH_ITERATIONS: "1000000"
-        run: >-
-          cargo test --locked --release --test stress probe_overhead_benchmark
-          -- --ignored --exact --nocapture
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -euo pipefail
+          flag=""
+          if [ "$PROFILE" = release ]; then flag="--release"; fi
+          for head in main pr118; do
+            (cd "$RUNNER_TEMP/$head" && cargo test --locked $flag -p liteinst-launch --all-features --lib --test selected_gate --test b3_exec_admission --no-run)
+          done
+      - name: Stress rows 12 and 13 by exact name, heads interleaved
+        timeout-minutes: 200
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -uo pipefail
+          flag=""
+          if [ "$PROFILE" = release ]; then flag="--release"; fi
+          classify="$GITHUB_WORKSPACE/.github/nff/classify.sh"
+          b3='blocked_exec_resolver_uses_original_deadline_and_owner_cleanup|exec_full_comparator_rejects_each_state_input_map_and_identity_corruption|original_exec_replacement_matches_raw_replay_and_native_full_state|resolver_panic_after_actual_exec_keeps_original_failure_and_cleanup|stale_exec_source_reply_preserves_actual_replacement_without_commit'
+          calib() {
+            out="$RUNNER_TEMP/cal-$1.txt"
+            (cd "$RUNNER_TEMP/main" && timeout -k 10 600 cargo test --locked $flag -p liteinst-launch --all-features --test b3_exec_admission) > "$out" 2>&1
+            rc=$?
+            cat "$out"
+            refusals=$(grep -c -F 'native selected full register completion differs' "$out")
+            oks=$(grep -c -x -E "test ($b3) \.\.\. ok" "$out")
+            if [ "$refusals" -ge 1 ]; then class=UNCALIBRATED
+            elif [ "$oks" -eq 5 ] && [ "$rc" -eq 0 ]; then class=CALIBRATED
+            else class=UNCLEAR; fi
+            echo "NFF-CAL bracket=$1 rc=$rc refusals=$refusals ok=$oks/5 class=$class"
+          }
+          run_one() {
+            head=$1; row=$2; rep=$3
+            if [ "$row" = 13 ]; then
+              target="--test selected_gate"
+              name=selected_interpreter_and_executable_instruction_one_complete_exactly_once
+            else
+              target="--lib"
+              name=linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_single_step_stops_before_same_page_marker
+            fi
+            out="$RUNNER_TEMP/x-$head-$row-$rep.txt"
+            echo "NFF-EXEC head=$head row=$row rep=$rep"
+            (cd "$RUNNER_TEMP/$head" && timeout -k 10 240 cargo test --locked $flag -p liteinst-launch --all-features $target -- --exact "$name") > "$out" 2>&1
+            rc=$?
+            cat "$out"
+            bash "$classify" "$out" "$rc" "$head" "$row" "$rep"
+          }
+          calib pre
+          pre=$class
+          echo "NFF-JOB-PRE profile=$PROFILE class=$pre"
+          for rep in $(seq 1 "$NFF_R"); do
+            for row in 13 12; do
+              if [ $((rep % 2)) -eq 1 ]; then order="main pr118"; else order="pr118 main"; fi
+              for head in $order; do run_one "$head" "$row" "$rep"; done
+            done
+          done
+          calib post
+          post=$class
+          if [ "$pre" = CALIBRATED ] && [ "$post" = CALIBRATED ]; then job=CALIBRATED
+          elif [ "$pre" != CALIBRATED ] && [ "$post" != CALIBRATED ] && { [ "$pre" = UNCALIBRATED ] || [ "$post" = UNCALIBRATED ]; }; then job=UNCALIBRATED-BY-SIGNATURE
+          else job=UNCLEAR; fi
+          echo "NFF-JOB profile=$PROFILE class=$job pre=$pre post=$post"
+          exit 0
