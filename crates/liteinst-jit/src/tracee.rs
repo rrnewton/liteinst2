@@ -146,6 +146,71 @@ impl PtraceTracee {
     }
 }
 
+/// The attach-mode driver's tracee (test seams only): a [`Tracee`] over an
+/// EXISTING traced pid, which the calling thread already traces (for
+/// example a child that ran `PTRACE_TRACEME`). It performs no
+/// `PTRACE_ATTACH` or `PTRACE_SEIZE`.
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug)]
+pub struct AttachTracee(pub(crate) PtraceTracee);
+
+#[cfg(feature = "test-seams")]
+impl AttachTracee {
+    /// The traced thread `pid`, in a ptrace-stop, with
+    /// `PTRACE_O_TRACESYSGOOD | PTRACE_O_EXITKILL` set, as the
+    /// substrate's contract requires (syscall stops reported as
+    /// `SIGTRAP | 0x80`; the thread killed if this tracer exits).
+    /// It can fail only in `PTRACE_SETOPTIONS`.
+    pub fn attach(pid: i32) -> Result<AttachTracee, Errno> {
+        let inner = PtraceTracee::new(pid);
+        inner.set_options(libc::PTRACE_O_TRACESYSGOOD | libc::PTRACE_O_EXITKILL)?;
+        Ok(AttachTracee(inner))
+    }
+}
+
+#[cfg(feature = "test-seams")]
+impl Tracee for AttachTracee {
+    fn pid(&self) -> i32 {
+        self.0.pid()
+    }
+    fn get_regs(&self) -> Result<libc::user_regs_struct, Errno> {
+        self.0.get_regs()
+    }
+    fn set_regs(&self, regs: &libc::user_regs_struct) -> Result<(), Errno> {
+        self.0.set_regs(regs)
+    }
+    fn read_mem(&self, addr: u64, buf: &mut [u8]) -> Result<(), Errno> {
+        self.0.read_mem(addr, buf)
+    }
+    fn write_mem(&self, addr: u64, buf: &[u8]) -> Result<(), Errno> {
+        self.0.write_mem(addr, buf)
+    }
+    fn get_siginfo(&self) -> Result<libc::siginfo_t, Errno> {
+        self.0.get_siginfo()
+    }
+    fn set_siginfo(&self, info: &libc::siginfo_t) -> Result<(), Errno> {
+        self.0.set_siginfo(info)
+    }
+    fn get_debugreg(&self, n: usize) -> Result<u64, Errno> {
+        self.0.get_debugreg(n)
+    }
+    fn set_debugreg(&self, n: usize, value: u64) -> Result<(), Errno> {
+        self.0.set_debugreg(n, value)
+    }
+    fn cont(&self, sig: i32) -> Result<(), Errno> {
+        self.0.cont(sig)
+    }
+    fn cont_syscall(&self, sig: i32) -> Result<(), Errno> {
+        self.0.cont_syscall(sig)
+    }
+    fn single_step(&self, sig: i32) -> Result<(), Errno> {
+        self.0.single_step(sig)
+    }
+    fn wait_stop(&self) -> Result<i32, Errno> {
+        self.0.wait_stop()
+    }
+}
+
 impl Tracee for PtraceTracee {
     fn pid(&self) -> i32 {
         self.pid

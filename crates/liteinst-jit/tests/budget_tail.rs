@@ -3,15 +3,16 @@
 //! a budgeted translation must land exactly where the O1 oracle,
 //! single-stepping natively, stands once k conditional branches have
 //! retired: all registers, RIP, retired instructions, the data and
-//! destination buffers and the stack window, in the in-process mode
-//! and in the remote (traced child) mode.
+//! destination buffers and the stack window, in the in-process mode,
+//! in the remote (traced child) mode, and in the attach mode (an O1
+//! host process driven by the attach-mode driver).
 //!
 //! Witnesses per row, judged by `judge_row`:
 //! - W1: the JIT credited exactly k (n plus the owed count for a
 //!   handoff), and the oracle stopped at the same count;
 //! - W2: the JIT arm made no single-step (remote: the counter reads
 //!   0; in-process: no tracer exists), while the oracle arm did; a
-//!   plain remote cpuid run is the counter's positive control;
+//!   plain remote cpuid run and `w2_control_attach` are the counter's positive controls;
 //! - W3: the PMU delta over the stretch is 2 x JIT branches + poll
 //!   entries (guest RCBs, one budget `jnz` per credit, one poll
 //!   `jnz` per block entry); in-process, only when the ret-only
@@ -23,11 +24,13 @@
 //!   the pre-stated handoff set may hand off.
 //!
 //! One sequential corpus test, `#[ignore]`d and run by name: the
-//! in-process dispatcher keeps process-global state, and both modes
-//! share ptrace and signals. The judge self-tests run by default.
+//! in-process dispatcher keeps process-global state, and all three
+//! modes share ptrace and signals. The judge self-tests run by default.
 
 use liteinst_jit::GuestState;
-use liteinst_jit::exec::{BudgetEnd, BudgetStop, Executable, ProcessMemory};
+use liteinst_jit::Refuse;
+use liteinst_jit::attach::AttachedExecutable;
+use liteinst_jit::exec::{BudgetEnd, BudgetStop, Executable, ProcessMemory, RunError};
 use liteinst_jit::fixtures;
 use liteinst_jit::harness::{MappedGuest, REDZONE_MARKER, RETURN_SENTINEL};
 use liteinst_jit::o1::{O1Stop, OracleOutcome};
@@ -283,7 +286,8 @@ fn oracle_view(name: &str, o: &OracleOutcome) -> View {
 }
 
 // ---------------------------------------------------------------
-// The two JIT arms.
+// The three JIT arms: in-process and remote here, attach in the Attach
+// arm's section below.
 
 /// One budgeted JIT run, measured.
 struct Measured {
@@ -492,12 +496,542 @@ fn w2_control() -> Result<u64, String> {
 }
 
 // ---------------------------------------------------------------
+// The CPU caps and the SIGXCPU premise reads, each a named failure:
+// B1, SIGXCPU is not caught in a host (`SigCgt` bit 24 clear); B2, a
+// CPU-cap hit ends the test binary by signal 24; B3, SIGXCPU is not
+// blocked in a host, nor ignored or blocked in the test process.
+
+/// SIGXCPU (signal 24) as a `/proc/<pid>/status` mask bit.
+const SIGXCPU_BIT: u64 = 1 << (libc::SIGXCPU - 1);
+
+/// One `/proc/<pid>/status` mask field, in hex. It must appear exactly
+/// once: a missing or repeated line fails closed, never reads as 0.
+fn status_field(text: &str, name: &str) -> Result<u64, String> {
+    let mut found = None;
+    for line in text.lines() {
+        if let Some(v) = line.strip_prefix(name) {
+            if found.is_some() {
+                return Err(format!("{name} repeated"));
+            }
+            let v = v.trim();
+            found = Some(u64::from_str_radix(v, 16).map_err(|_| format!("{name} not hex: {v:?}"))?);
+        }
+    }
+    found.ok_or_else(|| format!("{name} absent"))
+}
+
+/// The test process's own CPU cap: `RLIMIT_CPU` = {soft, hard}
+/// CPU-seconds, inherited by each child at fork and lowered to the
+/// child cap when the child is armed. Soft < hard, so a hit is
+/// SIGXCPU, whose default action ends the test process with signal
+/// 24; cargo reports it, and that is the named CPU-cap FAIL (B2).
+fn own_cpu_cap(soft: u64, hard: u64) {
+    assert!(
+        soft < hard,
+        "own_cpu_cap: soft {soft} must be below hard {hard}"
+    );
+    let lim = libc::rlimit {
+        rlim_cur: soft,
+        rlim_max: hard,
+    };
+    // SAFETY: setrlimit on this process with a valid limit.
+    let rc = unsafe { libc::setrlimit(libc::RLIMIT_CPU, &lim) };
+    assert!(
+        rc == 0,
+        "setrlimit(RLIMIT_CPU, {soft}/{hard}): {}",
+        std::io::Error::last_os_error()
+    );
+}
+
+/// B3, the test process: SIGXCPU is neither ignored (`SigIgn`, which
+/// is process-wide) nor blocked in this thread (`SigBlk`, which is per
+/// thread), so a CPU-cap hit is delivered with its default action.
+fn sigxcpu_premise_self() -> Result<(), String> {
+    let proc_text = std::fs::read_to_string("/proc/self/status")
+        .map_err(|e| format!("B3: read /proc/self/status: {e}"))?;
+    let thread_text = std::fs::read_to_string("/proc/thread-self/status")
+        .map_err(|e| format!("B3: read /proc/thread-self/status: {e}"))?;
+    let ign = status_field(&proc_text, "SigIgn:").map_err(|e| format!("B3: {e}"))?;
+    let blk = status_field(&thread_text, "SigBlk:").map_err(|e| format!("B3: {e}"))?;
+    if ign & SIGXCPU_BIT != 0 {
+        return Err(format!(
+            "B3: SIGXCPU is ignored in the test process (SigIgn {ign:016x})"
+        ));
+    }
+    if blk & SIGXCPU_BIT != 0 {
+        return Err(format!(
+            "B3: SIGXCPU is blocked in the test thread (SigBlk {blk:016x})"
+        ));
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------
+// The Attach arm (an O1 host driven by the attach-mode driver).
+
+/// The O1 host's real dst allocation, as the oracle's own view has it:
+/// a 32-byte box, except rep_stosb_partial's guarded tail, which ends
+/// 16 bytes before a PROT_NONE page (`GuardedDst`).
+fn host_dst_len(name: &str) -> u64 {
+    if name == "rep_stosb_partial" { 16 } else { 32 }
+}
+
+/// The host premise reads, before any stretch, from one
+/// `/proc/<pid>/status` read of the stopped host:
+/// - B1: SIGXCPU is not caught (`SigCgt` bit 24 clear);
+/// - B3: SIGXCPU is not blocked (`SigBlk` bit 24 clear);
+/// - the mirror comparison: for every signal, the queried mirror holds
+///   a custom action exactly where `SigCgt` has the bit, and an ignored
+///   one exactly where `SigIgn` has it.
+///
+/// So a CPU-cap hit reaches the tracer as a signal-delivery stop, and
+/// no action word the engine consults is wrong. Any failure is named.
+fn host_premise(pid: i32, exec: &AttachedExecutable) -> Result<(), String> {
+    let text = std::fs::read_to_string(format!("/proc/{pid}/status"))
+        .map_err(|e| format!("PREMISE: read /proc/{pid}/status: {e}"))?;
+    let field = |name: &str| status_field(&text, name).map_err(|e| format!("PREMISE: {e}"));
+    let cgt = field("SigCgt:")?;
+    let ign = field("SigIgn:")?;
+    let blk = field("SigBlk:")?;
+    if cgt & SIGXCPU_BIT != 0 {
+        return Err(format!(
+            "B1: SIGXCPU is caught in the host (SigCgt {cgt:016x})"
+        ));
+    }
+    if blk & SIGXCPU_BIT != 0 {
+        return Err(format!(
+            "B3: SIGXCPU is blocked in the host (SigBlk {blk:016x})"
+        ));
+    }
+    let registry = exec.registry();
+    for sig in 1..=64i32 {
+        let bit = 1u64 << (sig - 1);
+        let action = registry.action(sig);
+        if action.is_custom() != (cgt & bit != 0) || action.is_ignore() != (ign & bit != 0) {
+            return Err(format!(
+                "MIRROR: signal {sig}: mirror {action:?}, SigCgt {cgt:016x}, SigIgn {ign:016x}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// How an Attach run's error is reported (the child CPU-cap naming
+/// rule). A SIGXCPU inside a stretch takes one of four cases. (1) From
+/// the remote engine's KernelAsync arm, it surfaces as `RunError::Fault`
+/// with signum 24, because 24 is not a fault signal
+/// (`recovery::is_fault_signal`), named "CPU-cap FAIL: SIGXCPU (signal
+/// 24) at <pc>". (2) At a POLL exit, the engine instead names the
+/// lowest-numbered unblocked pending signal when none is deliverable,
+/// which is 24 when SIGXCPU is that signal. (3) If the stop's siginfo
+/// cannot be read, the run is refused as `RemoteSubstrate`. (4) On any
+/// other path (for example a syscall-exit-phase stop, which classifies
+/// Unexpected), this function names SIGXCPU only for a Fault whose
+/// signum is 24, so no other outcome is named SIGXCPU. Within a stretch,
+/// a signal yields `Refuse::RcbBudget` only when `delivery_action` admits
+/// it, and the admission sets never admit 24. `Refuse::RcbBudget` also
+/// arises, with no signal involved, from the engine's own wiring
+/// refusals. Every `Refuse::RcbBudget` stays named "budget refusal,
+/// cause not named (no signum)": never a pass, and never named SIGXCPU.
+/// Any other error is its Debug text.
+fn attach_error(e: &RunError) -> String {
+    match e {
+        RunError::Refuse(Refuse::RcbBudget { .. }) => {
+            "budget refusal, cause not named (no signum)".to_string()
+        }
+        RunError::Fault(f) if f.signum == libc::SIGXCPU => {
+            format!(
+                "CPU-cap FAIL: SIGXCPU (signal {}) at {:#x}",
+                f.signum, f.src_pc
+            )
+        }
+        other => format!("{other:?}"),
+    }
+}
+
+/// The Attach arm: one budgeted run of `name` to `k` in its own O1 host
+/// process, through the attach-mode driver. The procedure is
+/// `run_remote`'s; the memory ranges are the host's real allocations,
+/// as the oracle's view has them.
+fn run_attach(name: &str, k: u64) -> Measured {
+    let fixture = fixtures::by_name(name);
+    let (host, _deadline) = match deadline::attach_host(O1_CHILD, name) {
+        Ok(pair) => pair,
+        Err(e) => return failed(format!("attach host: {e:?}")),
+    };
+    let info = host.info;
+    let region = RegionFacts {
+        base: info.base,
+        bytes: fixture.bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    let profile = CountProfile::BranchesAndInstructions;
+    let mut exec = match AttachedExecutable::new(
+        host.tracee,
+        &host.site,
+        host.arena,
+        &info,
+        region,
+        info.base,
+        profile,
+    ) {
+        Ok(exec) => exec,
+        Err(e) => return failed(format!("attach: {e:?}")),
+    };
+    if let Err(e) = host_premise(host.pid, &exec) {
+        return failed(e);
+    }
+    if let Err(e) = exec.prepare_budgeted() {
+        return failed(format!("prepare: {e:?}"));
+    }
+    let mut state = exec.initial_state();
+    let (rdi, rsi, rdx, rax, rcx) =
+        MappedGuest::fixture_args(name, info.base, info.data, info.dst, info.src);
+    state.rdi = rdi;
+    state.rsi = rsi;
+    state.rdx = rdx;
+    state.rax = rax;
+    state.rcx = rcx;
+    // Opened after the install, while the host is stopped: from here
+    // on the host runs only generated code.
+    let pmu = perf_open(host.pid, false);
+    let before = pmu.and_then(perf_read);
+    let stop = exec.run_budgeted(state, RETURN_SENTINEL, k);
+    let after = pmu.and_then(perf_read);
+    perf_close(pmu);
+    let single_steps = Some(exec.single_steps_for_test());
+    let mut data = vec![0u8; 128];
+    let mut dst = vec![0u8; 32];
+    let mut stack = vec![0u8; 136];
+    let read = exec.read_mem(info.data, &mut data)
+        && exec.read_mem(info.dst, &mut dst)
+        && exec.read_mem(info.stack_top - 128, &mut stack);
+    let mem = Mem {
+        ranges: [
+            (info.base, 4096),
+            (info.data, 128),
+            (info.dst, host_dst_len(name)),
+            (info.src, 32),
+        ],
+        stack_top: info.stack_top,
+        data: &data,
+        dst: &dst,
+        stack: &stack,
+    };
+    let view = match (&stop, read) {
+        (Ok(s), true) => Some(view(name, &s.outcome.state, s.outcome.instructions, &mem)),
+        _ => None,
+    };
+    let stop = match (stop, read) {
+        (Ok(s), true) => Ok(s),
+        (Ok(_), false) => Err("attach memory read failed".to_string()),
+        (Err(e), _) => Err(attach_error(&e)),
+    };
+    Measured {
+        stop,
+        view,
+        pmu_delta: before.zip(after).map(|(b, a)| a.wrapping_sub(b)),
+        single_steps,
+        base: info.base,
+    }
+}
+
+/// The Attach arm's W2 positive control: a plain unbudgeted attach
+/// run of cpuid_leaf, on its own host process, steps its cpuid through
+/// the remote engine's single-step site, so the counter the Attach rows
+/// read must exceed 0 here. 0 is a W2 FAIL for the Attach arm. The
+/// premise reads run first: the unbudgeted run consults the mirror.
+fn w2_control_attach() -> Result<u64, String> {
+    let name = "cpuid_leaf";
+    let fixture = fixtures::by_name(name);
+    let (host, _deadline) =
+        deadline::attach_host(O1_CHILD, name).map_err(|e| format!("attach host: {e:?}"))?;
+    let info = host.info;
+    let region = RegionFacts {
+        base: info.base,
+        bytes: fixture.bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    let profile = CountProfile::BranchesAndInstructions;
+    let mut exec = AttachedExecutable::new(
+        host.tracee,
+        &host.site,
+        host.arena,
+        &info,
+        region,
+        info.base,
+        profile,
+    )
+    .map_err(|e| format!("attach: {e:?}"))?;
+    host_premise(host.pid, &exec)?;
+    exec.prepare().map_err(|e| format!("prepare: {e:?}"))?;
+    let mut state = exec.initial_state();
+    let (rdi, rsi, rdx, rax, rcx) =
+        MappedGuest::fixture_args(name, info.base, info.data, info.dst, info.src);
+    state.rdi = rdi;
+    state.rsi = rsi;
+    state.rdx = rdx;
+    state.rax = rax;
+    state.rcx = rcx;
+    exec.run(state, RETURN_SENTINEL)
+        .map_err(|e| format!("run: {}", attach_error(&e)))?;
+    Ok(exec.single_steps_for_test())
+}
+
+/// The core-limit premise, named C1 in failure messages: RLIMIT_CORE
+/// soft = 1 for the test process, inherited by every
+/// child at fork, so a CPU-cap hit leaves no piped core. That the kernel
+/// aborts a piped dump at exactly 1 is what the core probe (`core_probe`) proves
+/// or refutes on this host. Only the SOFT limit changes: the current
+/// hard limit is kept, never lowered irreversibly. A hard limit below 1
+/// cannot hold soft 1 and is a named failure.
+fn core_limit_one() {
+    let mut cur = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    // SAFETY: getrlimit on this process with a live struct.
+    let rc = unsafe { libc::getrlimit(libc::RLIMIT_CORE, &mut cur) };
+    assert!(
+        rc == 0,
+        "C1: getrlimit(RLIMIT_CORE): {}",
+        std::io::Error::last_os_error()
+    );
+    assert!(
+        cur.rlim_max >= 1,
+        "C1: RLIMIT_CORE hard limit {} is below 1",
+        cur.rlim_max
+    );
+    let lim = libc::rlimit {
+        rlim_cur: 1,
+        rlim_max: cur.rlim_max,
+    };
+    // SAFETY: setrlimit on this process with a valid limit (soft <= hard).
+    let rc = unsafe { libc::setrlimit(libc::RLIMIT_CORE, &lim) };
+    assert!(
+        rc == 0,
+        "C1: setrlimit(RLIMIT_CORE): {}",
+        std::io::Error::last_os_error()
+    );
+}
+
+/// One host for the naming controls: `attach_host`, then (the CPU-cap control only) the
+/// host's own RLIMIT_CPU lowered to `cap` straight after it, then
+/// `AttachedExecutable::new` over `bytes`, then the host premise reads.
+/// Lowering a limit of this test's own same-uid child needs no
+/// privilege.
+fn control_host(
+    name: &str,
+    bytes: Vec<u8>,
+    cap: Option<(u64, u64)>,
+) -> Result<(AttachedExecutable, deadline::AttachHost, deadline::Deadline), String> {
+    let (host, bound) =
+        deadline::attach_host(O1_CHILD, name).map_err(|e| format!("attach host: {e:?}"))?;
+    if let Some((soft, hard)) = cap {
+        let lim = libc::rlimit {
+            rlim_cur: soft,
+            rlim_max: hard,
+        };
+        // SAFETY: prlimit on this test's own child, spawned and not
+        // reaped; `lim` lowers its limits and no old limit is read.
+        let rc = unsafe { libc::prlimit(host.pid, libc::RLIMIT_CPU, &lim, core::ptr::null_mut()) };
+        if rc != 0 {
+            return Err(format!("prlimit: {}", std::io::Error::last_os_error()));
+        }
+    }
+    let info = host.info;
+    let region = RegionFacts {
+        base: info.base,
+        bytes,
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    let exec = AttachedExecutable::new(
+        host.tracee,
+        &host.site,
+        host.arena,
+        &info,
+        region,
+        info.base,
+        CountProfile::BranchesAndInstructions,
+    )
+    .map_err(|e| format!("attach: {e:?}"))?;
+    host_premise(host.pid, &exec)?;
+    Ok((exec, host, bound))
+}
+
+/// PC-1, N1 and N2, the naming rule's controls. Each part has its own
+/// host (prepare is one-shot). The result is the failures, empty when
+/// all three pass.
+/// - PC-1: a `jmp $` host whose own RLIMIT_CPU is lowered to {1, 2}
+///   must stop with a Fault of signum 24, named
+///   "CPU-cap FAIL: SIGXCPU (signal 24) at 0x...".
+/// - N1: a load fault (fault_load, with rdi unmapped) must not be named
+///   SIGXCPU.
+/// - N2: a budgeted run of an unbudgeted translation must read exactly
+///   "budget refusal, cause not named (no signum)".
+fn naming_controls() -> Vec<String> {
+    let mut failures = Vec::new();
+
+    // PC-1.
+    let pc1 = (|| -> Result<RunError, String> {
+        let (mut exec, _host, _bound) = control_host("hex:ebfe", vec![0xeb, 0xfe], Some((1, 2)))?;
+        exec.prepare_budgeted()
+            .map_err(|e| format!("prepare: {e:?}"))?;
+        let state = exec.initial_state();
+        match exec.run_budgeted(state, RETURN_SENTINEL, 1) {
+            Ok(stop) => Err(format!("run returned Ok: {stop:?}")),
+            Err(e) => Ok(e),
+        }
+    })();
+    match pc1 {
+        Ok(e) => {
+            let named = attach_error(&e);
+            let is24 = matches!(&e, RunError::Fault(f) if f.signum == libc::SIGXCPU);
+            if !(is24 && named.starts_with("CPU-cap FAIL: SIGXCPU (signal 24) at 0x")) {
+                failures.push(format!(
+                    "PC-1: expected Fault with signum 24, got {e:?} ({named})"
+                ));
+            }
+        }
+        Err(e) => failures.push(format!("PC-1: expected Fault with signum 24, got {e}")),
+    }
+
+    // N1.
+    let n1 = (|| -> Result<RunError, String> {
+        let name = "fault_load";
+        let (mut exec, _host, _bound) = control_host(name, fixtures::by_name(name).bytes, None)?;
+        exec.prepare_budgeted()
+            .map_err(|e| format!("prepare: {e:?}"))?;
+        let info = _host.info;
+        let mut state = exec.initial_state();
+        let (rdi, rsi, rdx, rax, rcx) =
+            MappedGuest::fixture_args(name, info.base, info.data, info.dst, info.src);
+        state.rdi = rdi;
+        state.rsi = rsi;
+        state.rdx = rdx;
+        state.rax = rax;
+        state.rcx = rcx;
+        // An unmapped address, as remote_compare does for this fixture:
+        // fixture_args gives rdi = data, a valid buffer, so the load
+        // could never fault without it.
+        state.rdi = 0x0dea_d000;
+        match exec.run_budgeted(state, RETURN_SENTINEL, 1000) {
+            Ok(stop) => Err(format!("run returned Ok: {stop:?}")),
+            Err(e) => Ok(e),
+        }
+    })();
+    match n1 {
+        Ok(e) => {
+            let named = attach_error(&e);
+            let not24 = matches!(&e, RunError::Fault(f) if f.signum != libc::SIGXCPU);
+            if !(not24 && !named.contains("SIGXCPU")) {
+                failures.push(format!(
+                    "N1: expected a Fault not named SIGXCPU, got {e:?} ({named})"
+                ));
+            }
+        }
+        Err(e) => failures.push(format!("N1: expected a Fault not named SIGXCPU, got {e}")),
+    }
+
+    // N2.
+    let n2 = (|| -> Result<RunError, String> {
+        let name = "sum_loop";
+        let (mut exec, _host, _bound) = control_host(name, fixtures::by_name(name).bytes, None)?;
+        exec.prepare().map_err(|e| format!("prepare: {e:?}"))?;
+        let state = exec.initial_state();
+        match exec.run_budgeted(state, RETURN_SENTINEL, 1) {
+            Ok(stop) => Err(format!("run returned Ok: {stop:?}")),
+            Err(e) => Ok(e),
+        }
+    })();
+    match n2 {
+        Ok(e) => {
+            let named = attach_error(&e);
+            if named != "budget refusal, cause not named (no signum)" {
+                failures.push(format!(
+                    "N2: expected exactly \"budget refusal, cause not named (no signum)\", got {e:?} ({named})"
+                ));
+            }
+        }
+        Err(e) => failures.push(format!(
+            "N2: expected exactly \"budget refusal, cause not named (no signum)\", got {e}"
+        )),
+    }
+    failures
+}
+
+/// PC-2, the proof of the core-limit premise on this host. The probe is this test binary
+/// running `sigxcpu_core_probe`, untraced, started only through
+/// `deadline::command_child`. Straight after that returns, and before
+/// the wait, this parent lowers the probe's RLIMIT_CPU to {1, 65}: the
+/// armed {60, 65} always comes first, so this only LOWERS the soft
+/// limit, and the hard limit stays 65 so a hard-limit SIGKILL cannot
+/// cut a slow dump short. PASS iff the probe ends by signal 24 with no
+/// core dumped; a core means the core-limit premise FAILS.
+fn core_probe() -> Result<(), String> {
+    use std::os::unix::process::ExitStatusExt;
+    let exe = std::env::current_exe().map_err(|e| format!("PC-2: current_exe: {e}"))?;
+    let mut cmd = std::process::Command::new(exe);
+    cmd.args([
+        "--exact",
+        "sigxcpu_core_probe",
+        "--ignored",
+        "--test-threads=1",
+    ])
+    .env("LITEINST_SIGXCPU_CORE_PROBE", "1")
+    .stdout(std::process::Stdio::null())
+    .stderr(std::process::Stdio::null());
+    let (mut child, bound) =
+        deadline::command_child(&mut cmd).map_err(|e| format!("PC-2: spawn: {e}"))?;
+    let lim = libc::rlimit {
+        rlim_cur: 1,
+        rlim_max: 65,
+    };
+    // SAFETY: prlimit on this test's own child, spawned and not reaped;
+    // `lim` lowers its soft limit below the armed {60, 65}.
+    let rc = unsafe {
+        libc::prlimit(
+            child.id() as i32,
+            libc::RLIMIT_CPU,
+            &lim,
+            core::ptr::null_mut(),
+        )
+    };
+    if rc != 0 {
+        let err = std::io::Error::last_os_error();
+        let _ = child.kill();
+        let _ = child.wait();
+        drop(bound);
+        return Err(format!("PC-2: prlimit: {err}"));
+    }
+    let status = child.wait().map_err(|e| format!("PC-2: wait: {e}"))?;
+    drop(bound);
+    if status.core_dumped() {
+        return Err(format!(
+            "PC-2: C1 FAILS: core dumped under RLIMIT_CORE 1: {status:?}"
+        ));
+    }
+    if status.signal() != Some(libc::SIGXCPU) {
+        return Err(format!(
+            "PC-2: the probe did not end by signal 24: {status:?}"
+        ));
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------
 // The judge (pure; exercised on synthetic rows by the self-test).
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Mode {
     InProcess,
     Remote,
+    /// The attach-mode driver over an O1 host (LAST everywhere,
+    /// so the arm-specific mutant kill lines keep their meaning).
+    Attach,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -606,9 +1140,10 @@ fn judge_row(r: &Row, inproc_calibrated: bool) -> Verdict {
     if let Some(m) = &r.state_mismatch {
         return fail(format!("STATE: {m}"));
     }
-    // W2.
+    // W2. Attach is a tracer arm like Remote: Some(0) only, and never
+    // judged as InProcess (so the calibration rule below skips it).
     match (r.mode, r.jit_single_steps) {
-        (Mode::Remote, Some(0)) | (Mode::InProcess, None) => {}
+        (Mode::Remote, Some(0)) | (Mode::InProcess, None) | (Mode::Attach, Some(0)) => {}
         (m, s) => return fail(format!("W2: {m:?} jit single-steps {s:?}")),
     }
     if r.k >= 1 && r.oracle_steps == 0 {
@@ -821,6 +1356,14 @@ fn end_label(r: &Row) -> &'static str {
 #[ignore]
 fn budget_tail_corpus_v1() {
     let _bound = deadline::TestBound::arm();
+    // B2 and B3 (the CPU-cap section above): SIGXCPU must reach this
+    // process with its default action, then the CPU caps. The test
+    // process runs at {1800, 1805} CPU-s, and every child armed from
+    // here at {60, 65}; soft < hard, so a cap hit is a NAMED SIGXCPU.
+    sigxcpu_premise_self().unwrap_or_else(|e| panic!("{e}"));
+    core_limit_one();
+    own_cpu_cap(1800, 1805);
+    deadline::set_child_cpu_cap(60, 65);
     let mut failures: Vec<String> = Vec::new();
     let control = w2_control();
     println!("W2-CONTROL\tsingle_steps={control:?}");
@@ -851,6 +1394,8 @@ fn budget_tail_corpus_v1() {
             rows.push((row(Mode::InProcess, name, k, &inproc, &to_k), total));
             let remote = run_remote(name, k);
             rows.push((row(Mode::Remote, name, k, &remote, &to_k), total));
+            let attach = run_attach(name, k);
+            rows.push((row(Mode::Attach, name, k, &attach, &to_k), total));
         }
     }
     readings.extend(calibrate(pmu_in));
@@ -886,7 +1431,7 @@ fn budget_tail_corpus_v1() {
         );
         judged.push((r, total, v));
     }
-    for mode in [Mode::InProcess, Mode::Remote] {
+    for mode in [Mode::InProcess, Mode::Remote, Mode::Attach] {
         let (mut landed, mut handoff) = (0u64, 0u64);
         for name in FIXTURES {
             let mine: Vec<&(Row, u64, Verdict)> = judged
@@ -936,6 +1481,27 @@ fn budget_tail_corpus_v1() {
             count(|v| matches!(v, Verdict::Fail(_))),
         );
     }
+    // The Attach arm's W2 positive control. Its failure is pushed
+    // LAST, as every Attach failure is, so the arm-specific mutant kill
+    // lines keep naming the first failing InProcess or Remote row.
+    let control_attach = w2_control_attach();
+    println!("W2-CONTROL-ATTACH\tsingle_steps={control_attach:?}");
+    if !matches!(control_attach, Ok(n) if n > 0) {
+        failures.push(format!(
+            "Attach W2 control: counter did not count: {control_attach:?}"
+        ));
+    }
+    // PC-1, N1 and N2, the naming rule's controls, then PC-2, the proof
+    // of the core-limit premise on this host. Their failures are pushed
+    // LAST, as every Attach failure is.
+    let naming = naming_controls();
+    println!("NAMING-CONTROLS\t{naming:?}");
+    failures.extend(naming);
+    let probe = core_probe();
+    println!("CORE-PROBE\t{probe:?}");
+    if let Err(e) = probe {
+        failures.push(e);
+    }
     assert!(
         failures.is_empty(),
         "budget tail FAILED: {} failing rows or fixtures; first: {}",
@@ -971,6 +1537,40 @@ fn synthetic() -> Row {
 
 fn is_fail_named(v: &Verdict, prefix: &str) -> bool {
     matches!(v, Verdict::Fail(s) if s.starts_with(prefix))
+}
+
+/// The Attach arm's single W2 change: an Attach row passes W2 with `Some(0)`
+/// single-steps only, and is never judged as InProcess, so the
+/// in-process calibration rule never applies to it.
+#[test]
+fn judge_selftest_attach_w2() {
+    let _bound = deadline::TestBound::arm();
+    let mut base = synthetic();
+    base.mode = Mode::Attach;
+    assert_eq!(
+        judge_row(&base, true),
+        Verdict::Pass,
+        "an Attach row with Some(0) passes W2"
+    );
+    for steps in [Some(1), None] {
+        let mut r = base.clone();
+        r.jit_single_steps = steps;
+        assert!(
+            is_fail_named(&judge_row(&r, true), "W2: "),
+            "an Attach row with jit single-steps {steps:?} must fail W2"
+        );
+    }
+    assert!(base.entries > 0, "the synthetic row has cache entries");
+    assert_ne!(
+        judge_row(&base, false),
+        Verdict::Uncalibrated,
+        "an Attach row is never judged as InProcess"
+    );
+    assert_eq!(
+        judge_row(&base, false),
+        Verdict::Pass,
+        "an Attach row's W3 does not depend on in-process calibration"
+    );
 }
 
 #[test]
@@ -1244,6 +1844,24 @@ fn mutant_log_verdict() {
     let v = judge_mutant_log(&log);
     println!("MUTANT-VERDICT\t{path}\t{v:?}");
     assert_eq!(v, MutantVerdict::Killed, "mutant not killed");
+}
+
+/// PC-2's probe (`core_probe`). It
+/// spins only when LITEINST_SIGXCPU_CORE_PROBE is set, which only PC-2 sets; any other run returns at once.
+/// It sets no CPU limit of its own: PC-2's parent lowers it, so the
+/// order of the two prlimit calls is fixed in one thread. It is not
+/// traced, and it inherits the core-limit premise's RLIMIT_CORE {soft 1, hard = the test
+/// process's current hard limit}.
+#[test]
+#[ignore]
+fn sigxcpu_core_probe() {
+    let _bound = deadline::TestBound::arm();
+    if std::env::var_os("LITEINST_SIGXCPU_CORE_PROBE").is_none() {
+        return;
+    }
+    loop {
+        core::hint::spin_loop();
+    }
 }
 
 /// Spawn census: every child this binary starts carries a run
