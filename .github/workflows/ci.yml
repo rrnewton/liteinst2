@@ -56,7 +56,7 @@ jobs:
         env:
           PROFILE: ${{ matrix.profile }}
         run: |
-          set -uo pipefail
+          set +e -uo pipefail
           flag=""
           if [ "$PROFILE" = release ]; then flag="--release"; fi
           classify="$GITHUB_WORKSPACE/.github/nff/classify.sh"
@@ -72,6 +72,7 @@ jobs:
             elif [ "$oks" -eq 5 ] && [ "$rc" -eq 0 ]; then class=CALIBRATED
             else class=UNCLEAR; fi
             echo "NFF-CAL bracket=$1 rc=$rc refusals=$refusals ok=$oks/5 class=$class"
+            if [ "$rc" -ne 0 ]; then tail -n 40 "$out" | cut -c1-400 | sed "s/^/NFF-CAL-TAIL bracket=$1: /"; fi
           }
           run_one() {
             head=$1; row=$2; rep=$3
