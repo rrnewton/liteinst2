@@ -157,9 +157,7 @@ pub fn inject_syscall<T: Tracee>(
         .set_regs(&regs)
         .map_err(seam("attach inject: PTRACE_SETREGS"))?;
     tracee.cont(0).map_err(seam("attach inject: PTRACE_CONT"))?;
-    let status = tracee
-        .wait_stop()
-        .map_err(seam("attach inject: waitpid"))?;
+    let status = tracee.wait_stop().map_err(seam("attach inject: waitpid"))?;
     if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP {
         return Err(Refuse::RemoteSubstrate {
             operation: "attach inject: the stop after the syscall is not SIGTRAP",

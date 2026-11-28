@@ -134,8 +134,7 @@ impl Deadline {
             // SAFETY: prlimit on this test's own child, spawned and
             // not reaped; `lim` is a valid limit and no old limit is
             // read back.
-            let rc =
-                unsafe { libc::prlimit(pid, libc::RLIMIT_CPU, &lim, core::ptr::null_mut()) };
+            let rc = unsafe { libc::prlimit(pid, libc::RLIMIT_CPU, &lim, core::ptr::null_mut()) };
             assert!(
                 rc == 0,
                 "deadline: prlimit({pid}, RLIMIT_CPU, {soft}/{hard}): {}",
@@ -384,7 +383,12 @@ fn pidfd_kill_reap(fd: &OwnedFd) {
         // SAFETY: waitid on the one process this pidfd names, with a
         // live siginfo.
         let rc = unsafe {
-            libc::waitid(P_PIDFD, fd.as_raw_fd() as libc::id_t, &mut info, libc::WEXITED)
+            libc::waitid(
+                P_PIDFD,
+                fd.as_raw_fd() as libc::id_t,
+                &mut info,
+                libc::WEXITED,
+            )
         };
         if rc == 0 {
             // Done only on an exit report: the kernel reports a tracee's
@@ -423,10 +427,11 @@ pub fn attach_host(bin: &str, name: &str) -> Result<(AttachHost, Deadline), Refu
     custody(|| {
         let mut cmd = Command::new(bin);
         cmd.arg(name).stdout(Stdio::piped());
-        let (mut child, deadline) = command_child(&mut cmd).map_err(|e| Refuse::RemoteSubstrate {
-            operation: "attach host: spawn",
-            errno: e.raw_os_error().unwrap_or(0),
-        })?;
+        let (mut child, deadline) =
+            command_child(&mut cmd).map_err(|e| Refuse::RemoteSubstrate {
+                operation: "attach host: spawn",
+                errno: e.raw_os_error().unwrap_or(0),
+            })?;
         let pid = child.id() as i32;
         // The host's pidfd, before any read of its stdout and before any
         // wait: the host is still this test's unreaped child, so the
@@ -563,7 +568,14 @@ fn place_attach_arena(
             tracee,
             site,
             libc::SYS_mprotect as u64,
-            [c, CODE_CAP as u64, (libc::PROT_READ | libc::PROT_EXEC) as u64, 0, 0, 0],
+            [
+                c,
+                CODE_CAP as u64,
+                (libc::PROT_READ | libc::PROT_EXEC) as u64,
+                0,
+                0,
+                0,
+            ],
         )?;
         if rax != 0 {
             return Err(Refuse::MappingPolicy {

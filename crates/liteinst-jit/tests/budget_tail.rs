@@ -526,7 +526,10 @@ fn status_field(text: &str, name: &str) -> Result<u64, String> {
 /// SIGXCPU, whose default action ends the test process with signal
 /// 24; cargo reports it, and that is the named CPU-cap FAIL (B2).
 fn own_cpu_cap(soft: u64, hard: u64) {
-    assert!(soft < hard, "own_cpu_cap: soft {soft} must be below hard {hard}");
+    assert!(
+        soft < hard,
+        "own_cpu_cap: soft {soft} must be below hard {hard}"
+    );
     let lim = libc::rlimit {
         rlim_cur: soft,
         rlim_max: hard,
@@ -637,7 +640,10 @@ fn attach_error(e: &RunError) -> String {
             "budget refusal, cause not named (no signum)".to_string()
         }
         RunError::Fault(f) if f.signum == libc::SIGXCPU => {
-            format!("CPU-cap FAIL: SIGXCPU (signal {}) at {:#x}", f.signum, f.src_pc)
+            format!(
+                "CPU-cap FAIL: SIGXCPU (signal {}) at {:#x}",
+                f.signum, f.src_pc
+            )
         }
         other => format!("{other:?}"),
     }
@@ -830,8 +836,7 @@ fn control_host(
         };
         // SAFETY: prlimit on this test's own child, spawned and not
         // reaped; `lim` lowers its limits and no old limit is read.
-        let rc =
-            unsafe { libc::prlimit(host.pid, libc::RLIMIT_CPU, &lim, core::ptr::null_mut()) };
+        let rc = unsafe { libc::prlimit(host.pid, libc::RLIMIT_CPU, &lim, core::ptr::null_mut()) };
         if rc != 0 {
             return Err(format!("prlimit: {}", std::io::Error::last_os_error()));
         }

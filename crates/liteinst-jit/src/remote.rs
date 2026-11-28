@@ -1559,14 +1559,12 @@ impl RemoteExecutable {
         let mut raw = [0u8; 56];
         let mut dump = [0u8; 65 * 32];
         {
-            let out = guard
-                .child
-                .as_mut()
-                .and_then(|c| c.stdout.as_mut())
-                .ok_or(Refuse::RemoteSubstrate {
+            let out = guard.child.as_mut().and_then(|c| c.stdout.as_mut()).ok_or(
+                Refuse::RemoteSubstrate {
                     operation: "remote child stdout",
                     errno: 0,
-                })?;
+                },
+            )?;
             out.read_exact(&mut raw)
                 .map_err(|_| Refuse::RemoteSubstrate {
                     operation: "read remote child setup",
