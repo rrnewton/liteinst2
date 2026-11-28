@@ -1,5 +1,7 @@
 //! Wiring witness for the reference gate's native single-step check: the
 //! trace stop after a selected instruction must be exactly its fallthrough.
+//! With no selected aliases the reference gate admits only CPUID sites, so
+//! the witness steps a native CPUID and first requires a calibrated host.
 
 use crate::gate::{GateError, GateEvent, ImageFacts, SingleThreadPageGate};
 use crate::{ExecCheckpoint, LaunchCommand};
@@ -18,7 +20,7 @@ const DATA: u64 = 0x600000;
 const TIMEOUT: Duration = Duration::from_secs(3);
 static NEXT: AtomicUsize = AtomicUsize::new(0);
 
-/// A private static ELF whose entry is RDTSC (`0f 31`) followed by UD2
+/// A private static ELF whose entry is CPUID (`0f a2`) followed by UD2
 /// (`0f 0b`), so the only selected site's fallthrough raises SIGILL.
 struct Fixture {
     directory: PathBuf,
@@ -68,7 +70,7 @@ impl Fixture {
         put32(&mut image, 180, 6);
         put64(&mut image, 224, 16);
         let offset = (site - BASE) as usize;
-        image[offset..offset + 4].copy_from_slice(&[0x0f, 0x31, 0x0f, 0x0b]);
+        image[offset..offset + 4].copy_from_slice(&[0x0f, 0xa2, 0x0f, 0x0b]);
         let heads = BTreeSet::from([site, site + 2]);
         let mut file_image = image.clone();
         file_image.resize(4 * PAGE, 0);
@@ -96,7 +98,7 @@ impl Fixture {
             ExecCheckpoint::launch(&LaunchCommand::new(&self.path), TIMEOUT).unwrap()
         };
         // SAFETY: this fixed private ELF has one task, immutable code, an exact
-        // reachable-head census (the RDTSC and the UD2 after it) and no aliases,
+        // reachable-head census (the CPUID and the UD2 after it) and no aliases,
         // code reads, signal handlers or mapping changes. We exclusively own
         // tracing and reaping.
         unsafe {
@@ -109,7 +111,7 @@ impl Fixture {
                 }],
                 Policy {
                     version: 1,
-                    selected: [SiteClass::Rdtsc].into_iter().collect(),
+                    selected: [SiteClass::Cpuid].into_iter().collect(),
                 },
                 TIMEOUT,
             )
@@ -138,15 +140,19 @@ fn observe_site(gate: &mut SingleThreadPageGate, site: u64) {
     match gate.next_event().unwrap() {
         GateEvent::Observe(observation) => {
             assert_eq!(observation.site.address, site);
-            assert_eq!(observation.site.class, SiteClass::Rdtsc);
+            assert_eq!(observation.site.class, SiteClass::Cpuid);
             assert_eq!(observation.registers.rip, site);
         }
-        other => panic!("expected the RDTSC observation, got {other:?}"),
+        other => panic!("expected the CPUID observation, got {other:?}"),
     }
 }
 
 #[test]
-fn rdtsc_site_control_raises_sigill_after_its_fallthrough() {
+fn cpuid_site_control_raises_sigill_after_its_fallthrough() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::gate::fallthrough_wiring_tests::cpuid_site_control_raises_sigill_after_its_fallthrough",
+    );
     let fixture = Fixture::new();
     let mut gate = fixture.launch();
     observe_site(&mut gate, fixture.site);
@@ -163,6 +169,10 @@ fn rdtsc_site_control_raises_sigill_after_its_fallthrough() {
 
 #[test]
 fn perturbed_step_rip_is_refused_off_the_fallthrough() {
+    crate::host_cpuid_step::require_calibrated(
+        &crate::TEST_FILE_FORK,
+        "liteinst_launch::gate::fallthrough_wiring_tests::perturbed_step_rip_is_refused_off_the_fallthrough",
+    );
     let fixture = Fixture::new();
     let mut gate = fixture.launch();
     observe_site(&mut gate, fixture.site);
