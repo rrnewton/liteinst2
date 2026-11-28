@@ -62,6 +62,231 @@ jobs:
             packages: "-p liteinst-x86 -p liteinst-aarch64 -p liteinst-aarch64-patch -p liteinst-artifact -p liteinst-admission -p liteinst-inprocess"
             timeout: 15
     steps:
+      # Diagnostic only, not for merge: print the runner's CPU, XCR0 and
+      # xstate layout before anything else runs, one DIAG-CPU key=value
+      # per line. It prints only and changes no test. Errexit is off, it
+      # ends with exit 0, and continue-on-error keeps even a timeout from
+      # failing the job.
+      - name: Runner CPU diagnostics (print only)
+        if: matrix.group.name != 'small-crates'
+        continue-on-error: true
+        timeout-minutes: 3
+        shell: bash --noprofile --norc {0}
+        run: |
+          set +e
+          p=DIAG-CPU
+          kv() { printf '%s: %s=%s\n' "$p" "$1" "$2"; }
+          lines() { while IFS= read -r line; do kv "$1" "$line"; done; }
+          field() { sed -n "s/^$1[[:space:]]*:[[:space:]]*//p" /proc/cpuinfo; }
+          kv diag.begin 1
+          kv cpu.count "$(grep -c '^processor' /proc/cpuinfo)"
+          for f in 'model name:model_name' 'cpu family:family' 'model:model' \
+              'stepping:stepping' 'microcode:microcode' 'flags:flags'; do
+            kv "cpu0.${f##*:}" "$(field "${f%%:*}" | head -n 1)"
+            kv "distinct.${f##*:}" "$(field "${f%%:*}" | sort -u | wc -l)"
+          done
+          if command -v lscpu > /dev/null; then lscpu | lines lscpu; else kv lscpu absent; fi
+          kv kernel.release "$(uname -r)"
+          kv kernel.version "$(uname -v)"
+          kv kernel.machine "$(uname -m)"
+          if command -v systemd-detect-virt > /dev/null; then
+            kv virt "$(systemd-detect-virt)"
+          else
+            kv virt absent
+          fi
+          fpu="$(dmesg 2> /dev/null | grep 'x86/fpu')"
+          if [ -n "$fpu" ]; then printf '%s\n' "$fpu" | lines dmesg.fpu; else kv dmesg.fpu unavailable; fi
+          sed -n -E 's/^[0-9a-f]+-[0-9a-f]+ ([-rwxps]{4}) [0-9a-f]+ [0-9a-f:]+ [0-9]+ +(\[[^]]+\])$/\2 \1/p' /proc/self/maps | sort -u | lines maps.special
+          kv kernel.randomize_va_space "$(cat /proc/sys/kernel/randomize_va_space 2> /dev/null)"
+          kv pagesize "$(getconf PAGESIZE 2> /dev/null)"
+          src="$RUNNER_TEMP/diag-xstate.c"
+          cat > "$src" << 'EOF'
+          /* Print-only probe: CPUID, XCR0, XINUSE and the CPUID leaf 0xD
+             xstate components, as DIAG-CPU key=value lines. */
+          #include <cpuid.h>
+          #include <stdint.h>
+          #include <stdio.h>
+          #include <string.h>
+          #include <sys/auxv.h>
+          #include <sys/syscall.h>
+          #include <unistd.h>
+
+          #define P(...) printf("DIAG-" "CPU: " __VA_ARGS__)
+
+          static const char *const names[] = {
+              "x87", "sse", "avx", "mpx_bndregs", "mpx_bndcsr", "avx512_opmask",
+              "avx512_zmm_hi256", "avx512_hi16_zmm", "pt", "pkru", "pasid", "cet_u",
+              "cet_s", "hdc", "uintr", "lbr", "hwp", "amx_tilecfg", "amx_tiledata",
+              "apx",
+          };
+
+          static uint64_t xgetbv(uint32_t index)
+          {
+              uint32_t lo, hi;
+              __asm__ volatile("xgetbv" : "=a"(lo), "=d"(hi) : "c"(index));
+              return ((uint64_t)hi << 32) | lo;
+          }
+
+          static void bits(const char *key, uint64_t v)
+          {
+              unsigned int i;
+              const char *sep = "";
+              P("%s=", key);
+              for (i = 0; i < 64; i++)
+                  if ((v >> i) & 1) {
+                      printf("%s%u", sep, i);
+                      sep = ",";
+                  }
+              printf("\n");
+          }
+
+          int main(void)
+          {
+              unsigned int a, b, c, d, max, ecx1, hvmax, leaf, i, fam, model;
+              uint64_t xcr0 = 0, xinuse = 0, user, xss, val;
+              int osxsave, have_xinuse = 0;
+              char vendor[13] = {0};
+
+              /* XCR0 and XINUSE first, before this program prints anything. */
+              __cpuid(0, max, b, c, d);
+              __cpuid(1, a, b, ecx1, d);
+              osxsave = (ecx1 >> 27) & 1;
+              if (osxsave && max >= 0xd) {
+                  xcr0 = xgetbv(0);
+                  __cpuid_count(0xd, 1, a, b, c, d);
+                  if ((a >> 2) & 1) {
+                      xinuse = xgetbv(1);
+                      have_xinuse = 1;
+                  }
+              }
+              /* Line-buffered from here on, so a crash keeps every line already
+                 printed. It comes after the two reads above, so it cannot
+                 change them. */
+              setvbuf(stdout, NULL, _IOLBF, 0);
+
+              __cpuid(0, max, b, c, d);
+              memcpy(vendor, &b, 4);
+              memcpy(vendor + 4, &d, 4);
+              memcpy(vendor + 8, &c, 4);
+              P("cpuid.vendor=%s\n", vendor);
+              P("cpuid.max_leaf=0x%x\n", max);
+              __cpuid(1, a, b, c, d);
+              fam = (a >> 8) & 0xf;
+              model = (a >> 4) & 0xf;
+              if (fam == 0xf)
+                  fam += (a >> 20) & 0xff;
+              if (fam == 0x6 || fam >= 0xf)
+                  model |= ((a >> 16) & 0xf) << 4;
+              P("cpuid.1=eax:0x%08x ecx:0x%08x edx:0x%08x\n", a, c, d);
+              P("cpuid.family=%u\n", fam);
+              P("cpuid.model=%u\n", model);
+              P("cpuid.stepping=%u\n", a & 0xf);
+              P("cpuid.osxsave=%d\n", osxsave);
+              P("cpuid.hypervisor=%u\n", (ecx1 >> 31) & 1);
+              if (max >= 7) {
+                  __cpuid_count(7, 0, a, b, c, d);
+                  P("cpuid.7.0=ebx:0x%08x ecx:0x%08x edx:0x%08x\n", b, c, d);
+                  if (a >= 1) { /* EAX of (7,0) = the highest subleaf */
+                      __cpuid_count(7, 1, a, b, c, d);
+                      P("cpuid.7.1=eax:0x%08x ebx:0x%08x ecx:0x%08x edx:0x%08x\n",
+                        a, b, c, d);
+                  } else {
+                      P("cpuid.7.1=unsupported\n");
+                  }
+              }
+
+              if ((ecx1 >> 31) & 1) {
+                  __cpuid(0x40000000, hvmax, b, c, d);
+                  memcpy(vendor, &b, 4);
+                  memcpy(vendor + 4, &c, 4);
+                  memcpy(vendor + 8, &d, 4);
+                  for (i = 0; i < 12; i++)
+                      if (vendor[i] < 0x20 || vendor[i] > 0x7e)
+                          vendor[i] = '.';
+                  P("hv.vendor=%s\n", vendor);
+                  P("hv.max_leaf=0x%x\n", hvmax);
+                  for (leaf = 0x40000001; leaf <= hvmax && leaf <= 0x40000006; leaf++) {
+                      __cpuid(leaf, a, b, c, d);
+                      P("hv.0x%x=eax:0x%08x ebx:0x%08x ecx:0x%08x edx:0x%08x\n",
+                        leaf, a, b, c, d);
+                  }
+              } else {
+                  P("hv.vendor=none\n");
+              }
+
+              if (!osxsave || max < 0xd) {
+                  P("xcr0=unavailable\n");
+              } else {
+                  P("xcr0=0x%016llx\n", (unsigned long long)xcr0);
+                  bits("xcr0.components", xcr0);
+                  if (have_xinuse) {
+                      P("xinuse.at_main=0x%016llx\n", (unsigned long long)xinuse);
+                      bits("xinuse.components", xinuse);
+                  } else {
+                      P("xinuse.at_main=unsupported\n");
+                  }
+                  __cpuid_count(0xd, 0, a, b, c, d);
+                  user = ((uint64_t)d << 32) | a;
+                  P("xsave.user_supported=0x%016llx\n", (unsigned long long)user);
+                  P("xsave.size_for_xcr0=%u\n", b);
+                  P("xsave.size_max=%u\n", c);
+                  __cpuid_count(0xd, 1, a, b, c, d);
+                  xss = ((uint64_t)d << 32) | c;
+                  P("xsave.d1_eax=0x%08x\n", a);
+                  P("xsave.xsaveopt=%u\n", a & 1);
+                  P("xsave.xsavec=%u\n", (a >> 1) & 1);
+                  P("xsave.xgetbv1=%u\n", (a >> 2) & 1);
+                  P("xsave.xsaves=%u\n", (a >> 3) & 1);
+                  P("xsave.xfd=%u\n", (a >> 4) & 1);
+                  P("xsave.size_compacted_xcr0_xss=%u\n", b);
+                  P("xsave.xss_supported=0x%016llx\n", (unsigned long long)xss);
+                  for (i = 0; i < 63; i++) {
+                      const char *name = i < sizeof(names) / sizeof(names[0]) ? names[i] : "unknown";
+                      char use = have_xinuse ? (char)('0' + ((xinuse >> i) & 1)) : '-';
+                      if (!(((user | xss) >> i) & 1))
+                          continue;
+                      if (i < 2) {
+                          P("xstate.%02u=name:%s legacy:1 xcr0:%u inuse:%c\n", i, name,
+                            (unsigned int)((xcr0 >> i) & 1), use);
+                          continue;
+                      }
+                      __cpuid_count(0xd, i, a, b, c, d);
+                      P("xstate.%02u=name:%s size:%u offset:%u supervisor:%u align64:%u "
+                        "xfd:%u xcr0:%u inuse:%c\n", i, name, a, b, c & 1, (c >> 1) & 1,
+                        (c >> 2) & 1, (unsigned int)((xcr0 >> i) & 1), use);
+                  }
+              }
+
+              val = 0; /* ARCH_GET_XCOMP_SUPP */
+              if (syscall(SYS_arch_prctl, 0x1021, &val) == 0)
+                  P("kernel.xcomp_supp=0x%016llx\n", (unsigned long long)val);
+              else
+                  P("kernel.xcomp_supp=error\n");
+              val = 0; /* ARCH_GET_XCOMP_PERM */
+              if (syscall(SYS_arch_prctl, 0x1022, &val) == 0)
+                  P("kernel.xcomp_perm=0x%016llx\n", (unsigned long long)val);
+              else
+                  P("kernel.xcomp_perm=error\n");
+              P("auxv.minsigstksz=%lu\n", getauxval(51)); /* AT_MINSIGSTKSZ */
+              return 0;
+          }
+          EOF
+          if command -v cc > /dev/null; then
+            kv cc.version "$(cc --version | head -n 1)"
+            cc -O0 -o "$RUNNER_TEMP/diag-xstate" "$src" 2> "$src.err"
+            rc=$?
+            kv xstate_probe.cc_rc "$rc"
+            if [ "$rc" -eq 0 ]; then
+              "$RUNNER_TEMP/diag-xstate"
+              kv xstate_probe.rc "$?"
+            else
+              head -n 20 "$src.err" | lines xstate_probe.cc_err
+            fi
+          else
+            kv xstate_probe.cc_rc absent
+          fi
+          kv diag.end 1
+          exit 0
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1
       # Build artifacts only (registry + target); never test outcomes.
